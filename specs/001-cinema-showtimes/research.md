@@ -187,8 +187,8 @@ eleven small sources.
 ## 5. Movie matching across cinemas (FR-005)
 
 **Decision**: Deterministic, conservative matching:
-1. **Normalise** titles: lower-case, strip diacritics, remove format/language tags (`3D`, `IMAX`,
-   `4DX`, `(LT sub.)`, `LT`, `ORG`, `dubliuotas`, etc.), remove punctuation, collapse spaces.
+1. **Normalise** titles: lower-case, strip diacritics, remove format/language tags (`IMAX`, `4DX`,
+   `(LT sub.)`, `LT`, `ORG`, `dubliuotas`, etc.), remove punctuation, collapse spaces.
 2. **Title keys**: every movie is known by all its normalised titles — the **English** title (when
    a source states it: Apollo's international titles, Cinamon's translations), the original
    title, and the Lithuanian title — with a leading "The"/"A"/"An" ignored. The movie is named

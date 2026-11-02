@@ -27,8 +27,8 @@ function toggled<T>(list: readonly T[], value: T): T[] {
 
 /**
  * Cinema, format and audio filters (FR-012). A group with a single choice filters nothing, so it
- * is shown only when something in it is selected. On small screens the groups fold behind a
- * toggle.
+ * is shown only when something in it is selected. A lone format is the exception when other
+ * screenings have none: it still narrows the list. On small screens the groups fold behind a toggle.
  */
 export function FilterBar({ screenings, filters, onChange }: FilterBarProps) {
   const { t } = useT();
@@ -36,7 +36,9 @@ export function FilterBar({ screenings, filters, onChange }: FilterBarProps) {
   const [expanded, setExpanded] = useState(false);
   const options = filterOptions(screenings, filters);
   const showCinemas = options.cinemas.length > 1 || filters.cinemas.length > 0;
-  const showFormats = options.formats.length > 1 || filters.formats.length > 0;
+  const someHaveNoFormat = screenings.some((screening) => screening.format === null);
+  const showFormats =
+    options.formats.length > (someHaveNoFormat ? 0 : 1) || filters.formats.length > 0;
   const showAudio = options.audio.length > 1 || filters.audio !== null;
   if (!showCinemas && !showFormats && !showAudio) return null;
   const count = filterCount(filters);

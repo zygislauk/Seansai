@@ -79,7 +79,7 @@ export function screeningRecord(overrides: Partial<ScreeningRecord> = {}): Scree
     localDate: '2026-10-30',
     durationMinutes: 101,
     hall: '6 salė',
-    format: '2D',
+    format: 'IMAX',
     spokenLanguage: 'en',
     subtitleLanguage: 'lt',
     isDubbed: false,

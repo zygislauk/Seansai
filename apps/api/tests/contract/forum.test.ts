@@ -73,7 +73,7 @@ describe('Forum Cinemas (REST API behind forumcinemas.lt)', () => {
       originalTitle: 'Shaun the Sheep: The Beast of Mossy Bottom',
       ageRating: 'V',
       hall: '10 salė',
-      format: '2D',
+      format: null,
       spokenLanguage: 'lt',
       subtitleLanguage: null,
       isDubbed: true,
@@ -210,7 +210,7 @@ describe('Forum Cinemas edge cases', () => {
 
     expect(findScreening(screenings, 'a')).toMatchObject({
       startsAt: new Date('2026-10-31T22:30:00Z'),
-      format: '3D',
+      format: null,
       hall: null,
       ageRating: null,
       posterUrl: null,

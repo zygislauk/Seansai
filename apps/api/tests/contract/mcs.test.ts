@@ -45,7 +45,7 @@ describe('Apollo (MCS JSON feed)', () => {
       posterUrl:
         'https://mcswebsites.blob.core.windows.net/1050/Event_7563/portrait_medium/2592x3840_Vesper.png',
       hall: '6 salė',
-      format: '2D',
+      format: null,
       spokenLanguage: 'en',
       subtitleLanguage: 'lt',
       isDubbed: false,
@@ -94,7 +94,7 @@ describe('Pasaka (MCS XML feed)', () => {
       genres: ['Animacija', 'Nuotykių', 'Fantastinis', 'Šeimai'],
       posterUrl: null,
       hall: '„Paupio“ salė',
-      format: '2D',
+      format: null,
       spokenLanguage: 'lt',
       subtitleLanguage: null,
       isDubbed: true,
@@ -156,10 +156,10 @@ describe('MCS edge cases', () => {
     expect(screening && localDateOf(screening.startsAt)).toBe('2026-10-31');
   });
 
-  test('maps 3D and treats a zero year and "-" rating as unknown', async () => {
+  test('shows no format for 3D and treats a zero year and "-" rating as unknown', async () => {
     const { screenings } = await runOnBodies(adapter, { [url]: show({}) }, NOW);
 
-    expect(screenings[0]).toMatchObject({ format: '3D', year: null, ageRating: null, genres: [] });
+    expect(screenings[0]).toMatchObject({ format: null, year: null, ageRating: null, genres: [] });
   });
 
   test('skips a show without a valid start time instead of failing the source', async () => {

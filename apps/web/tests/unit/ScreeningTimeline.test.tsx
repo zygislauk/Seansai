@@ -30,7 +30,7 @@ test('each row shows cinema, city, time, and hall, format and language when know
   expect(within(apollo).getByRole('time')).toHaveAttribute('datetime', '2026-10-30T20:00:00+02:00');
   expect(apollo).toHaveTextContent('Vilnius');
   expect(apollo).toHaveTextContent('6 salė');
-  expect(within(apollo).getByText('3D')).toBeInTheDocument();
+  expect(within(apollo).getByText('4DX')).toBeInTheDocument();
   expect(within(apollo).getByText('EN')).toHaveAttribute('title', 'English');
   expect(within(apollo).getByText('LT subtitles')).toBeInTheDocument();
 

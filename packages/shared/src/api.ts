@@ -9,7 +9,7 @@ export const InstantSchema = z.iso.datetime({ offset: true });
 export const LangSchema = z.enum(['lt', 'en']);
 export type Lang = z.infer<typeof LangSchema>;
 
-export const ScreeningFormatSchema = z.enum(['2D', '3D', 'IMAX', '4DX', 'ScreenX', 'other']);
+export const ScreeningFormatSchema = z.enum(['IMAX', '4DX', 'ScreenX', 'other']);
 export type ScreeningFormat = z.infer<typeof ScreeningFormatSchema>;
 
 export const FreshnessSchema = z.object({

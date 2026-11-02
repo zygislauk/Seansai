@@ -34,7 +34,7 @@ describe('Vue (films with showings)', () => {
       genres: ['Siaubo'],
       posterUrl: expect.stringMatching(/^https:\/\/media\.vuekinas\.lt\/.+residentevil/) as string,
       hall: '3 salė',
-      format: '2D',
+      format: null,
       spokenLanguage: null,
       subtitleLanguage: null,
       isDubbed: null,

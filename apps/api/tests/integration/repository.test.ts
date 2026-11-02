@@ -59,7 +59,7 @@ describe('splitStatements', () => {
 
 describe('openDb', () => {
   test('records the migrations in a table, never in PRAGMA user_version (Turso rejects it)', async () => {
-    expect(await schemaVersion(db)).toBe(4);
+    expect(await schemaVersion(db)).toBe(5);
     expect(await userVersion(db)).toBe(0);
   });
 
@@ -67,7 +67,28 @@ describe('openDb', () => {
     db.close();
     db = await openDb(`file:${path}`);
 
-    expect(await schemaVersion(db)).toBe(4);
+    expect(await schemaVersion(db)).toBe(5);
+  });
+
+  test('migration 5 clears the 2D and 3D formats stored earlier and keeps the others', async () => {
+    await seedScreenings(
+      repo,
+      'apollo',
+      NOW,
+      ['apollo:1', 'apollo:2', 'apollo:3'].map((id) => screeningRecord({ id })),
+    );
+    await db.execute("UPDATE screenings SET format = '2D' WHERE id = 'apollo:1'");
+    await db.execute("UPDATE screenings SET format = '3D' WHERE id = 'apollo:2'");
+    await db.execute('DELETE FROM schema_migrations WHERE version = 5');
+    db.close();
+    db = await openDb(`file:${path}`);
+
+    const { rows } = await db.execute('SELECT id, format FROM screenings ORDER BY id');
+    expect(rows.map((row) => [row.id, row.format])).toEqual([
+      ['apollo:1', null],
+      ['apollo:2', null],
+      ['apollo:3', 'IMAX'],
+    ]);
   });
 
   test('a database migrated before the table existed is not migrated again', async () => {
@@ -90,7 +111,7 @@ describe('openDb', () => {
         .rows[0]?.count,
     ).toBe(1);
     // Only the migrations it lacks run.
-    expect(await schemaVersion(reopened)).toBe(4);
+    expect(await schemaVersion(reopened)).toBe(5);
     expect(
       (await reopened.execute('PRAGMA table_info(screenings)')).rows.map((row) => row.name),
     ).toContain('duration_minutes');
@@ -124,7 +145,7 @@ describe('openDb', () => {
 
     const [first, second] = await Promise.all([openDb(url), openDb(url)]);
 
-    expect(await schemaVersion(first)).toBe(4);
+    expect(await schemaVersion(first)).toBe(5);
     expect(
       (await first.execute("SELECT COUNT(*) AS count FROM sqlite_master WHERE name = 'movies'"))
         .rows[0]?.count,

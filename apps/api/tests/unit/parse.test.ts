@@ -11,8 +11,8 @@ import {
 
 describe('formatOf', () => {
   test.each([
-    ['2D', '2D'],
-    ['3D', '3D'],
+    ['2D', null],
+    ['3D', null],
     ['imax', 'IMAX'],
     ['IMAX 3D', 'IMAX'],
     ['4DX', '4DX'],

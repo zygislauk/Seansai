@@ -1,12 +1,12 @@
 import type { Screening } from '@seansai/shared';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test } from 'vitest';
 import { MemoryRouter, useLocation } from 'react-router';
 import { useFilters } from '../../src/app/filters.ts';
 import { FilterBar } from '../../src/components/organisms/FilterBar/index.ts';
 import { I18nProvider } from '../../src/i18n/index.tsx';
-import { diggerScreenings } from '../helpers/mock-api.ts';
+import { diggerScreenings, screening } from '../helpers/mock-api.ts';
 
 /** FilterBar wired to the URL as the movie page wires it; shows the query string. */
 function Harness({ screenings }: { screenings: Screening[] }) {
@@ -41,7 +41,7 @@ test('offers only the cinemas, formats and audio present in the list', () => {
       .getAllByRole('button')
       .map((button) => button.textContent);
   expect(names('Cinema')).toEqual(['Apollo Akropolis', 'Skalvija', 'Vue Vilnius']);
-  expect(names('Format')).toEqual(['2D', '3D']);
+  expect(names('Format')).toEqual(['4DX', 'ScreenX']);
   expect(names('Language')).toEqual(['Original language', 'Dubbed']);
 });
 
@@ -52,6 +52,21 @@ test('hides a group with a single option', () => {
   expect(screen.queryByRole('group', { name: 'Format' })).not.toBeInTheDocument();
 });
 
+test('offers a lone format only when other screenings lack it, as it then narrows the list', () => {
+  renderBar(undefined, [
+    screening({ id: 'a', format: 'IMAX' }),
+    screening({ id: 'b', format: null }),
+  ]);
+  expect(within(group('Format')).getByRole('button', { name: 'IMAX' })).toBeInTheDocument();
+  cleanup();
+
+  renderBar(undefined, [
+    screening({ id: 'a', format: 'IMAX' }),
+    screening({ id: 'b', format: 'IMAX' }),
+  ]);
+  expect(screen.queryByRole('group', { name: 'Format' })).not.toBeInTheDocument();
+});
+
 test('selected chips are pressed and written to the cinema, format and audio parameters', async () => {
   const user = userEvent.setup();
   const { query } = renderBar();
@@ -59,12 +74,12 @@ test('selected chips are pressed and written to the cinema, format and audio par
   const vue = within(group('Cinema')).getByRole('button', { name: 'Vue Vilnius' });
   await user.click(vue);
   await user.click(within(group('Cinema')).getByRole('button', { name: 'Skalvija' }));
-  await user.click(within(group('Format')).getByRole('button', { name: '3D' }));
+  await user.click(within(group('Format')).getByRole('button', { name: '4DX' }));
   await user.click(within(group('Language')).getByRole('button', { name: 'Original language' }));
 
   expect(vue).toHaveAttribute('aria-pressed', 'true');
   expect(new URLSearchParams(query())).toEqual(
-    new URLSearchParams('date=2026-10-31&cinema=vue-vilnius,skalvija&format=3D&audio=original'),
+    new URLSearchParams('date=2026-10-31&cinema=vue-vilnius,skalvija&format=4DX&audio=original'),
   );
 
   await user.click(vue);
@@ -89,9 +104,9 @@ test('the two audio choices exclude each other', async () => {
 
 test('reads filters from the URL, and "Clear filters" resets them', async () => {
   const user = userEvent.setup();
-  const { query } = renderBar('/en/movie/digger-2026?date=2026-10-31&format=3D&audio=dubbed');
+  const { query } = renderBar('/en/movie/digger-2026?date=2026-10-31&format=4DX&audio=dubbed');
 
-  expect(within(group('Format')).getByRole('button', { name: '3D' })).toHaveAttribute(
+  expect(within(group('Format')).getByRole('button', { name: '4DX' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -103,7 +118,7 @@ test('reads filters from the URL, and "Clear filters" resets them', async () => 
 
 test('on small screens the filters fold behind a toggle that shows how many are set', async () => {
   const user = userEvent.setup();
-  renderBar('/en/movie/digger-2026?format=3D&cinema=skalvija');
+  renderBar('/en/movie/digger-2026?format=4DX&cinema=skalvija');
 
   const toggle = screen.getByRole('button', { name: 'Filters (2)' });
   expect(toggle).toHaveAttribute('aria-expanded', 'false');

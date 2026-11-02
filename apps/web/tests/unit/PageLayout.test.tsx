@@ -93,13 +93,13 @@ test('the city dialog closes unchanged with Escape or the close button', async (
 test('changing city on a movie page updates a linked city and drops the cinema filter', async () => {
   const user = userEvent.setup();
   mockApi();
-  const app = renderApp('/en/movie/digger-2026?city=vilnius&cinema=skalvija&format=3D');
+  const app = renderApp('/en/movie/digger-2026?city=vilnius&cinema=skalvija&format=4DX');
 
   await user.click(await screen.findByRole('button', { name: 'Change city: Vilnius' }));
   await user.click(screen.getByRole('button', { name: /^All of Lithuania/ }));
 
   await waitFor(() => {
-    expect(app.location()).toBe('/en/movie/digger-2026?city=all&format=3D');
+    expect(app.location()).toBe('/en/movie/digger-2026?city=all&format=4DX');
   });
   expect(
     await screen.findByRole('button', { name: 'Change city: All of Lithuania' }),

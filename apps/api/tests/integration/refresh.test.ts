@@ -26,7 +26,7 @@ function screening(overrides: Partial<SourceScreening> = {}): SourceScreening {
     genres: ['drama'],
     posterUrl: 'https://www.apollokinas.lt/posters/digger.jpg',
     hall: '6 salė',
-    format: '2D',
+    format: 'IMAX',
     spokenLanguage: 'en',
     subtitleLanguage: 'lt',
     isDubbed: false,

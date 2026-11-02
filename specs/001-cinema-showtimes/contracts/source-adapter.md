@@ -39,7 +39,7 @@ type SourceScreening = {
   genres: string[];
   posterUrl: string | null;
   hall: string | null;
-  format: "2D" | "3D" | "IMAX" | "4DX" | "ScreenX" | "other" | null;
+  format: "IMAX" | "4DX" | "ScreenX" | "other" | null;
   spokenLanguage: string | null;
   subtitleLanguage: string | null;
   isDubbed: boolean | null;

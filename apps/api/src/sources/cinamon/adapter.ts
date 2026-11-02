@@ -33,7 +33,6 @@ const SessionSchema = z.object({
   pid: z.union([z.string(), z.number()]).transform(String),
   showtime: z.string().regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/),
   screen_name: z.string().nullish(),
-  is_3d: z.boolean().default(false),
   relatedAttributes: z.array(AttributeSchema).default([]),
   film: z.object({
     name: z.string().trim().min(1),
@@ -77,7 +76,7 @@ function toScreening(session: Session, cinemaId: string): SourceScreening {
     genres: film.genre ? [film.genre.name] : [],
     posterUrl: film.poster || null,
     hall: session.screen_name?.trim() || null,
-    format: session.is_3d ? '3D' : formatOf(attribute(session, 'movie-type')),
+    format: formatOf(attribute(session, 'movie-type')),
     spokenLanguage,
     subtitleLanguage,
     isDubbed: dubbingOf({ title, originalTitle, spokenLanguage, subtitleLanguage }),

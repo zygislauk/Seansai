@@ -7,8 +7,8 @@ import {
 } from './helpers.ts';
 
 /**
- * Quickstart US3 against the fixture data (see helpers.ts for the fixture clock). No cinema had a 3D
- * screening when the fixtures were captured, so the format step filters Forum's IMAX screenings.
+ * Quickstart US3 against the fixture data (see helpers.ts for the fixture clock). The format step
+ * filters Forum's IMAX screenings.
  */
 
 test.beforeEach(async ({ context, request }) => {
@@ -70,7 +70,7 @@ test('US3: changing city and filtering screenings', async ({ page }) => {
   await expect(page).toHaveURL(/\?date=2026-11-01$/);
   await expect(rows).toHaveCount(13);
   await showFilters(page);
-  // Every screening of it that day is 2D, so there is no format to choose.
+  // No screening of it that day has a special format, so there is none to choose.
   await expect(page.getByRole('group', { name: 'Formatas' })).toHaveCount(0);
 
   const cinemas = page.getByRole('group', { name: 'Kino teatras' });
@@ -103,7 +103,7 @@ test('US3: changing city and filtering screenings', async ({ page }) => {
   await expect(rows).toHaveCount(13);
   await expect(page).toHaveURL(/\/lt\/movie\/[\w-]+\?date=2026-11-01$/);
 
-  // 2 (format). "Odisėja" runs in 2D at Vue and in IMAX at Forum Cinemas Vingis that day.
+  // 2 (format). "Odisėja" runs at Vue, and in IMAX at Forum Cinemas Vingis, that day.
   await page.getByRole('link', { name: 'Seansai', exact: true }).click();
   await page.getByRole('searchbox').fill('Odisėja');
   await page.getByRole('link', { name: /Odisėja/ }).click();

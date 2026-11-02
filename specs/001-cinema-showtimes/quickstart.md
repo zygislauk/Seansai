@@ -67,7 +67,7 @@ Run with `SOURCES_MODE=fixtures` so results are deterministic. Fixture "today" i
 
 1. Switch city to **Visa Lietuva**, then to **Kaunas**.
    **Expect**: movie list and screenings update; reload keeps Kaunas.
-2. Filter by one cinema, then by format `3D`, then by original language.
+2. Filter by one cinema, then by format `IMAX`, then by original language.
    **Expect**: only matching rows; URL reflects filters.
 3. Apply filters that match nothing.
    **Expect**: "no screenings match" message with **Clear filters**.

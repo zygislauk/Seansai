@@ -47,7 +47,7 @@ type Screening = {
   startsAt: string;           // instant
   cinema: { id: string; name: string; cityId: string; cityName: string };
   hall: string | null;
-  format: "2D" | "3D" | "IMAX" | "4DX" | "ScreenX" | "other" | null;
+  format: "IMAX" | "4DX" | "ScreenX" | "other" | null;
   spokenLanguage: string | null;     // ISO 639-1
   subtitleLanguage: string | null;   // ISO 639-1
   isDubbed: boolean | null;

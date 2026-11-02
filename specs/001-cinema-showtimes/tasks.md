@@ -58,7 +58,7 @@ depends on
 
 ### Shared contracts
 
-- [X] T010 [P] Define zod schemas and inferred types in `packages/shared/src/api.ts` exactly as in [contracts/public-api.md](./contracts/public-api.md): `Freshness`, `MovieSummary`, `Screening` (`format: "2D" | "3D" | "IMAX" | "4DX" | "ScreenX" | "other" | null`), `CitiesResponse`, `MoviesResponse` (items `{ movie, screeningsToday, firstDate }`), `MovieDetailResponse` (`screeningDates`, `availableDates`), `ScreeningsResponse` (`date`, `screenings`, `nextDateWithScreenings`, `freshness`), `ErrorResponse` with codes `invalid_city` · `invalid_date` · `movie_not_found` · `internal_error`; re-export from `packages/shared/src/index.ts`
+- [X] T010 [P] Define zod schemas and inferred types in `packages/shared/src/api.ts` exactly as in [contracts/public-api.md](./contracts/public-api.md): `Freshness`, `MovieSummary`, `Screening` (`format: "IMAX" | "4DX" | "ScreenX" | "other" | null`), `CitiesResponse`, `MoviesResponse` (items `{ movie, screeningsToday, firstDate }`), `MovieDetailResponse` (`screeningDates`, `availableDates`), `ScreeningsResponse` (`date`, `screenings`, `nextDateWithScreenings`, `freshness`), `ErrorResponse` with codes `invalid_city` · `invalid_date` · `movie_not_found` · `internal_error`; re-export from `packages/shared/src/index.ts`
 
 ### API foundations
 
@@ -77,7 +77,7 @@ depends on
 
 ### Storage
 
-- [X] T020 Create `apps/api/src/db/schema.sql` and migration runner `apps/api/src/db/index.ts` (`openDb(path)` with WAL mode) with tables: `sources` (`id` TEXT PK, `last_attempt_at`, `last_success_at` nullable, `last_error` nullable); `movies` (`id` TEXT PK, `title` NOT NULL, `original_title`, `match_key` NOT NULL, `year` INTEGER, `duration_minutes`, `age_rating`, `genres` JSON, `poster_url`, `last_screening_at`; UNIQUE(`match_key`, `year`)); `screenings` (`id` TEXT PK = "`{sourceId}:{sourceScreeningId}`", `source_id`, `movie_id` FK, `cinema_id` NOT NULL, `starts_at` NOT NULL UTC, `local_date` NOT NULL, `hall`, `format` CHECK IN (`2D`,`3D`,`IMAX`,`4DX`,`ScreenX`,`other`) or NULL, `spoken_language`, `subtitle_language`, `is_dubbed`, `ticket_url` NOT NULL, `source_title` NOT NULL, `refreshed_at` NOT NULL); `match_reviews` (`id` INTEGER PK, `match_key`, `movie_id_a`, `movie_id_b`, `reason`, `first_seen_at`, `resolution` CHECK IN (`merge`,`keep-separate`) or NULL); indexes on `screenings(local_date, cinema_id)` and `screenings(movie_id, local_date)`
+- [X] T020 Create `apps/api/src/db/schema.sql` and migration runner `apps/api/src/db/index.ts` (`openDb(path)` with WAL mode) with tables: `sources` (`id` TEXT PK, `last_attempt_at`, `last_success_at` nullable, `last_error` nullable); `movies` (`id` TEXT PK, `title` NOT NULL, `original_title`, `match_key` NOT NULL, `year` INTEGER, `duration_minutes`, `age_rating`, `genres` JSON, `poster_url`, `last_screening_at`; UNIQUE(`match_key`, `year`)); `screenings` (`id` TEXT PK = "`{sourceId}:{sourceScreeningId}`", `source_id`, `movie_id` FK, `cinema_id` NOT NULL, `starts_at` NOT NULL UTC, `local_date` NOT NULL, `hall`, `format` (values in data-model.md) or NULL, `spoken_language`, `subtitle_language`, `is_dubbed`, `ticket_url` NOT NULL, `source_title` NOT NULL, `refreshed_at` NOT NULL); `match_reviews` (`id` INTEGER PK, `match_key`, `movie_id_a`, `movie_id_b`, `reason`, `first_seen_at`, `resolution` CHECK IN (`merge`,`keep-separate`) or NULL); indexes on `screenings(local_date, cinema_id)` and `screenings(movie_id, local_date)`
 - [X] T021 Write integration tests in `apps/api/tests/integration/repository.test.ts` (temp SQLite file): `replaceSourceScreenings` replaces only that source's future rows in one transaction ("A successful refresh replaces that source's future screenings, so cancelled screenings disappear"); `deletePastScreenings(today)`; `deleteStaleMovies(now)` removes movies "deleted after 30 days without screenings"
 - [X] T022 Implement `apps/api/src/db/repository.ts` (`upsertMovie`, `replaceSourceScreenings`, `recordSourceAttempt`, `recordSourceSuccess`, `deletePastScreenings`, `deleteStaleMovies`, `insertMatchReview`) so T021 passes
 
@@ -89,7 +89,7 @@ depends on
 
 ### Movie matching (FR-005)
 
-- [X] T026 [P] Write unit tests in `apps/api/tests/unit/normalize.test.ts`: lower-case, strip diacritics ("Kopa. Trečia dalis" → "kopa trecia dalis"), remove tags `3D`, `IMAX`, `4DX`, `(LT sub.)`, `LT`, `ORG`, `dubliuotas`, remove punctuation, collapse spaces; Vue style "ABSOLIUTUS BLOGIS (Resident Evil)" yields original-title key "resident evil"
+- [X] T026 [P] Write unit tests in `apps/api/tests/unit/normalize.test.ts`: lower-case, strip diacritics ("Kopa. Trečia dalis" → "kopa trecia dalis"), remove tags `IMAX`, `4DX`, `(LT sub.)`, `LT`, `ORG`, `dubliuotas`, remove punctuation, collapse spaces; Vue style "ABSOLIUTUS BLOGIS (Resident Evil)" yields original-title key "resident evil"
 - [X] T027 [P] Implement `normalizeTitle` and `matchKeyOf({ title, originalTitle })` in `apps/api/src/matching/normalize.ts` so T026 passes
 - [X] T028 [P] Write unit tests in `apps/api/tests/unit/match.test.ts`: "confident match when their match keys are equal and either their production years are equal, or one year is missing and durations differ by ≤ 10 minutes"; remake with different year stays separate and creates a MatchReview; "Kopa" vs "Kopa. Antra dalis" stay separate; alias file `merge` forces a merge and `keep-separate` suppresses the review
 - [X] T029 Implement `resolveMovie(listing, existingMovies, aliases)` in `apps/api/src/matching/match.ts` and the empty alias file `apps/api/src/matching/aliases.json` (`[{ "matchKey", "movieIdA", "movieIdB", "resolution" }]`) so T028 passes; movie `id` is a stable slug of match key + year (e.g. `digger-2026`)
@@ -221,7 +221,7 @@ rows remain, clear filters restores the full list
 
 - [X] T083 [P] [US3] Unit test `apps/web/tests/unit/filters.test.ts` for `applyFilters(screenings, { cinemas, formats, audio })`: cinema list filter; format filter; `audio=original` keeps screenings whose spoken language is not dubbed Lithuanian; `audio=dubbed` keeps `isDubbed === true`; screenings with unknown format/language are excluded only when that filter is active
 - [X] T084 [P] [US3] Component test `apps/web/tests/unit/FilterBar.test.tsx`: options built only from values present in the current list; selected chips reflected in URL params `cinema`, `format`, `audio`; "Išvalyti filtrus"/"Clear filters" resets
-- [X] T085 [P] [US3] End-to-end test `apps/web/tests/e2e/us3-filters.spec.ts` covering quickstart US3 steps 1–3 (city change to "Visa Lietuva" then Kaunas persists after reload) with an axe scan. *Note:* no cinema had a 3D screening when the fixtures were captured, so the e2e format step filters Forum Vingis' IMAX screenings of "Odisėja"; `3D` is covered by T083/T084
+- [X] T085 [P] [US3] End-to-end test `apps/web/tests/e2e/us3-filters.spec.ts` covering quickstart US3 steps 1–3 (city change to "Visa Lietuva" then Kaunas persists after reload) with an axe scan. *Note:* the e2e format step filters Forum Vingis' IMAX screenings of "Odisėja"
 
 ### Implementation for User Story 3
 

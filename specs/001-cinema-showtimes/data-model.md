@@ -79,7 +79,7 @@ One showing of a movie at a cinema.
 | `localDate` | date | calendar date of `startsAt` in Europe/Vilnius (edge case: after midnight) |
 | `durationMinutes` | integer \| null | as this cinema lists it; the movie shows the most common one |
 | `hall` | string \| null | e.g. "6 salė" |
-| `format` | enum \| null | `2D` · `3D` · `IMAX` · `4DX` · `ScreenX` · `other` |
+| `format` | enum \| null | `IMAX` · `4DX` · `ScreenX` · `other` |
 | `spokenLanguage` | ISO 639-1 \| null | e.g. `en` |
 | `subtitleLanguage` | ISO 639-1 \| null | e.g. `lt` |
 | `isDubbed` | boolean \| null | true when spoken language is a dubbed Lithuanian version |

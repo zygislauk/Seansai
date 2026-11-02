@@ -32,7 +32,7 @@ describe('Cinamon Mega (page API, today only)', () => {
       genres: ['Siaubo'],
       posterUrl: 'https://cinamonkino.com/api/page/film-poster?film_id=1413004104',
       hall: 'Sale 2',
-      format: '2D',
+      format: null,
       spokenLanguage: 'en',
       subtitleLanguage: 'lt',
       isDubbed: false,

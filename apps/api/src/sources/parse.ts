@@ -6,15 +6,14 @@ import { normalizeTitle } from '../matching/normalize.ts';
  * durations its own way, and these turn them into the SourceScreening vocabulary.
  */
 
-/** "IMAX 3D" counts as IMAX: the premium format is what users filter for. */
+/** "IMAX 3D" counts as IMAX: the premium format is what users filter for. Plain 2D and 3D are not shown. */
 export function formatOf(label: string | null | undefined): ScreeningFormat | null {
   const text = label?.trim().toLowerCase() ?? '';
   if (text === '') return null;
   if (text.includes('imax')) return 'IMAX';
   if (text.includes('4dx')) return '4DX';
   if (text.includes('screenx')) return 'ScreenX';
-  if (/\b3d\b/.test(text)) return '3D';
-  if (/\b2d\b/.test(text)) return '2D';
+  if (/\b[23]d\b/.test(text)) return null;
   return 'other';
 }
 

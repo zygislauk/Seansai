@@ -54,7 +54,7 @@ movie and day.
    of today's not-yet-started screenings of that movie at the supported cinemas in their chosen
    city, sorted by start time.
 4. **Given** the user sees a screening, **When** they look at it, **Then** it shows the cinema name,
-   city, start time, and any available hall, format (e.g., 2D, 3D, IMAX), and language/subtitle
+   city, start time, and any available hall, format (e.g., IMAX), and language/subtitle
    details.
 5. **Given** the user chooses a screening, **When** they select "Buy ticket", **Then** they are
    taken to that cinema's own page for that screening (or the movie's page at that cinema if no
@@ -108,7 +108,7 @@ screenings remain, and that clearing filters restores the full list.
 2. **Given** a screening list, **When** the user selects one or more cinemas, **Then** only
    screenings at those cinemas are shown.
 3. **Given** a screening list, **When** the user filters by format or language (e.g., original
-   language with subtitles, dubbed, 3D), **Then** only matching screenings are shown.
+   language with subtitles, dubbed, IMAX), **Then** only matching screenings are shown.
 4. **Given** the user has chosen filters, **When** they return to the website later on the same
    device, **Then** their city choice is remembered.
 5. **Given** filters remove every screening, **When** the list is empty, **Then** the user sees a
@@ -119,7 +119,7 @@ screenings remain, and that clearing filters restores the full list.
 ### Edge Cases
 
 - **Same movie, different titles**: cinemas may list the same movie under slightly different
-  names (Lithuanian vs. original title, extra tags like "(LT subtitrai)" or "3D"). These MUST be
+  names (Lithuanian vs. original title, extra tags like "(LT subtitrai)" or "IMAX"). These MUST be
   shown as one movie, not duplicates. Different films with similar titles (e.g., a remake and
   the original, or two parts of a series) MUST NOT be merged; when unsure, they stay separate.
 - **A cinema is unavailable**: if schedule data from one cinema cannot be refreshed, screenings from

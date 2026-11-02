@@ -125,11 +125,11 @@ test('filters narrow the list and live in the URL; when nothing matches, one cli
   expect(within(list).getAllByRole('listitem')).toHaveLength(3);
 
   await user.click(
-    within(screen.getByRole('group', { name: 'Format' })).getByRole('button', { name: '3D' }),
+    within(screen.getByRole('group', { name: 'Format' })).getByRole('button', { name: '4DX' }),
   );
   expect(within(list).getAllByRole('listitem')).toHaveLength(1);
   expect(screen.getByText('Showing 1 of 3')).toBeInTheDocument();
-  expect(location()).toBe('/en/movie/digger-2026?date=2026-10-31&format=3D');
+  expect(location()).toBe('/en/movie/digger-2026?date=2026-10-31&format=4DX');
 
   await user.click(
     within(screen.getByRole('group', { name: 'Cinema' })).getByRole('button', {

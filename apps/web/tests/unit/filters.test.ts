@@ -12,11 +12,11 @@ import { screening } from '../helpers/mock-api.ts';
 
 const cinema = (id: string, name: string) => ({ id, name, cityId: 'vilnius', cityName: 'Vilnius' });
 
-const original = screening({ id: 'a', format: '3D', spokenLanguage: 'en', isDubbed: false });
+const original = screening({ id: 'a', format: '4DX', spokenLanguage: 'en', isDubbed: false });
 const dubbed = screening({
   id: 'b',
   cinema: cinema('vue-vilnius', 'Vue Vilnius'),
-  format: '2D',
+  format: 'ScreenX',
   spokenLanguage: 'lt',
   subtitleLanguage: null,
   isDubbed: true,
@@ -51,8 +51,8 @@ describe('applyFilters', () => {
   });
 
   test('keeps screenings in the chosen formats; an unknown format matches no format filter', () => {
-    expect(ids({ formats: ['3D'] })).toEqual(['a']);
-    expect(ids({ formats: ['2D', 'IMAX'] })).toEqual(['b', 'd']);
+    expect(ids({ formats: ['4DX'] })).toEqual(['a']);
+    expect(ids({ formats: ['ScreenX', 'IMAX'] })).toEqual(['b', 'd']);
   });
 
   test('"original" keeps screenings not dubbed into Lithuanian; unknown audio is left out', () => {
@@ -64,7 +64,7 @@ describe('applyFilters', () => {
   });
 
   test('combines filters', () => {
-    expect(ids({ cinemas: ['apollo-akropolis'], formats: ['3D'], audio: 'original' })).toEqual([
+    expect(ids({ cinemas: ['apollo-akropolis'], formats: ['4DX'], audio: 'original' })).toEqual([
       'a',
     ]);
     expect(ids({ cinemas: ['vue-vilnius'], audio: 'original' })).toEqual([]);
@@ -75,19 +75,19 @@ describe('URL parameters', () => {
   test('reads cinema, format and audio, ignoring unknown values', () => {
     expect(
       parseFilters(
-        new URLSearchParams('cinema=skalvija,vue-vilnius&format=3D,4K,IMAX&audio=dubbed&date=x'),
+        new URLSearchParams('cinema=skalvija,vue-vilnius&format=3D,2D,4K,IMAX&audio=dubbed&date=x'),
       ),
-    ).toEqual({ cinemas: ['skalvija', 'vue-vilnius'], formats: ['3D', 'IMAX'], audio: 'dubbed' });
+    ).toEqual({ cinemas: ['skalvija', 'vue-vilnius'], formats: ['IMAX'], audio: 'dubbed' });
     expect(parseFilters(new URLSearchParams('audio=loud&cinema='))).toEqual(noFilters);
   });
 
   test('writes the filters and keeps the other parameters', () => {
     const params = toSearchParams(
-      { cinemas: ['skalvija', 'vue-vilnius'], formats: ['3D'], audio: 'original' },
-      new URLSearchParams('date=2026-10-31&format=2D'),
+      { cinemas: ['skalvija', 'vue-vilnius'], formats: ['4DX'], audio: 'original' },
+      new URLSearchParams('date=2026-10-31&format=ScreenX'),
     );
     expect(params.toString()).toBe(
-      'date=2026-10-31&format=3D&cinema=skalvija%2Cvue-vilnius&audio=original',
+      'date=2026-10-31&format=4DX&cinema=skalvija%2Cvue-vilnius&audio=original',
     );
     expect(toSearchParams(noFilters, params).toString()).toBe('date=2026-10-31');
   });
@@ -110,17 +110,17 @@ test('filterOptions lists only values present in the list, plus any already sele
       { id: 'skalvija', name: 'Skalvija' },
       { id: 'vue-vilnius', name: 'Vue Vilnius' },
     ],
-    formats: ['2D', '3D', 'IMAX'],
+    formats: ['IMAX', '4DX', 'ScreenX'],
     audio: ['original', 'dubbed'],
   });
   expect(
-    filterOptions([original], { cinemas: ['forum-vingis'], formats: ['4DX'], audio: 'dubbed' }),
+    filterOptions([original], { cinemas: ['forum-vingis'], formats: ['IMAX'], audio: 'dubbed' }),
   ).toEqual({
     cinemas: [
       { id: 'apollo-akropolis', name: 'Apollo Akropolis' },
       { id: 'forum-vingis', name: 'forum-vingis' },
     ],
-    formats: ['3D', '4DX'],
+    formats: ['IMAX', '4DX'],
     audio: ['original', 'dubbed'],
   });
 });

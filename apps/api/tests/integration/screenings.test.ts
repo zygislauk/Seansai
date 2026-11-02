@@ -50,7 +50,7 @@ describe('GET /movies/{id}/screenings', () => {
         cityName: 'Vilnius',
       },
       hall: '6 salė',
-      format: '2D',
+      format: 'IMAX',
       spokenLanguage: 'en',
       subtitleLanguage: 'lt',
       isDubbed: false,
