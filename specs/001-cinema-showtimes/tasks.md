@@ -252,6 +252,16 @@ rows remain, clear filters restores the full list
 
 ---
 
+## Phase 7: Hide the default 2D format (owner decision, 2026-11-02)
+
+**Purpose**: Show only special formats, per FR-008, FR-012 and [research.md](./research.md). Amends
+T058, T070, T083, T084 and T088; adapters, the database and the API are unchanged
+
+- [X] T101 Tests first: `apps/web/tests/unit/ScreeningTimeline.test.tsx` (2D row has no badge, 3D row keeps its badge), `apps/web/tests/unit/filters.test.ts` (2D is never an option, `format=2D` in the URL is ignored), `apps/web/tests/unit/FilterBar.test.tsx` (a lone special format is offered when it narrows the list; no format group when every screening is 2D or all share one format), `apps/web/tests/e2e/us3-filters.spec.ts` ("Odisėja" shows no 2D badge and offers only IMAX)
+- [X] T102 Drop the 2D badge in `apps/web/src/components/molecules/ScreeningRow/`, drop 2D from the format choices in `apps/web/src/lib/filters.ts`, and show the format group in `apps/web/src/components/organisms/FilterBar/` whenever a chip would narrow the list, so T101 passes
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -262,6 +272,7 @@ rows remain, clear filters restores the full list
 - **US2 (Phase 4)**: depends on Foundational; uses US1's MoviePage and API routes (T069, T073)
 - **US3 (Phase 5)**: depends on Foundational; uses US1's MoviePage (T073) and PageLayout (T046)
 - **Polish (Phase 6)**: depends on the stories it covers
+- **Hide 2D (Phase 7)**: depends on US1 and US3
 
 ### Key task dependencies
 

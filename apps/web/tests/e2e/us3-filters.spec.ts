@@ -110,8 +110,11 @@ test('US3: changing city and filtering screenings', async ({ page }) => {
   await page.getByRole('toolbar', { name: 'Pasirinkite datą' }).getByRole('button').nth(2).click();
   await expect(page).toHaveURL(/\?date=2026-11-01$/);
   await expect(rows).toHaveCount(4);
+  await expect(rows.getByText('2D', { exact: true })).toHaveCount(0);
   await showFilters(page);
-  await page.getByRole('group', { name: 'Formatas' }).getByRole('button', { name: 'IMAX' }).click();
+  const formats = page.getByRole('group', { name: 'Formatas' });
+  await expect(formats.getByRole('button')).toHaveText(['IMAX']);
+  await formats.getByRole('button', { name: 'IMAX' }).click();
   await expect(page).toHaveURL(/[?&]format=IMAX(&|$)/);
   await expect(rows).toHaveCount(2);
   await expect(rows.filter({ hasNotText: 'Forum Cinemas Vingis' })).toHaveCount(0);

@@ -42,6 +42,15 @@ test('each row shows cinema, city, time, and hall, format and language when know
   expect(within(skalvija).queryByText(/salė|subtitles|Dubbed|^[A-Z]{2}$/)).not.toBeInTheDocument();
 });
 
+test('2D is the default and gets no badge; special formats keep theirs', () => {
+  renderUi(<ScreeningTimeline screenings={diggerScreenings} />);
+  const [apollo, , vue] = rows();
+  if (!apollo || !vue) throw new Error('expected three rows');
+
+  expect(within(apollo).getByText('3D')).toBeInTheDocument();
+  expect(within(vue).queryByText('2D')).not.toBeInTheDocument();
+});
+
 test('"Buy ticket" opens the cinema’s page in a new tab, safely', () => {
   renderUi(<ScreeningTimeline screenings={diggerScreenings} />);
   const [apollo] = rows();

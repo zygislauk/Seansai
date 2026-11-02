@@ -25,6 +25,13 @@
   today first, ordered by number of screenings (most first); movies that start on later dates
   come after, labelled with their first date.
 
+### Session 2026-11-02
+
+- Q: Should screenings show a "2D" tag? → A: No (owner decision). 2D is the default viewing
+  experience and nearly every screening in Lithuania is 2D, so only special formats (3D, IMAX, 4DX,
+  ScreenX, other) are tagged and offered as filters. A movie shown in 2D and IMAX therefore still
+  offers an IMAX filter, on its own.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See today's screenings of a movie across all cinemas (Priority: P1)
@@ -54,8 +61,8 @@ movie and day.
    of today's not-yet-started screenings of that movie at the supported cinemas in their chosen
    city, sorted by start time.
 4. **Given** the user sees a screening, **When** they look at it, **Then** it shows the cinema name,
-   city, start time, and any available hall, format (e.g., 2D, 3D, IMAX), and language/subtitle
-   details.
+   city, start time, and any available hall, special format (e.g., 3D, IMAX; 2D, the default, is
+   not shown), and language/subtitle details.
 5. **Given** the user chooses a screening, **When** they select "Buy ticket", **Then** they are
    taken to that cinema's own page for that screening (or the movie's page at that cinema if no
    direct screening link is available), opened in a new tab.
@@ -161,7 +168,8 @@ screenings remain, and that clearing filters restores the full list.
   name.
 - **FR-007**: For today, the system MUST hide screenings that have already started.
 - **FR-008**: Each screening MUST show cinema name, city, date, start time, and, when the cinema
-  provides them, hall, format, and language/subtitle details.
+  provides them, hall, format, and language/subtitle details. 2D is the default and MUST NOT be
+  shown; only special formats are.
 - **FR-009**: Each screening MUST link to the corresponding page on the cinema's own website so the
   user can buy a ticket there.
 - **FR-010**: Users MUST be able to choose any date from today up to the furthest date for which at
@@ -169,6 +177,7 @@ screenings remain, and that clearing filters restores the full list.
 - **FR-011**: The selected movie and date MUST be reflected in the page address, so the view can be
   bookmarked, shared, and reloaded.
 - **FR-012**: Users MUST be able to filter screenings by city, by cinema, and by format/language.
+  Format filters offer special formats only, not 2D, and appear whenever one would narrow the list.
 - **FR-013**: On a user's first visit, the system MUST ask once for their city (offering "All of
   Lithuania" as a choice) and MUST remember the choice on the same device without requiring an
   account. The movie list and screenings MUST be limited to the chosen city, and the user MUST be
