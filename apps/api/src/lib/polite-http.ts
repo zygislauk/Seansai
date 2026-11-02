@@ -25,6 +25,18 @@ const MIN_DELAY_PER_HOST_MS = 500;
 const TIMEOUT_MS = 15_000;
 const ROBOTS_CACHE_MS = 24 * 60 * 60 * 1000;
 const BLOCKING_STATUSES = new Set([401, 403, 429]);
+/** Say who refused a request and why. Only these are logged, so cookies never reach the logs. */
+const REFUSAL_HEADERS = [
+  'server',
+  'content-type',
+  'retry-after',
+  'via',
+  'cf-ray',
+  'cf-mitigated',
+  'cf-cache-status',
+];
+const REFUSAL_BODY_CHARS = 1000;
+const REFUSAL_BODY_WAIT_MS = 2000;
 
 /**
  * Markers of challenge pages that block automated clients (Cloudflare, DataDome and generic
@@ -166,7 +178,8 @@ export class PoliteHttpClient implements HttpClient {
         signal: controller.signal,
         redirect: 'follow',
       });
-      if (!response.ok) await response.body?.cancel();
+      if (BLOCKING_STATUSES.has(response.status)) await this.#logRefusal(url, response);
+      else if (!response.ok) await response.body?.cancel();
       return {
         ok: response.ok,
         status: response.status,
@@ -183,6 +196,26 @@ export class PoliteHttpClient implements HttpClient {
     }
   }
 
+  /** A firewall usually names itself in a refusal, which tells a cinema what to look for. */
+  async #logRefusal(url: string, response: Response): Promise<void> {
+    const headers = Object.fromEntries(
+      REFUSAL_HEADERS.flatMap((name) => {
+        const value = response.headers.get(name);
+        return value === null ? [] : [[name, value]];
+      }),
+    );
+    this.#logger.warn(
+      {
+        source: this.#sourceId,
+        url,
+        status: response.status,
+        headers,
+        bodyStart: await startOfBody(response),
+      },
+      'Source refused the request',
+    );
+  }
+
   /** Resolves when this request may start: at least 500 ms after the previous one to the host. */
   #waitForTurn(host: string): Promise<void> {
     const previous = this.#queueByHost.get(host) ?? Promise.resolve();
@@ -197,6 +230,27 @@ export class PoliteHttpClient implements HttpClient {
     this.#queueByHost.set(host, turn);
     return turn;
   }
+}
+
+/**
+ * The first bytes of a refusal, without waiting long or failing: the refusal is already known, and
+ * its body can stall or break off.
+ */
+async function startOfBody(response: Response): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) return '';
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const first = await Promise.race([
+    reader.read().catch(() => undefined),
+    new Promise<undefined>((resolve) => {
+      timer = setTimeout(() => {
+        resolve(undefined);
+      }, REFUSAL_BODY_WAIT_MS);
+    }),
+  ]);
+  clearTimeout(timer);
+  void reader.cancel().catch(() => undefined);
+  return new TextDecoder().decode(first?.value).replace(/\s+/g, ' ').slice(0, REFUSAL_BODY_CHARS);
 }
 
 /** Parses a JSON body and validates it; shared by the live and the fixture clients. */

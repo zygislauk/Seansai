@@ -17,6 +17,9 @@ type Route = {
   status?: number | 'hang' | 'stall';
   /** The status a stalling server sends before it stops. */
   stalledStatus?: number;
+  /** What a stalling server sends before it stops. */
+  stalledBody?: string;
+  headers?: Record<string, string>;
   body?: string;
   contentType?: string;
 };
@@ -43,7 +46,7 @@ function createClient(
     if (route.status === 'stall') {
       const body = new ReadableStream<Uint8Array>({
         start(stream) {
-          stream.enqueue(new TextEncoder().encode('<html>'));
+          stream.enqueue(new TextEncoder().encode(route.stalledBody ?? '<html>'));
           init?.signal?.addEventListener('abort', () => {
             stream.error(new DOMException('The operation was aborted.', 'AbortError'));
           });
@@ -54,7 +57,7 @@ function createClient(
     return Promise.resolve(
       new Response(route.body ?? '', {
         status: route.status ?? 200,
-        headers: { 'content-type': route.contentType ?? 'text/plain' },
+        headers: { 'content-type': route.contentType ?? 'text/plain', ...route.headers },
       }),
     );
   });
@@ -217,6 +220,85 @@ describe('PoliteHttpClient', () => {
     await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
       SourceBlockedError,
     );
+  });
+
+  describe('logs who refused a request', () => {
+    const refusal = (lines: () => Array<Record<string, unknown>>) =>
+      lines().filter((line) => line.msg === 'Source refused the request');
+
+    test('with the telling headers and the start of the body, and never cookies', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': {
+          status: 403,
+          contentType: 'text/html',
+          headers: {
+            server: 'cloudflare',
+            'cf-ray': 'a5433dd6eee7a86f-FRA',
+            'cf-mitigated': 'challenge',
+            'set-cookie': 'session=private',
+          },
+          body: `<title>Access denied</title>\n\n  ${'x'.repeat(2000)}`,
+        },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      const [line] = refusal(lines);
+      expect(line).toMatchObject({
+        source: 'test',
+        url: 'https://cinema.lt/blocked',
+        status: 403,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': 'a5433dd6eee7a86f-FRA',
+          'cf-mitigated': 'challenge',
+          'content-type': 'text/html',
+        },
+      });
+      expect(JSON.stringify(line)).not.toContain('private');
+      expect(String(line?.bodyStart).startsWith('<title>Access denied</title> xxx')).toBe(true);
+      expect(String(line?.bodyStart)).toHaveLength(1000);
+    });
+
+    test('also for robots.txt, which still counts as no restrictions', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': { status: 403 },
+        'https://cinema.lt/page': { body: 'ok' },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/page'))).resolves.toBe('ok');
+
+      expect(refusal(lines).map((line) => line.url)).toEqual(['https://cinema.lt/robots.txt']);
+    });
+
+    test('without waiting for a body that never starts', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': { status: 'stall', stalledStatus: 403, stalledBody: '' },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      expect(refusal(lines)[0]?.bodyStart).toBe('');
+    });
+
+    test('not for other failures', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/broken': { status: 500 },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/broken'))).rejects.toThrow(
+        SourceRequestError,
+      );
+
+      expect(refusal(lines)).toEqual([]);
+    });
   });
 
   test('refuses a URL disallowed by robots.txt', async () => {
