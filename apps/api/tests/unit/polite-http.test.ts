@@ -17,8 +17,12 @@ type Route = {
   status?: number | 'hang' | 'stall';
   /** The status a stalling server sends before it stops. */
   stalledStatus?: number;
-  /** What a stalling server sends before it stops. */
-  stalledBody?: string;
+  /** What a stalling server sends before it stops, each sent separately. */
+  stalledChunks?: string[];
+  /** The stalling server's connection breaks instead. */
+  breaks?: boolean;
+  /** Called if the client gives up on a stalling server's body. */
+  onCancel?: () => void;
   headers?: Record<string, string>;
   body?: string;
   contentType?: string;
@@ -46,10 +50,16 @@ function createClient(
     if (route.status === 'stall') {
       const body = new ReadableStream<Uint8Array>({
         start(stream) {
-          stream.enqueue(new TextEncoder().encode(route.stalledBody ?? '<html>'));
+          for (const chunk of route.stalledChunks ?? ['<html>']) {
+            stream.enqueue(new TextEncoder().encode(chunk));
+          }
+          if (route.breaks) stream.error(new TypeError('terminated'));
           init?.signal?.addEventListener('abort', () => {
             stream.error(new DOMException('The operation was aborted.', 'AbortError'));
           });
+        },
+        cancel() {
+          route.onCancel?.();
         },
       });
       return Promise.resolve(new Response(body, { status: route.stalledStatus ?? 200 }));
@@ -274,17 +284,75 @@ describe('PoliteHttpClient', () => {
       expect(refusal(lines).map((line) => line.url)).toEqual(['https://cinema.lt/robots.txt']);
     });
 
-    test('without waiting for a body that never starts', async () => {
+    test('without waiting long for a body that never starts, then giving up on it', async () => {
+      const onCancel = vi.fn();
       const { client, lines } = createClient({
         'https://cinema.lt/robots.txt': ALLOW_ALL,
-        'https://cinema.lt/blocked': { status: 'stall', stalledStatus: 403, stalledBody: '' },
+        'https://cinema.lt/blocked': {
+          status: 'stall',
+          stalledStatus: 403,
+          stalledChunks: [],
+          onCancel,
+        },
+      });
+      const started = Date.now();
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      // 2 s, plus the pause between requests to a host; far from the 15 s timeout.
+      expect(Date.now() - started).toBeLessThan(3000);
+      expect(refusal(lines)[0]?.bodyStart).toBe('');
+      expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    test('with a body sent in small pieces', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': {
+          status: 'stall',
+          stalledStatus: 403,
+          stalledChunks: ['<', 'title>Access denied</title>'],
+        },
       });
 
       await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
         SourceBlockedError,
       );
 
-      expect(refusal(lines)[0]?.bodyStart).toBe('');
+      expect(refusal(lines)[0]?.bodyStart).toBe('<title>Access denied</title>');
+    });
+
+    test('and it stays a refusal when the connection breaks during the body', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': {
+          status: 'stall',
+          stalledStatus: 403,
+          stalledChunks: ['<title>Access'],
+          breaks: true,
+        },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      expect(refusal(lines)).toHaveLength(1);
+    });
+
+    test('with long header values cut short', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': { status: 403, headers: { server: 'x'.repeat(500) } },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      expect(refusal(lines)[0]?.headers).toMatchObject({ server: 'x'.repeat(200) });
     });
 
     test('not for other failures', async () => {

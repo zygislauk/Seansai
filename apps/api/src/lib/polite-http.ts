@@ -35,6 +35,7 @@ const REFUSAL_HEADERS = [
   'cf-mitigated',
   'cf-cache-status',
 ];
+const REFUSAL_HEADER_CHARS = 200;
 const REFUSAL_BODY_CHARS = 1000;
 const REFUSAL_BODY_WAIT_MS = 2000;
 
@@ -201,7 +202,7 @@ export class PoliteHttpClient implements HttpClient {
     const headers = Object.fromEntries(
       REFUSAL_HEADERS.flatMap((name) => {
         const value = response.headers.get(name);
-        return value === null ? [] : [[name, value]];
+        return value === null ? [] : [[name, value.slice(0, REFUSAL_HEADER_CHARS)]];
       }),
     );
     this.#logger.warn(
@@ -233,25 +234,29 @@ export class PoliteHttpClient implements HttpClient {
 }
 
 /**
- * The first bytes of a refusal, without waiting long or failing: the refusal is already known, and
+ * The start of a refusal's text, without waiting long or failing: the refusal is already known, and
  * its body can stall or break off.
  */
 async function startOfBody(response: Response): Promise<string> {
   const reader = response.body?.getReader();
   if (!reader) return '';
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const first = await Promise.race([
-    reader.read().catch(() => undefined),
-    new Promise<undefined>((resolve) => {
-      timer = setTimeout(() => {
-        resolve(undefined);
-      }, REFUSAL_BODY_WAIT_MS);
-    }),
-  ]);
+  const timeUp = new Promise<undefined>((resolve) => {
+    timer = setTimeout(() => {
+      resolve(undefined);
+    }, REFUSAL_BODY_WAIT_MS);
+  });
+  const decoder = new TextDecoder();
+  let text = '';
+  while (text.length < REFUSAL_BODY_CHARS) {
+    const chunk = await Promise.race([reader.read().catch(() => undefined), timeUp]);
+    if (!chunk || chunk.done) break;
+    const bytes = chunk.value as Uint8Array;
+    text = (text + decoder.decode(bytes, { stream: true })).replace(/\s+/g, ' ');
+  }
   clearTimeout(timer);
   void reader.cancel().catch(() => undefined);
-  const bytes = first?.value as Uint8Array | undefined;
-  return new TextDecoder().decode(bytes).replace(/\s+/g, ' ').slice(0, REFUSAL_BODY_CHARS);
+  return text.slice(0, REFUSAL_BODY_CHARS);
 }
 
 /** Parses a JSON body and validates it; shared by the live and the fixture clients. */
