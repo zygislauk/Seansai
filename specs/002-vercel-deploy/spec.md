@@ -24,8 +24,8 @@ Decisions agreed with the project owner before this specification was written:
 - Q (2026-11-02, after production): Pasaka and Cinamon refuse requests from Vercel with HTTP 403, so
   where should refreshing run? → A: The owner chose to treat all venues the same: every source is
   refreshed once a day from the owner's machine at home, and Vercel only serves the site. The owner
-  accepted that the site stops updating while that machine is off, and that this routes around
-  those cinemas' refusal of Vercel's requests.
+  accepted that the site stops updating while that machine is off or they are logged out, and that
+  this routes around those cinemas' refusal of Vercel's requests.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -58,7 +58,7 @@ self-hosted copy with the same data.
 
 ### User Story 2 - Schedules stay current without anyone stepping in (Priority: P2)
 
-Once a day, whenever the owner's machine is on, Seansai collects the latest schedules from all
+Once a day, the first time the owner's machine is on and they are logged in, Seansai collects the latest schedules from all
 supported cinemas and removes screenings that are over. A visitor sees the coming days' screenings.
 If a cinema could not be read, the site still shows everything else and flags that cinema once its
 data is more than two days old.
@@ -72,7 +72,8 @@ site flags it once its data is more than 48 hours old.
 
 **Acceptance Scenarios**:
 
-1. **Given** the site is deployed in production and the machine is on at some point in the day,
+1. **Given** the site is deployed in production and the machine is on with the owner logged in at
+   some point in the day,
    **When** the daily refresh is due, **Then** every enabled cinema's schedule is updated and past
    screenings are removed, without anyone acting.
 2. **Given** one cinema's website fails during the daily refresh, **When** the refresh finishes,
@@ -129,9 +130,10 @@ and run the self-hosted container with saved test data and confirm it works as b
   after one refresh, with no duplicate screenings.
 - **First deploy**: the database is empty until the first refresh. Visitors see the existing "no
   screenings" state, and the maintainer triggers a refresh right after deploying.
-- **Cinemas that publish only today's sessions (Cinamon)**: the refresh sees only that day's
-  remaining sessions, so a machine first switched on at 19:00 shows only that evening's, and changes
-  made later that day wait for the next day's run. This is an accepted, documented gap.
+- **Cinemas that publish only today's sessions (Cinamon)**: the site lists none of that cinema's
+  screenings for today until the day's refresh has run, and no flag warns of this, because the
+  48-hour threshold has not passed. On a day the machine stays off they are missing all day. Changes
+  made after the refresh wait for the next day's run. This is an accepted, documented gap.
 - **Approaching a free-plan limit**: the providers warn by email. The site must never move to a
   paid tier automatically.
 - **Preview deployments**: they use their own database, separate from production's, so a preview
@@ -151,8 +153,9 @@ and run the self-hosted container with saved test data and confirm it works as b
 - **FR-003**: Schedule data MUST be stored so that every visitor sees the same data no matter which
   server answers, and the data MUST survive restarts, redeploys and periods with no traffic.
 - **FR-004**: In the hosted deployment, schedule data MUST be refreshed automatically once a day
-  from the owner's machine, at any time of day, whenever that machine is on. This replaces feature 001's FR-014 ("at least every 3
-  hours") for the hosted deployment only. FR-014's "show when the data was last updated" part still
+  from the owner's machine, at any time of day, the first time that machine is on with the owner
+  logged in. This replaces feature 001's FR-014 ("at least every 3 hours") for the hosted deployment
+  only. FR-014's "show when the data was last updated" part still
   applies.
 - **FR-005**: The daily run MUST also remove past screenings and old movies, under feature 001's
   existing rules.
