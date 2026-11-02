@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { getCity, getLang, setCity, setLang } from '../../src/storage/settings.ts';
+import { forgetCity, getCity, getLang, setCity, setLang } from '../../src/storage/settings.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -12,6 +12,13 @@ describe('settings', () => {
     setCity('kaunas');
     expect(getCity()).toBe('kaunas');
     expect(window.localStorage.getItem('seansai.city')).toBe('kaunas');
+  });
+
+  test('forgets the remembered city', () => {
+    setCity('kaunas');
+    forgetCity();
+    expect(getCity()).toBeNull();
+    expect(window.localStorage.getItem('seansai.city')).toBeNull();
   });
 
   test('remembers the language under seansai.lang', () => {
@@ -33,10 +40,14 @@ describe('settings', () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('Quota exceeded', 'QuotaExceededError');
     });
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('The operation is insecure.', 'SecurityError');
+    });
 
     expect(() => {
       setCity('vilnius');
       setLang('en');
+      forgetCity();
     }).not.toThrow();
     expect(getCity()).toBeNull();
     expect(getLang()).toBeNull();

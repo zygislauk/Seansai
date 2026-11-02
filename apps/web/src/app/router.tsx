@@ -2,7 +2,6 @@ import { LangSchema } from '@seansai/shared';
 import type { QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import {
-  createBrowserRouter,
   Outlet,
   redirect,
   useParams,
@@ -46,7 +45,7 @@ function RouteLoading() {
 function pageContext({ params, request }: LoaderFunctionArgs) {
   return {
     lang: LangSchema.catch(DEFAULT_LANG).parse(params.lang),
-    city: new URL(request.url).searchParams.get('city') ?? getCity(),
+    city: new URL(request.url).searchParams.get('city') ?? getCity() ?? 'all',
     date: new URL(request.url).searchParams.get('date'),
   };
 }
@@ -88,7 +87,7 @@ export function createRoutes(queryClient: QueryClient): RouteObject[] {
           loader: (args) => {
             const { lang, city } = pageContext(args);
             queryClient.query(citiesQuery(lang)).catch(ignore);
-            if (city !== null) queryClient.query(moviesQuery(city)).catch(ignore);
+            queryClient.query(moviesQuery(city)).catch(ignore);
             return null;
           },
           shouldRevalidate: pageChanged,
@@ -102,10 +101,8 @@ export function createRoutes(queryClient: QueryClient): RouteObject[] {
             const { lang, city, date } = pageContext(args);
             const movieId = args.params.movieId ?? '';
             queryClient.query(citiesQuery(lang)).catch(ignore);
-            if (city !== null) {
-              queryClient.query(movieQuery(movieId, city)).catch(ignore);
-              queryClient.query(screeningsQuery(movieId, city, date)).catch(ignore);
-            }
+            queryClient.query(movieQuery(movieId, city)).catch(ignore);
+            queryClient.query(screeningsQuery(movieId, city, date)).catch(ignore);
             return null;
           },
           shouldRevalidate: pageChanged,
@@ -120,8 +117,4 @@ export function createRoutes(queryClient: QueryClient): RouteObject[] {
       ],
     },
   ];
-}
-
-export function createAppRouter(queryClient: QueryClient) {
-  return createBrowserRouter(createRoutes(queryClient));
 }

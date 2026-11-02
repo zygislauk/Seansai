@@ -1,5 +1,8 @@
-import { screen, waitFor } from '@testing-library/react';
+import { renderHook, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { CityProvider, useCity } from '../../src/app/city.tsx';
 import { mockApi } from '../helpers/mock-api.ts';
 import { renderApp } from '../helpers/render-app.tsx';
 
@@ -69,5 +72,84 @@ describe('routes (contracts/web-routes.md)', () => {
       'href',
       '/en/',
     );
+  });
+});
+
+describe('useCity', () => {
+  const cityAt = (path: string) =>
+    renderHook(
+      () => {
+        const { city, isChosen, forgetCity } = useCity();
+        return { city, isChosen, forgetCity, search: useLocation().search };
+      },
+      {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <MemoryRouter initialEntries={[path]}>
+            <CityProvider>{children}</CityProvider>
+          </MemoryRouter>
+        ),
+      },
+    ).result;
+
+  test('is all of Lithuania, not yet chosen, when nothing is remembered', () => {
+    expect(cityAt('/lt/').current).toMatchObject({ city: 'all', isChosen: false });
+  });
+
+  test('keeps a remembered city, as chosen', () => {
+    window.localStorage.setItem('seansai.city', 'kaunas');
+
+    expect(cityAt('/lt/').current).toMatchObject({ city: 'kaunas', isChosen: true });
+  });
+
+  test('a remembered choice of all of Lithuania counts as chosen', () => {
+    window.localStorage.setItem('seansai.city', 'all');
+
+    expect(cityAt('/lt/').current).toMatchObject({ city: 'all', isChosen: true });
+  });
+
+  test('a link names the city, which counts as chosen and is remembered', async () => {
+    expect(cityAt('/lt/?city=vilnius').current).toMatchObject({ city: 'vilnius', isChosen: true });
+    await waitFor(() => {
+      expect(window.localStorage.getItem('seansai.city')).toBe('vilnius');
+    });
+  });
+});
+
+describe('a city that is no longer supported', () => {
+  test.each([
+    ['list page', '/en/', 'Bunny'],
+    ['movie page', '/en/movie/digger-2026', 'Kasėjas'],
+  ])('on the %s, a stored city is forgotten', async (_, path, content) => {
+    window.localStorage.setItem('seansai.city', 'riga');
+    const api = mockApi();
+    const { location } = renderApp(path);
+
+    expect((await screen.findAllByText(content))[0]).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.localStorage.getItem('seansai.city')).toBeNull();
+    });
+    expect(location()).toBe(path);
+    expect(api.requested().some((url) => url.includes('city=all'))).toBe(true);
+  });
+
+  test.each([
+    ['list page', '/en/?city=riga', '/en/', 'Bunny'],
+    [
+      'movie page',
+      '/en/movie/digger-2026?city=riga&date=2026-10-31',
+      '/en/movie/digger-2026?date=2026-10-31',
+      'Kasėjas',
+    ],
+  ])('on the %s, a link drops the option from the address', async (_, path, clean, content) => {
+    const api = mockApi();
+    const { location } = renderApp(path);
+
+    expect((await screen.findAllByText(content))[0]).toBeInTheDocument();
+    await waitFor(() => {
+      expect(location()).toBe(clean);
+    });
+    expect(window.localStorage.getItem('seansai.city')).toBeNull();
+    expect(api.requested().some((url) => url.includes('city=all'))).toBe(true);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

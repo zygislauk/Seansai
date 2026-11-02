@@ -28,6 +28,11 @@ html {
   text-size-adjust: 100%;
 }
 
+// Hidden until the app has rendered this visitor's page (public/boot-gate.js).
+html[data-boot='client'] #root {
+  display: none;
+}
+
 body {
   min-height: 100dvh;
   background: var(--color-bg);

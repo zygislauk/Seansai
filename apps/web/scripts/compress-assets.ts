@@ -6,11 +6,11 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
+import { distDir } from './build-paths.ts';
 
 const COMPRESSIBLE = new Set(['.js', '.css', '.html', '.svg', '.json']);
 /** Below this, compression saves less than the extra headers cost. */
 const MIN_BYTES = 1024;
-const distDir = join(import.meta.dirname, '..', 'dist');
 
 function* files(dir: string): Generator<string> {
   for (const name of readdirSync(dir)) {

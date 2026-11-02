@@ -2,8 +2,8 @@ import { LangSchema, type Lang } from '@seansai/shared';
 
 /**
  * Settings remembered on this device (contracts/web-routes.md). Storage can be unavailable
- * (privacy settings, private browsing, full quota); the app then still works: it asks for the
- * city on each visit and takes the language from the URL.
+ * (privacy settings, private browsing, full quota); the app then still works: it shows all of
+ * Lithuania on each visit and takes the language from the URL.
  */
 const CITY_KEY = 'seansai.city';
 const LANG_KEY = 'seansai.lang';
@@ -32,6 +32,14 @@ export function getCity(): string | null {
 
 export function setCity(city: string): void {
   write(CITY_KEY, city);
+}
+
+export function forgetCity(): void {
+  try {
+    window.localStorage.removeItem(CITY_KEY);
+  } catch {
+    // Storage is unavailable: nothing was remembered.
+  }
 }
 
 export function getLang(): Lang | null {

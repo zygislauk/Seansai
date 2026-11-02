@@ -6,7 +6,10 @@ import { AppProviders, createQueryClient } from '../../src/app/providers.tsx';
 import { createRoutes } from '../../src/app/router.tsx';
 import { I18nProvider } from '../../src/i18n/index.tsx';
 
-/** Renders the real app routes at `path`; returns the router to inspect the final location. */
+/**
+ * Renders the real app routes at `path`; returns the router to inspect the final location and the
+ * query client to refetch from.
+ */
 export function renderApp(path: string) {
   const queryClient = createQueryClient();
   const router = createMemoryRouter(createRoutes(queryClient), { initialEntries: [path] });
@@ -16,7 +19,7 @@ export function renderApp(path: string) {
     </AppProviders>,
   );
   const location = () => `${router.state.location.pathname}${router.state.location.search}`;
-  return { ...result, router, location };
+  return { ...result, router, queryClient, location };
 }
 
 /** Renders one component with the interface language and a router around it. */

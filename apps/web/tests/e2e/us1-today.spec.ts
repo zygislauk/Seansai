@@ -13,14 +13,18 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 test('US1: today’s screenings of a movie across all cinemas in the city', async ({ page }) => {
-  // 1. A first visit lands in Lithuanian and asks for the city.
+  // 1. A first visit lands in Lithuanian and shows all of Lithuania without asking first.
   await page.goto('/');
   await expect(page).toHaveURL(/\/lt\/$/);
+  const switcher = page.getByRole('button', { name: 'Keisti miestą: Visa Lietuva' });
+  await expect(switcher).toBeVisible();
   const prompt = page.getByRole('dialog', { name: 'Pasirinkite miestą' });
-  await expect(prompt.getByRole('button', { name: /Visa Lietuva/ })).toBeVisible();
+  await expect(prompt).toHaveCount(0);
+  await expect(page.getByRole('article').first()).toBeVisible();
   await expectNoAccessibilityViolations(page);
 
   // 2. Choosing Vilnius shows its movies, those with screenings left today first.
+  await switcher.click();
   await prompt.getByRole('button', { name: /^Vilnius/ }).click();
   await expect(prompt).toBeHidden();
   const cards = page.getByRole('article');

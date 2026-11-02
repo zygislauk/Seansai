@@ -51,27 +51,23 @@ export function useCities(lang: Lang) {
   return useQuery(citiesQuery(lang));
 }
 
-/** Waits (does not fetch) while no city has been chosen yet. */
-export function useMovies(city: string | null) {
-  return useQuery({ ...moviesQuery(city ?? ''), enabled: city !== null });
+export function useMovies(city: string) {
+  return useQuery(moviesQuery(city));
 }
 
-/** Waits while no city has been chosen yet. */
-export function useMovie(movieId: string, city: string | null) {
-  return useQuery({ ...movieQuery(movieId, city ?? ''), enabled: city !== null });
+export function useMovie(movieId: string, city: string) {
+  return useQuery(movieQuery(movieId, city));
 }
 
 /**
- * Waits while no city has been chosen yet; `date` null means today. While another date of the
- * same movie and city loads, the previous date's list stays as placeholder data
- * (`isPlaceholderData`).
+ * `date` null means today. While another date of the same movie and city loads, the previous
+ * date's list stays as placeholder data (`isPlaceholderData`).
  */
-export function useScreenings(movieId: string, city: string | null, date: string | null) {
+export function useScreenings(movieId: string, city: string, date: string | null) {
   return useQuery({
-    ...screeningsQuery(movieId, city ?? '', date),
-    enabled: city !== null,
+    ...screeningsQuery(movieId, city, date),
     placeholderData: (previous, previousQuery) =>
-      previousQuery?.queryKey[1] === movieId && previousQuery.queryKey[2] === (city ?? '')
+      previousQuery?.queryKey[1] === movieId && previousQuery.queryKey[2] === city
         ? previous
         : undefined,
   });

@@ -6,9 +6,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { distDir } from './build-paths.ts';
 
 const BUDGET_BYTES = 150_000;
-const distDir = join(import.meta.dirname, '..', 'dist');
 const html = readFileSync(join(distDir, 'index.html'), 'utf8');
 
 /** Script and module-preload URLs referenced by index.html. */
@@ -18,7 +18,7 @@ const initialScripts = [
 ].map((match) => match[1] ?? '');
 
 if (initialScripts.length === 0) {
-  console.error('check-bundle-size: no entry script found in dist/index.html');
+  console.error('check-bundle-size: no entry script found in index.html');
   process.exit(1);
 }
 

@@ -1,14 +1,14 @@
 import type { MovieDetail } from '@seansai/shared';
+import { useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
-import { useCities, useMovie, useScreenings } from '../api/hooks.ts';
+import { useMovie, useScreenings } from '../api/hooks.ts';
 import { useCity } from '../app/city.tsx';
 import { useFilters } from '../app/filters.ts';
 import { Badge } from '../components/atoms/Badge/index.ts';
 import { Button } from '../components/atoms/Button/index.ts';
 import { Poster } from '../components/atoms/Poster/index.ts';
 import { Spinner } from '../components/atoms/Spinner/index.ts';
-import { CityPrompt } from '../components/organisms/CityPrompt/index.ts';
 import { DatePicker } from '../components/organisms/DatePicker/index.ts';
 import { EmptyState } from '../components/organisms/EmptyState/index.ts';
 import { ErrorState } from '../components/organisms/ErrorState/index.ts';
@@ -32,14 +32,13 @@ function withDate(params: URLSearchParams, date: string, today: string | null): 
   return search === '' ? '' : `?${search}`;
 }
 
-/** One movie's screenings in the chosen city on one date, today by default (FR-006 to FR-011). */
+/** One movie's screenings in the city on one date, today by default (FR-006 to FR-011). */
 export function MoviePage() {
-  const { t, lang, formatTime } = useT();
+  const { t, formatTime } = useT();
   const { movieId = '' } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { city, chooseCity } = useCity();
-  const cities = useCities(lang);
+  const { city, forgetCity } = useCity();
   const detail = useMovie(movieId, city);
 
   // "Today" comes from the server, so it matches the data even on a device with a wrong clock.
@@ -58,6 +57,11 @@ export function MoviePage() {
     requested === null || unavailableDate ? null : requested,
   );
 
+  const unknownCity = detail.error instanceof ApiError && detail.error.code === 'invalid_city';
+  useEffect(() => {
+    if (unknownCity) forgetCity();
+  }, [unknownCity, forgetCity]);
+
   // Replaces the history entry, so Back leaves the movie instead of stepping through dates.
   const chooseDate = (next: string) => {
     void navigate(
@@ -69,14 +73,6 @@ export function MoviePage() {
   if (detail.error instanceof ApiError && detail.error.code === 'movie_not_found') {
     return <NotFoundPage reason="movie" />;
   }
-  const unknownCity = detail.error instanceof ApiError && detail.error.code === 'invalid_city';
-  if (city === null || unknownCity) {
-    return (
-      <PageLayout>
-        <CityPrompt cities={cities.data?.cities ?? null} onSelect={chooseCity} />
-      </PageLayout>
-    );
-  }
 
   return (
     <PageLayout
@@ -85,8 +81,9 @@ export function MoviePage() {
         t('layout.updatedAt', { time: formatTime(screenings.data.freshness.updatedAt) })
       }
     >
-      {detail.isPending && <LoadingState />}
-      {detail.isError && (
+      {(detail.isPending || unknownCity) && <LoadingState />}
+      {/* Only with nothing to show: a failed refresh leaves the movie in place (research.md §7). */}
+      {detail.isError && detail.data === undefined && !unknownCity && (
         <ErrorState
           onRetry={() => {
             void detail.refetch();
@@ -169,7 +166,7 @@ function ScreeningsContent({
   const { t, formatDate } = useT();
   const [filters, setFilters] = useFilters();
   if (query.isPending) return <LoadingState />;
-  if (query.isError) {
+  if (query.data === undefined) {
     return (
       <ErrorState
         onRetry={() => {
