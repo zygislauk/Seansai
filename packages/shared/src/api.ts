@@ -44,15 +44,18 @@ export const MovieDetailSchema = MovieSummarySchema.extend({
 });
 export type MovieDetail = z.infer<typeof MovieDetailSchema>;
 
+export const CinemaSummarySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  cityId: z.string(),
+  cityName: z.string(),
+});
+export type CinemaSummary = z.infer<typeof CinemaSummarySchema>;
+
 export const ScreeningSchema = z.object({
   id: z.string(),
   startsAt: InstantSchema,
-  cinema: z.object({
-    id: z.string(),
-    name: z.string(),
-    cityId: z.string(),
-    cityName: z.string(),
-  }),
+  cinema: CinemaSummarySchema,
   hall: z.string().nullable(),
   format: ScreeningFormatSchema.nullable(),
   /** ISO 639-1 */
@@ -91,6 +94,8 @@ export const MovieDetailResponseSchema = z.object({
   movie: MovieDetailSchema,
   screeningDates: z.array(DateSchema),
   availableDates: z.array(DateSchema),
+  /** Cinemas with a screening still to come in the city, by city name, then cinema name. */
+  showingAt: z.array(CinemaSummarySchema),
 });
 export type MovieDetailResponse = z.infer<typeof MovieDetailResponseSchema>;
 

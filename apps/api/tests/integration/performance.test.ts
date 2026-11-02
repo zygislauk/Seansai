@@ -24,6 +24,7 @@ function p95(durations: number[]): number {
 test.each([
   ['GET /movies', '/api/v1/movies?city=vilnius'],
   ['GET /movies (all cities)', '/api/v1/movies?city=all'],
+  ['GET /movies/{id} (all cities)', `/api/v1/movies/${largeMovieIds[1] ?? ''}?city=all`],
   [
     'GET /movies/{id}/screenings',
     `/api/v1/movies/${largeMovieIds[1] ?? ''}/screenings?city=all&date=${TODAY}`,

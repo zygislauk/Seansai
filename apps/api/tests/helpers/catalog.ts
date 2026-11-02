@@ -39,8 +39,10 @@ function at(movieId: string, cinemaId: string, startsAt: string): ScreeningRecor
  * Movies and screenings around NOW, sources `apollo`, `forum` and `skalvija`:
  * - Zuikis: 5 screenings left today in Vilnius.
  * - Abba and Kasėjas: 3 each today in Vilnius (ties go by title); Kasėjas also had one that
- *   already started, one in Kaunas, and one tomorrow.
- * - Anksčiau starts on 1 November (at 00:30, then 19:00), Vėliau on 6 November.
+ *   already started, one in Kaunas, and one tomorrow. It also shows at Cinamon Mega in Kaunas,
+ *   but `cinamon` is not one of the sources shown unless a test asks for it.
+ * - Anksčiau starts on 1 November (at 00:30, then 19:00), Vėliau on 6 November, also in Klaipėda
+ *   and Šiauliai.
  * - Prasidėjęs has only a screening that already started.
  * Forum last succeeded 4 hours ago (stale); Apollo and Skalvija 1 hour ago.
  */
@@ -93,13 +95,16 @@ export async function seedCatalog(repo: Repository): Promise<void> {
     at(movies.digger.id, 'apollo-akropolis', '2026-10-30T13:00:00Z'),
     at(movies.digger.id, 'apollo-akropolis', '2026-10-30T09:00:00Z'), // already started
     at(movies.digger.id, 'forum-kaunas', '2026-10-30T16:00:00Z'),
+    at(movies.digger.id, 'cinamon-mega', '2026-10-30T16:00:00Z'),
     at(movies.digger.id, 'apollo-akropolis', '2026-10-31T18:00:00Z'),
     at(movies.sooner.id, 'skalvija', '2026-10-31T22:30:00Z'), // 00:30 on 1 November in Vilnius
     at(movies.sooner.id, 'skalvija', '2026-11-01T17:00:00Z'),
     at(movies.later.id, 'apollo-akropolis', '2026-11-06T17:00:00Z'),
+    at(movies.later.id, 'forum-klaipeda', '2026-11-06T18:00:00Z'),
+    at(movies.later.id, 'forum-siauliai', '2026-11-06T18:00:00Z'),
     at(movies.started.id, 'apollo-akropolis', '2026-10-30T08:00:00Z'), // already started
   ];
-  for (const sourceId of ['apollo', 'forum', 'skalvija']) {
+  for (const sourceId of ['apollo', 'forum', 'skalvija', 'cinamon']) {
     await seedScreenings(
       repo,
       sourceId,

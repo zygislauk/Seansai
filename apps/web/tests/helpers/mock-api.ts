@@ -104,6 +104,11 @@ export const diggerDetail: MovieDetailResponse = {
   movie: { ...summary('digger-2026', 'Kasėjas', 'Digger'), genres: ['drama'], year: 2026 },
   screeningDates: [TODAY, '2026-10-31'],
   availableDates: [TODAY, '2026-10-31', '2026-11-01'],
+  showingAt: [
+    vilnius('apollo-akropolis', 'Apollo Akropolis'),
+    vilnius('skalvija', 'Skalvija'),
+    vilnius('vue-vilnius', 'Vue Vilnius'),
+  ],
 };
 
 type MockOptions = {

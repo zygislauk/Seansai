@@ -1,5 +1,9 @@
-import { ErrorResponseSchema, MoviesResponseSchema } from '@seansai/shared';
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import {
+  ErrorResponseSchema,
+  MovieDetailResponseSchema,
+  MoviesResponseSchema,
+} from '@seansai/shared';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { Repository } from '../../src/db/repository.ts';
 import { startCatalogServer } from '../helpers/catalog.ts';
 
@@ -106,4 +110,67 @@ test('on Vercel, data refreshed 4 hours ago is not flagged as stale (48-hour thr
 
   expect(MoviesResponseSchema.parse(response.json()).freshness.staleCinemas).toEqual([]);
   await vercel.close();
+});
+
+describe('showingAt on GET /movies/{id}', () => {
+  const showingAt = async (url: string) =>
+    MovieDetailResponseSchema.parse((await server.app.inject(url)).json()).showingAt;
+
+  // The Kaunas answer also shows that a source's cinemas stay hidden when it isn't shown.
+  test('lists cinemas with a screening that has not started, within the requested city', async () => {
+    const inVilnius = await showingAt('/api/v1/movies/digger-2026?city=vilnius');
+    const inKaunas = await showingAt('/api/v1/movies/digger-2026?city=kaunas');
+
+    expect(inVilnius.map((cinema) => cinema.id)).toEqual([
+      'apollo-akropolis',
+      'forum-vingis',
+      'skalvija',
+    ]);
+    expect(inKaunas).toEqual([
+      {
+        id: 'forum-kaunas',
+        name: 'Forum Cinemas Kaunas',
+        cityId: 'kaunas',
+        cityName: 'Kaunas',
+      },
+    ]);
+  });
+
+  test('orders all of Lithuania by city name, then cinema name', async () => {
+    const cinemas = await showingAt('/api/v1/movies/digger-2026?city=all');
+
+    expect(cinemas.map((cinema) => cinema.name)).toEqual([
+      'Forum Cinemas Kaunas',
+      'Apollo Akropolis',
+      'Forum Cinemas Vingis',
+      'Skalvija',
+    ]);
+  });
+
+  test('within a city, orders by cinema name', async () => {
+    const withCinamon = await startCatalogServer(['forum', 'cinamon']);
+
+    const response = await withCinamon.app.inject('/api/v1/movies/digger-2026?city=kaunas');
+
+    expect(
+      MovieDetailResponseSchema.parse(response.json()).showingAt.map((cinema) => cinema.name),
+    ).toEqual(['Cinamon Mega', 'Forum Cinemas Kaunas']);
+    await withCinamon.close();
+  });
+
+  test('is empty when the only screening already started, or none is in the city', async () => {
+    expect(await showingAt('/api/v1/movies/started-2026?city=all')).toEqual([]);
+    expect(await showingAt('/api/v1/movies/zuikis-2026?city=kaunas')).toEqual([]);
+  });
+
+  test('names cities in the requested language, Lithuanian by default', async () => {
+    const cityNames = async (query: string) =>
+      (await showingAt(`/api/v1/movies/later-2026?city=all${query}`)).map(
+        (cinema) => cinema.cityName,
+      );
+
+    // Šiauliai before Vilnius: sorted as Lithuanian, not by character code.
+    expect(await cityNames('')).toEqual(['Klaipėda', 'Šiauliai', 'Vilnius']);
+    expect(await cityNames('&lang=en')).toEqual(['Klaipeda', 'Siauliai', 'Vilnius']);
+  });
 });
