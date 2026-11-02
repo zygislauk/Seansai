@@ -346,6 +346,8 @@ from that night, and no manual action (spec US2, SC-003, quickstart §5).
   - one manual `curl -H "Authorization: Bearer $CRON_SECRET" https://<production>/api/v1/cron/daily` returns 200 with every enabled source `success`, and its duration in Runtime Logs is < 300 s;
   - then quickstart §5's check on two consecutive mornings. This is the release gate; SC-003's full 7 consecutive days are confirmed in T054.
 
+**Open from T047** (2026-11-02): the nightly cron ran by itself, but Pasaka and Cinamon refuse Vercel's requests with HTTP 403 ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)). T047 stays open until they allow Seansai or are switched off with the kill switch.
+
 **Checkpoint**: The site keeps itself current every night with no manual action.
 
 ---
@@ -366,7 +368,7 @@ US2 (T044).
 
 ### Branch for User Story 3
 
-- [ ] T048 [US3] US2's PR is already merged, so start a follow-up branch: `git switch main && git pull && git switch -c 002-vercel-deploy-followup`. All US3 and polish commits go here.
+- [X] T048 [US3] US2's PR is already merged, so start a follow-up branch: `git switch main && git pull && git switch -c 002-vercel-deploy-followup`. All US3 and polish commits go here.
 
 ### Tests for User Story 3 ⚠️
 

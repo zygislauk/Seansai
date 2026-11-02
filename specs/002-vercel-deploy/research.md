@@ -184,6 +184,13 @@ calls.
     production.
   - Every cold start logged `Refresh runs from Vercel Cron; scheduler not started`, and none
     refreshed a source (SC-006).
+- **Measured on production** (2026-11-01 and 02): the first refresh took 93 s, under the 300 s limit.
+  Nine of 11 sources succeeded. Pasaka and Cinamon answered HTTP 403 on both runs, though the same
+  requests work from a home connection, so their four cinemas have no data. Both sites sit behind
+  Cloudflare, and a rule against datacentre networks is the likely cause, not yet confirmed. The
+  preview could not show this, as its data was fetched from a laptop. Per the no-circumvention
+  rule, nothing works around it. Refused requests now log their headers and the start of the body. Hobby keeps logs for an hour, so
+  read them within the hour of a run: `sources.last_error` holds only `HTTP 403`.
 - **Timing tests on CI** (2026-11-01, owner decision): GitHub's machines vary by about 1.7× in
   throughput. `performance.spec.ts` allows 2.5 s on CI and 2 s elsewhere, because its throttling
   comes on top of the machine's own speed. The target stays 2 s (SC-002): CI catches real slowdowns,

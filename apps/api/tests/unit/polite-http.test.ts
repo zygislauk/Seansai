@@ -17,6 +17,13 @@ type Route = {
   status?: number | 'hang' | 'stall';
   /** The status a stalling server sends before it stops. */
   stalledStatus?: number;
+  /** What a stalling server sends before it stops, each sent separately. */
+  stalledChunks?: string[];
+  /** The stalling server's connection breaks instead. */
+  breaks?: boolean;
+  /** Called if the client gives up on a stalling server's body. */
+  onCancel?: () => void;
+  headers?: Record<string, string>;
   body?: string;
   contentType?: string;
 };
@@ -43,10 +50,16 @@ function createClient(
     if (route.status === 'stall') {
       const body = new ReadableStream<Uint8Array>({
         start(stream) {
-          stream.enqueue(new TextEncoder().encode('<html>'));
+          for (const chunk of route.stalledChunks ?? ['<html>']) {
+            stream.enqueue(new TextEncoder().encode(chunk));
+          }
+          if (route.breaks) stream.error(new TypeError('terminated'));
           init?.signal?.addEventListener('abort', () => {
             stream.error(new DOMException('The operation was aborted.', 'AbortError'));
           });
+        },
+        cancel() {
+          route.onCancel?.();
         },
       });
       return Promise.resolve(new Response(body, { status: route.stalledStatus ?? 200 }));
@@ -54,7 +67,7 @@ function createClient(
     return Promise.resolve(
       new Response(route.body ?? '', {
         status: route.status ?? 200,
-        headers: { 'content-type': route.contentType ?? 'text/plain' },
+        headers: { 'content-type': route.contentType ?? 'text/plain', ...route.headers },
       }),
     );
   });
@@ -217,6 +230,143 @@ describe('PoliteHttpClient', () => {
     await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
       SourceBlockedError,
     );
+  });
+
+  describe('logs who refused a request', () => {
+    const refusal = (lines: () => Array<Record<string, unknown>>) =>
+      lines().filter((line) => line.msg === 'Source refused the request');
+
+    test('with the telling headers and the start of the body, and never cookies', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': {
+          status: 403,
+          contentType: 'text/html',
+          headers: {
+            server: 'cloudflare',
+            'cf-ray': 'a5433dd6eee7a86f-FRA',
+            'cf-mitigated': 'challenge',
+            'set-cookie': 'session=private',
+          },
+          body: `<title>Access denied</title>\n\n  ${'x'.repeat(2000)}`,
+        },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      const [line] = refusal(lines);
+      expect(line).toMatchObject({
+        source: 'test',
+        url: 'https://cinema.lt/blocked',
+        status: 403,
+        headers: {
+          server: 'cloudflare',
+          'cf-ray': 'a5433dd6eee7a86f-FRA',
+          'cf-mitigated': 'challenge',
+          'content-type': 'text/html',
+        },
+      });
+      expect(JSON.stringify(line)).not.toContain('private');
+      expect(String(line?.bodyStart).startsWith('<title>Access denied</title> xxx')).toBe(true);
+      expect(String(line?.bodyStart)).toHaveLength(1000);
+    });
+
+    test('also for robots.txt, which still counts as no restrictions', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': { status: 403 },
+        'https://cinema.lt/page': { body: 'ok' },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/page'))).resolves.toBe('ok');
+
+      expect(refusal(lines).map((line) => line.url)).toEqual(['https://cinema.lt/robots.txt']);
+    });
+
+    test('without waiting long for a body that never starts, then giving up on it', async () => {
+      const onCancel = vi.fn();
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': {
+          status: 'stall',
+          stalledStatus: 403,
+          stalledChunks: [],
+          onCancel,
+        },
+      });
+      const started = Date.now();
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      // 2 s, plus the pause between requests to a host; far from the 15 s timeout.
+      expect(Date.now() - started).toBeLessThan(3000);
+      expect(refusal(lines)[0]?.bodyStart).toBe('');
+      expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    test('with a body sent in small pieces', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': {
+          status: 'stall',
+          stalledStatus: 403,
+          stalledChunks: ['<', 'title>Access denied</title>'],
+        },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      expect(refusal(lines)[0]?.bodyStart).toBe('<title>Access denied</title>');
+    });
+
+    test('and it stays a refusal when the connection breaks during the body', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': {
+          status: 'stall',
+          stalledStatus: 403,
+          stalledChunks: ['<title>Access'],
+          breaks: true,
+        },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      expect(refusal(lines)).toHaveLength(1);
+    });
+
+    test('with long header values cut short', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/blocked': { status: 403, headers: { server: 'x'.repeat(500) } },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/blocked'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+
+      expect(refusal(lines)[0]?.headers).toMatchObject({ server: 'x'.repeat(200) });
+    });
+
+    test('not for other failures', async () => {
+      const { client, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/broken': { status: 500 },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/broken'))).rejects.toThrow(
+        SourceRequestError,
+      );
+
+      expect(refusal(lines)).toEqual([]);
+    });
   });
 
   test('refuses a URL disallowed by robots.txt', async () => {
