@@ -10,7 +10,9 @@ if [ "$PWD" != "$HOME/.local/share/seansai-refresh" ]; then
   echo "Run this from its own checkout, ~/.local/share/seansai-refresh, not from $PWD" >&2
   exit 1
 fi
-if [ -n "$(git status --porcelain)" ]; then
+# Assigned first, so set -e stops the script when git status itself fails.
+changes=$(git status --porcelain)
+if [ -n "$changes" ]; then
   echo "The checkout has local changes, so it is not what is on main" >&2
   exit 1
 fi
