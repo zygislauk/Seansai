@@ -346,7 +346,12 @@ from that night, and no manual action (spec US2, SC-003, quickstart §5).
   - one manual `curl -H "Authorization: Bearer $CRON_SECRET" https://<production>/api/v1/cron/daily` returns 200 with every enabled source `success`, and its duration in Runtime Logs is < 300 s;
   - then quickstart §5's check on two consecutive mornings. This is the release gate; SC-003's full 7 consecutive days are confirmed in T054.
 
-**Open from T047** (2026-11-02): the nightly cron ran by itself, but Pasaka and Cinamon refuse Vercel's requests with HTTP 403 ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)). T047 stays open until they allow Seansai or are switched off with the kill switch.
+**Changed after T047's first run** (2026-11-02, owner decision): Pasaka and Cinamon refuse Vercel's requests with HTTP 403 ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)), so every source now refreshes from the owner's Mac.
+
+- [X] T047a [US2] Add `refresh-now.ts`, `scripts/home-refresh.sh` and the launchd job. Remove `crons`. Raise the threshold to 48 h.
+- [ ] T047b [US2] With the owner's go-ahead, merge, set up the job (quickstart §5) and confirm its first run: every enabled source `success`.
+- [ ] T047c [US2] Replaces T047's cron checks: quickstart §5's check on two consecutive days.
+
 
 **Checkpoint**: The site keeps itself current every night with no manual action.
 
@@ -385,11 +390,11 @@ US2 (T044).
   - `curl -s localhost:3000/` returns `index.html`.
   - If Docker isn't available, record that this check was skipped in the PR description.
 - [ ] T052 [US3] Check the kill switch on production (quickstart §5).
-  - Set `DISABLED_SOURCES=forum` in Production and redeploy.
-  - Trigger the cron by hand: the summary shows `forum: disabled`, and Forum's cinemas are gone from the site.
-  - Remove the variable and redeploy.
+  - Set `DISABLED_SOURCES=forum` in Production and in `refresh.env`, and redeploy.
+  - Run the job by hand: the log shows `forum: disabled`, and Forum's cinemas are gone from the site.
+  - Remove the variable from both and redeploy.
 - [ ] T053 [US3] Commit `build: drop the native toolchain from the container (002 US3)` on the follow-up branch.
-- [ ] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, Vercel's Cron Jobs tab shows a successful run and `/api/v1/health` showed that night's `lastSuccessAt`.
+- [ ] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, `/api/v1/health` showed that day's `lastSuccessAt`.
   - Vercel Usage: invocations, Active CPU, Provisioned Memory, Fast Origin and Fast Data Transfer are each < 50% of the Hobby allowance, prorated.
   - Turso: rows read and written, and storage, are each < 50% of Free.
   - Both accounts have no charges and no payment method.

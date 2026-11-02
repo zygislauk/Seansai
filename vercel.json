@@ -33,6 +33,5 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "api" } },
     { "source": "/(.*)", "destination": { "service": "web" } }
-  ],
-  "crons": [{ "path": "/api/v1/cron/daily", "schedule": "0 22 * * *" }]
+  ]
 }

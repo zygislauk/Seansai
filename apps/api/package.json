@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node --watch src/main.ts",
     "start": "node src/main.ts",
+    "refresh": "node src/refresh-now.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:load": "vitest run --config vitest.load.config.ts",

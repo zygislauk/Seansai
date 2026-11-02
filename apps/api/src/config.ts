@@ -4,10 +4,10 @@ import { STALE_AFTER_MS } from './refresh/status.ts';
 
 const DEFAULT_DB_PATH = fileURLToPath(new URL('../data/seansai.sqlite', import.meta.url));
 /**
- * Two daily cron runs can be up to about 25 h apart (the hour they may start in, run time,
- * daylight saving); 27 h leaves margin and still flags one missed night (research §4).
+ * A once-a-day refresh from a machine at home can run at any time of day, so two runs can be well
+ * over 24 h apart. 48 h allows for that and one missed day, and flags anything longer.
  */
-const CRON_STALE_AFTER_MS = 27 * 60 * 60 * 1000;
+const DAILY_STALE_AFTER_MS = 48 * 60 * 60 * 1000;
 const LAST_SUCCESS_HOURS_PATTERN = /^FIXTURE_([A-Z0-9]+)_LAST_SUCCESS_HOURS$/;
 
 const sourceIdList = z
@@ -28,7 +28,7 @@ const EnvSchema = z
     /** Turso (libSQL) database; on Vercel the only place data outlives a function instance. */
     TURSO_DATABASE_URL: z.string().min(1).optional(),
     TURSO_AUTH_TOKEN: z.string().min(1).optional(),
-    /** Vercel Cron sends it as a bearer token; it protects the refresh route (FR-008). */
+    /** A bearer token protecting the fallback refresh route (FR-008). */
     CRON_SECRET: z
       .string()
       .regex(/^[0-9a-f]{32,}$/i, 'must be at least 32 hex characters')
@@ -55,8 +55,8 @@ export type Config = {
   db: { url: string; authToken: string | null };
   sourcesMode: 'live' | 'fixtures';
   /**
-   * `cron` on Vercel in live mode: functions do not run between requests, so a daily Vercel Cron
-   * Job refreshes the data. `scheduler` everywhere else: the server refreshes hourly itself.
+   * `cron` on Vercel in live mode: functions do not run between requests, so the data is refreshed
+   * from outside, once a day. `scheduler` everywhere else: the server refreshes hourly itself.
    */
   refreshMode: 'scheduler' | 'cron';
   /** Age after which a source's data is flagged as possibly outdated (FR-014, FR-015). */
@@ -107,7 +107,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     db: chooseDb(values, onVercel),
     sourcesMode: values.SOURCES_MODE,
     refreshMode,
-    staleAfterMs: refreshMode === 'cron' ? CRON_STALE_AFTER_MS : STALE_AFTER_MS,
+    staleAfterMs: refreshMode === 'cron' ? DAILY_STALE_AFTER_MS : STALE_AFTER_MS,
     cronSecret: values.CRON_SECRET ?? null,
     fixtureNow: values.FIXTURE_NOW ? new Date(values.FIXTURE_NOW) : null,
     fixtureFail: values.FIXTURE_FAIL,

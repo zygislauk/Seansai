@@ -68,15 +68,13 @@ curl -s localhost:3000/ | head -c 100     # the web app's index.html
    - `vercel env add CRON_SECRET production` with the output of `openssl rand -hex 32`;
    - `vercel env add SEANSAI_CONTACT` with `https://github.com/zygispr/Seansai`.
 4. Deploy a preview by pushing the branch or running `vercel deploy`.
-   - **Expected**: the build succeeds and `regions` and `crons` are accepted. If not, use the
-     fallbacks in [hosting.md](./contracts/hosting.md).
+   - **Expected**: the build succeeds and `regions` is accepted. If not, use the fallback in
+     [hosting.md](./contracts/hosting.md).
 5. `curl <preview>/api/v1/health`.
    - **Expected**: `status: ok`, every source `stale`. This proves the migrations ran on Turso.
    - If Deployment Protection blocks the call, use `vercel curl`.
-6. Deploy to production (merge to `main`), then trigger the first load by hand:
-   `curl -H "Authorization: Bearer $CRON_SECRET" https://<production>/api/v1/cron/daily`
-   - **Expected**: `200` with every enabled source `success`.
-   - The function's duration in Runtime Logs is well under 300 s.
+6. Deploy to production (merge to `main`), then trigger the first load with the job in §5.
+   - **Expected**: every enabled source `success` in the log, in about a minute.
 7. Open the production address on a phone and follow feature 001's journeys:
    - choose a city, then pick a movie;
    - change the date, apply filters;
@@ -84,20 +82,60 @@ curl -s localhost:3000/ | head -c 100     # the web app's index.html
    - reload a deep link.
    - **Expected**: the same results as a self-hosted copy (SC-001).
 
-## 5. Daily refresh works without anyone (US2)
+## 5. Daily refresh from a machine at home (US2)
 
-- On two consecutive mornings (the release gate), and then on each of the first 7 days (SC-003,
-  checked at the one-week review), before 08:00 Vilnius time:
-  - Vercel's Cron Jobs tab shows a successful run after 22:00 UTC;
-  - `/health` shows each source's `lastSuccessAt` from that night;
+Vercel only serves the site: some cinemas refuse requests from it ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)).
+The job runs from its own checkout of `main`, so an unreviewed branch can never migrate or write
+production's data.
+
+Set it up once, on a Mac. Run `nvm use 24` first if you use nvm, as the job keeps that Node's path.
+
+```bash
+git clone https://github.com/zygispr/Seansai.git ~/.local/share/seansai-refresh
+
+# Private, outside any repository: SEANSAI_CONTACT, plus production's TURSO_DATABASE_URL and
+# TURSO_AUTH_TOKEN. To read those, run `vercel env pull <private file> --environment=production` in
+# the linked project, copy the three lines across, and delete that file.
+mkdir -p ~/.config/seansai && touch ~/.config/seansai/refresh.env && chmod 600 ~/.config/seansai/refresh.env
+```
+
+Once that file is filled in:
+
+```bash
+cd ~/.local/share/seansai-refresh
+mkdir -p ~/Library/LaunchAgents
+sed -e "s#__CHECKOUT__#$PWD#" -e "s#__NODE_DIR__#$(dirname "$(which node)")#" -e "s#__LOGS__#$HOME/Library/Logs#" \
+  deploy/lt.seansai.refresh.plist > ~/Library/LaunchAgents/lt.seansai.refresh.plist
+launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/lt.seansai.refresh.plist
+```
+
+- **What it does**: it checks every hour while you are logged in and the Mac is awake, and refreshes
+  on the first check of each Vilnius day. So it runs once a day, and catches up after sleep or being
+  offline. It can't run while the Mac is off.
+- **By hand**: run `~/.local/share/seansai-refresh/scripts/home-refresh.sh`. It refuses within an
+  hour of the last run, the limit for every source.
+- **If Node changes**: removing that Node version stops the job, with the reason in the log. To
+  change the job, run the `launchctl bootout` below first, then the commands above again.
+- **Logs**: `~/Library/Logs/seansai-refresh.log`.
+- **To stop it**: `launchctl bootout "gui/$(id -u)/lt.seansai.refresh"`.
+
+Then check:
+
+- On two consecutive days (the release gate), and on each of the first 7 days (SC-003, checked at the
+  one-week review):
+  - `/health` shows each source's `lastSuccessAt` from that day;
   - the site lists today's screenings and none from yesterday (SC-003).
 - Kill switch:
-  - Set `DISABLED_SOURCES=forum` in Production and redeploy.
-  - After the next run, Forum's cinemas are gone from the site, and no Forum request appears in
-    that run's logs.
-  - Remove the variable afterwards.
-- Missed refresh: with Forum disabled for longer than 27 h, the site would flag it. Unit tests
-  cover the threshold (§1). Live checking is optional.
+  - Set `DISABLED_SOURCES=forum` in Production, redeploy, and add it to `refresh.env`. Vercel uses it
+    to hide the cinemas, and the job to stop contacting them. If a cinema asks Seansai to stop,
+    `refresh.env` is the one that matters.
+  - After the next run, Forum's cinemas are gone from the site, and the log shows Forum as disabled with no request made to it.
+  - Remove the variable from both afterwards.
+- Missed refresh: with Forum disabled for longer than 48 h, the site would flag it. Unit tests cover
+  the threshold (§1). Live checking is optional.
+- If the machine is away for long: `/api/v1/cron/daily` still refreshes from Vercel with the secret,
+  though the cinemas that refuse Vercel stay as they were. That counts as the day's attempt, so run
+  the job by hand an hour later to catch them up.
 
 ## 6. Cost and usage check (US3, SC-002, SC-005)
 

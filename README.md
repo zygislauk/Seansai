@@ -58,15 +58,15 @@ docker build -t seansai .
 docker run -p 3000:3000 -v seansai-data:/data -e SEANSAI_CONTACT=https://github.com/zygispr/Seansai seansai
 ```
 
-| Variable                                 | Meaning                                                                             |
-| ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| `SEANSAI_CONTACT`                        | Email or project URL sent in the User-Agent. Required for live data.                |
-| `DISABLED_SOURCES`                       | Comma-separated source ids never fetched (the kill switch).                         |
-| `DB_PATH`                                | SQLite file. `/data/seansai.sqlite` in the container.                               |
-| `PORT`, `HOST`                           | Where the server listens (`3000`, `0.0.0.0` in the container).                      |
-| `SOURCES_MODE`                           | `live` (default) or `fixtures` for the saved test data.                             |
-| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Turso database instead of a file. Required on Vercel.                               |
-| `CRON_SECRET`                            | Enables the daily refresh route (`/api/v1/cron/daily`). At least 32 hex characters. |
+| Variable                                 | Meaning                                                                                  |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `SEANSAI_CONTACT`                        | Email or project URL sent in the User-Agent. Required for live data.                     |
+| `DISABLED_SOURCES`                       | Comma-separated source ids never fetched (the kill switch). See quickstart §5 on Vercel. |
+| `DB_PATH`                                | SQLite file. `/data/seansai.sqlite` in the container.                                    |
+| `PORT`, `HOST`                           | Where the server listens (`3000`, `0.0.0.0` in the container).                           |
+| `SOURCES_MODE`                           | `live` (default) or `fixtures` for the saved test data.                                  |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Turso database instead of a file. Required on Vercel.                                    |
+| `CRON_SECRET`                            | Enables the fallback refresh route (`/api/v1/cron/daily`). At least 32 hex characters.   |
 
 ## Deploy to Vercel (free)
 
@@ -82,10 +82,12 @@ in [specs/002-vercel-deploy/quickstart.md](specs/002-vercel-deploy/quickstart.md
   for Preview, so a preview can never change production's data.
 - **Variables**: set `SEANSAI_CONTACT` for Production and Preview, and `CRON_SECRET`
   (`openssl rand -hex 32`) for Production only.
-- **Refreshing**: Hobby runs scheduled jobs at most once a day, so a Vercel Cron Job calls the
-  refresh route between 00:00 and 02:00 Vilnius time. Visits never contact a cinema. A cinema is
-  flagged as possibly outdated after **27 hours** on Vercel, instead of the 3 hours that apply to
-  self-hosted copies, which still refresh hourly.
+- **Refreshing**: some cinemas refuse requests from Vercel, so a scheduled job on a machine at home
+  refreshes every source once a day into Turso (setup in
+  [quickstart.md §5](specs/002-vercel-deploy/quickstart.md)). The machine only needs to be on, with you
+  logged in, for about a minute a day. Visits never contact a cinema. A cinema is flagged as possibly outdated
+  after **48 hours** on Vercel, instead of the 3 hours that apply to self-hosted copies, which still
+  refresh hourly.
 - **Monitoring**: Hobby keeps runtime logs for only an hour, so `GET /api/v1/health` (each
   source's status and last successful refresh) is the lasting record of how refreshes went.
 

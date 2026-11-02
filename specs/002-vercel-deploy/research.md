@@ -87,6 +87,9 @@ measurements come from the developer's live database on the same day.
 
 ## 3. Refresh scheduling on Hobby
 
+> **Superseded on 2026-11-02**: no Vercel Cron Job runs now. Refreshing moved to a machine at home
+> ([§5](#5-keeping-usage-free-sc-002-sc-005)). The route below remains as a fallback.
+
 - **Decision**:
   - Vercel Cron Job `{ "path": "/api/v1/cron/daily", "schedule": "0 22 * * *" }` (top-level
     `crons`), calling a route that refreshes every enabled source **in parallel** and then runs
@@ -122,6 +125,8 @@ measurements come from the developer's live database on the same day.
   - External cron services: an extra account, no benefit over the fallback.
 
 ## 4. Staleness on the hosted deployment
+
+> **Superseded on 2026-11-02**: the threshold is now 48 h, because the run's time of day can move.
 
 - **Decision**: `staleAfterMs` is 27 h when refreshing by cron and 3 h otherwise (FR-006, FR-015).
   It's passed from config to `deriveSourceStatus`, `Queries.freshness` and `/health`.
@@ -191,6 +196,14 @@ calls.
   preview could not show this, as its data was fetched from a laptop. Per the no-circumvention
   rule, nothing works around it. Refused requests now log their headers and the start of the body. Hobby keeps logs for an hour, so
   read them within the hour of a run: `sources.last_error` holds only `HTTP 403`.
+- **Refreshing from home** (2026-11-02, owner decision): to treat all venues the same, every source
+  now refreshes from the owner's Mac, and Vercel only serves the site. The job checks hourly and runs on
+  the first check of each Vilnius day. The first run from there
+  took 50 s with all 11 sources succeeding. Alternatives measured: a browser can read only 5 of 11
+  sources (the rest send no cross-site permission), and a paid proxy disguises where requests come
+  from. The no-circumvention rule is still met in its wording: one fixed address and honest
+  identification, stopping if refused. It does route around these cinemas' refusal of Vercel,
+  which the owner accepted.
 - **Timing tests on CI** (2026-11-01, owner decision): GitHub's machines vary by about 1.7× in
   throughput. `performance.spec.ts` allows 2.5 s on CI and 2 s elsewhere, because its throttling
   comes on top of the machine's own speed. The target stays 2 s (SC-002): CI catches real slowdowns,
