@@ -250,7 +250,8 @@ async function startOfBody(response: Response): Promise<string> {
   ]);
   clearTimeout(timer);
   void reader.cancel().catch(() => undefined);
-  return new TextDecoder().decode(first?.value).replace(/\s+/g, ' ').slice(0, REFUSAL_BODY_CHARS);
+  const bytes = first?.value as Uint8Array | undefined;
+  return new TextDecoder().decode(bytes).replace(/\s+/g, ' ').slice(0, REFUSAL_BODY_CHARS);
 }
 
 /** Parses a JSON body and validates it; shared by the live and the fixture clients. */
