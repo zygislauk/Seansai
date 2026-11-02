@@ -78,8 +78,11 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   `/api/v1/cron/daily`). The URL is an optional setting, `VERCEL_DEPLOY_HOOK_URL`.
 - **Rationale**: Hooks are free, limited to 60 calls an hour, and need no credentials except the URL.
   Repeat calls cancel earlier builds. Hobby allows 100 deployments a day.
-- **Failure handling**: a failed hook call is logged as an error and doesn't fail the refresh, since the
-  data is saved and the app shows it. Pages stay at the earlier snapshot until the next refresh.
+- **Failure handling**: a failed hook call is retried once after 30 s, to cover a brief network problem just
+  after the Mac wakes. A second failure is logged as an error and doesn't fail the refresh, since the data is
+  saved and the app shows it. Pages stay at the earlier snapshot until the next refresh, as FR-003 allows.
+  A failed build shows only in Vercel, so the `lastmod` values in `/sitemap.xml` are the check for it
+  (quickstart §4).
 - **Side effects**: every hook call deploys the latest `main`, so any merged change goes live by the next
   morning at the latest. A rollback made in the dashboard is overwritten by the next hook call, so
   rolling back needs the code reverted too. This goes in the runbook.
@@ -156,7 +159,10 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
 - **Why it isn't a dialog**: Google warns against intrusive pop-ups, and a dialog would take focus away from
   what a searcher came to read. It's normal page content in reading order, so it's read and reached with the
   keyboard like anything else.
-- **Stored city no longer supported**: treated as nothing remembered, so it's a first visit.
+- **Stored city no longer supported**: only the pages can tell, from the API's `invalid_city` error, so `useCity`
+  can't decide this alone. The page calls `forgetCity`, which clears the stored city and removes any `?city=`
+  from the address. The visitor is then in the first-visit state. A `/{lang}/city/{cityId}` address with an
+  unknown city is different: it's the not-found page.
 
 ## 10. Returning visitors and the first paint
 
@@ -197,6 +203,7 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   `charlie-harper-2026`). That's the known split-films problem from feature 001, and it affects SC-002.
   Titles add the year where known, and descriptions include where it's showing. Identical titles can still
   occur for a record with no year and the same places. In that case merging the records is the right fix,
-  so the site map check reports them rather than disguising them.
+  so the build logs a warning naming them rather than disguising them, and doesn't fail
+  ([contract](./contracts/snapshot.md#failing-safely)).
 - **No synopses**: descriptions are composed from title, year, genres and where and when it's showing.
 - **Posters**: 28 of 216 have none, so they use the default preview image.

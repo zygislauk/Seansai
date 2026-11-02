@@ -49,7 +49,18 @@ curl -s https://seansai.vercel.app/robots.txt
 curl -s https://seansai.vercel.app/sitemap.xml | grep -c '<loc>'
 ```
 
+Check `X-Robots-Tag` on the current production deployment's own unique address, from `vercel ls` (FR-016):
+
+```bash
+curl -sI https://<deployment-address>/lt/ | grep -i x-robots-tag
+```
+
+`noindex` is the good result. If it's absent, the page's canonical link still names the public address, so
+record that in research §7 and don't add anything.
+
 Then:
+
+- Read the build log for duplicate title or description warnings (SC-002). For each one, merge the records.
 
 - Paste 10 movie addresses into [Facebook's Sharing Debugger](https://developers.facebook.com/tools/debug/)
   (SC-008).
@@ -61,6 +72,9 @@ Then:
 2. After the next refresh, `~/Library/Logs/seansai-refresh.log` shows `Snapshot build requested`.
 3. A deployment marked as triggered by the hook appears in Vercel, and finishes within 10 minutes.
 4. The `lastmod` values in `/sitemap.xml` show the new date.
+
+If `lastmod` falls behind `/api/v1/health`'s `lastSuccessAt`, the hook or the build failed: check the home job's
+log, then the deployment in Vercel. Pages stay as they were until an update succeeds (FR-003).
 
 **Rollback note**: a dashboard rollback lasts only until the next hook call, which deploys the latest `main`.
 Revert the code on `main` as well.

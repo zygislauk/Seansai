@@ -39,11 +39,14 @@ The build exits non-zero, leaving the previous deployment live, if:
 - The general list has no movies.
 - A rendered page lacks its `<h1>` or is over budget.
 
+Two pages sharing a title or description only logs a warning naming them (SC-002). Duplicates come from split
+movie records, so the right fix is merging those records, and one shouldn't hold back the whole site.
+
 ## The hook
 
 - `apps/api/src/refresh/deploy-hook.ts` sends one `POST` to `VERCEL_DEPLOY_HOOK_URL`.
 - Called after a refresh in which at least one source succeeded, from `refresh-now.ts` and the cron route.
-- Skipped when unset. Timeout 10 s, no retries, since the next refresh tries again.
+- Skipped when unset. Timeout 10 s, with one retry after 30 s. After that, the next refresh tries again.
 - Logs `Snapshot build requested` or an error. The URL is never logged. A failure doesn't change the refresh's
   exit code or result.
 - Isn't called on `--if-due` runs that find nothing to do.

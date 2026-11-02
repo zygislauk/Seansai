@@ -26,6 +26,10 @@
   addresses stay reachable and ask not to be listed (FR-011).
 - Q: Which readers may see a screening that has already started? → A: Only readers without scripts,
   until the next data refresh. This follows from pages being a daily snapshot.
+- Q: Should a merged movie's old address lead to the surviving movie? → A: No. The system keeps no
+  record of old addresses, and merges are rare, so it answers "not found".
+- Q: What happens when pages can't be updated? → A: They stay as they were until an update succeeds.
+  This replaces the earlier "temporarily unavailable" response, which static pages never produce.
 
 ## Current State
 
@@ -155,15 +159,15 @@ title, description and image match the movie.
 
 ### Edge Cases
 
-- **Data service down when a page is requested**: the response says "temporarily unavailable". It is
-  never an empty success, which could replace the listing, and never "not found", which could
-  remove the page from search results.
+- **Data can't be read when pages are being updated**: the update is abandoned and the published pages
+  stay as they were. A failure never produces empty pages or "not found", which could remove pages
+  from search results.
 - **Data not refreshed because the owner's Mac is off (002)**: pages are still served with the newest
   data available and its "updated at" time, so nothing claims to be fresher than it is.
 - **A screening started since the page was produced**: readers without scripts may still see it, until
   the next data refresh. In the running app people never see it, as FR-007 of feature 001 requires.
-- **A movie's address changes because duplicate listings were merged**: the old address leads to the
-  surviving movie's page rather than "not found", when the system knows the two are the same movie.
+- **A movie's address changes because duplicate listings were merged**: the old address answers "not
+  found", and the surviving movie's page is listed as usual.
 - **A shared link with `?city=`**: it keeps working and keeps saving that city for people.
 - **Stored city no longer supported**: treated as a first visit (FR-006).
 - **A city with no current movies**: its page shows the existing empty message and leaves the site map
@@ -185,7 +189,8 @@ title, description and image match the movie.
 - **FR-002**: That content MUST match what a first-time visitor to the same address sees. Search
   engines MUST NOT be given different content from people.
 - **FR-003**: Content delivered this way MUST NOT be more than 1 hour older than the newest published
-  schedule data.
+  schedule data, unless updating the pages fails. The published pages then stay as they were until an
+  update succeeds, and the failure MUST be logged.
 - **FR-004**: With no city in the address and none remembered, which includes every search engine,
   pages MUST show content for all of Lithuania. Returning visitors keep seeing their remembered city.
 - **FR-005**: Every movie page MUST say, in words people can also see, when and where the movie is
@@ -224,7 +229,7 @@ title, description and image match the movie.
 - **FR-014**: Requests for `/` and for unknown language prefixes MUST receive a real redirect in the
   response. The remembered-language behaviour for returning visitors MUST keep working.
 - **FR-015**: Unknown addresses and movies no longer listed MUST receive a real "not found" response.
-  Temporary failures MUST receive a real "temporarily unavailable" response.
+  A failure to read data MUST NOT change published pages.
 - **FR-016**: Only the public production address MUST be listed as preferred or be open to crawlers;
   other copies of the site MUST ask not to be listed.
 
@@ -257,7 +262,7 @@ title, description and image match the movie.
 - **SC-003**: 100% of the site map's addresses answer directly with success, and 100% of a sample of
   unknown addresses answer "not found".
 - **SC-004**: A movie that stops being listed leaves the site map, and its address answers "not found",
-  within 1 hour of the data refresh that removed it.
+  within 1 hour of the data refresh that removed it, when updating the pages succeeds.
 - **SC-005**: Within 8 weeks of the site being submitted to Google, at least 80% of submitted movie
   pages are reported as indexed in Google's owner tools.
 - **SC-006**: Within 8 weeks of submission, for at least 5 of 10 sampled movies now showing, a Google

@@ -14,8 +14,8 @@ acceptance criteria. Test tasks come first in each phase and must fail before th
 
 **Organization**:
 
-- Phase 1: small shared setup.
-- Phase 2: the API addition, which ships on its own first, then the shared rendering pipeline.
+- Phase 1: the API addition, which ships on its own first.
+- Phase 2: shared setup and the rendering pipeline.
 - Phases 3–6: one phase per user story, in priority order. Each ends with a commit.
 - Phase 7: documents, final checks, production and the owner's steps.
 
@@ -30,39 +30,39 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 ---
 
-## Phase 1: Setup
+## Phase 1: API Addition (First PR)
 
-**Purpose**: The settings everything else reads.
+**Purpose**: The one API change, which has to be live before later builds can work, because builds validate against production's API (research §3). This PR carries only this and the 003 documents. Nothing visible changes.
 
-- [ ] T001 [P] Add the one public address, `export const SITE_URL = 'https://seansai.vercel.app'`, with a comment that a move to `seansai.lt` changes only this line (FR-022), in `apps/web/src/lib/site.ts`
-- [ ] T002 [P] In `apps/web/vite.config.ts`, using `defineConfig(({ isPreview, isSsrBuild }) => ...)`: set `build.cssCodeSplit: false` so one stylesheet is linked from every page (research §2). Set `build.outDir` from `BUILD_OUT_DIR`, default `dist`, with `-prerender` added for SSR builds, so concurrent builds never share a folder. For `vite preview` only, use `appType: 'mpa'`, because the development server needs its fallback to `index.html`, and add a `configurePreviewServer` plugin that adds the trailing slash when the path is a directory, keeping any query string. Without it, `/lt/movie/x` answers 404 from `x/index.html` (measured, research §10)
-- [ ] T002a [P] Add `apps/web/scripts/build-paths.ts`, exporting the output folder from `BUILD_OUT_DIR` with default `dist`, and use it in `apps/web/scripts/compress-assets.ts` and `apps/web/scripts/check-bundle-size.ts`, which hardcode `dist` today. `apps/web/scripts/prerender.ts` is its third user (Constitution I)
-- [ ] T003 [P] Ignore `dist-*/` in `.gitignore`, `.prettierignore` and `eslint.config.js`
+**⚠️ CRITICAL**: No user story can be deployed until T005 is merged.
+
+- [ ] T001 [P] Add failing tests for `showingAt` on `GET /api/v1/movies/:movieId`: "Cinemas with a screening of this movie that hasn't started, within the requested `city`", "Ordered by city name, then cinema name", "Empty when there are none", in `apps/api/tests/integration/movies.test.ts`
+- [ ] T002 [P] Add a failing test that every `/api/` response, including errors, sends `X-Robots-Tag: noindex`, in `apps/api/tests/integration/server.test.ts`
+- [ ] T003 Add `showingAt: Array<{ id, name, cityId, cityName }>` to `MovieDetailResponseSchema` in `packages/shared/src/api.ts`, one query in `apps/api/src/db/queries.ts` with no N+1, and the field in `apps/api/src/routes/movies.ts`
+- [ ] T004 Send `X-Robots-Tag: noindex` on `/api/` responses from `apps/api/src/server.ts`, kept out of `SECURITY_HEADERS` because `tests/unit/vercel-config.test.ts` keeps those equal to `vercel.json`'s page headers. Comment on why robots.txt doesn't block the API instead (research §7)
+- [ ] T005 Document `showingAt` in `specs/001-cinema-showtimes/contracts/public-api.md`, run all quality gates, run a reviewer agent over the change against `.specify/memory/constitution.md` and fix what it finds (Constitution I), then commit. **Ask the owner to approve a PR from this branch, carrying the 003 documents and the API addition**, wait for CI to pass, and merge. After it merges, confirm the PR shows as merged, and confirm `curl https://seansai.vercel.app/api/v1/movies/<id>?city=all` includes `showingAt`, and continue on a new branch from `main`, `003-seo-pages`
+
+**Checkpoint**: Production's API has `showingAt`, and nothing visible has changed.
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: The API addition that has to be live first, then what renders a page to HTML and takes over in the browser.
+**Purpose**: On the new branch `003-seo-pages`: the settings everything else reads, then what renders a page to HTML and takes over in the browser.
 
-**⚠️ CRITICAL**: No user story can be deployed until T008 is merged, because builds validate against production's API (research §3).
+### Setup
 
-### API addition: first PR
-
-- [ ] T004 [P] Add failing tests for `showingAt` on `GET /api/v1/movies/:movieId`: "Cinemas with a screening of this movie that hasn't started, within the requested `city`", "Ordered by city name, then cinema name", "Empty when there are none", in `apps/api/tests/integration/movies.test.ts`
-- [ ] T005 [P] Add a failing test that every `/api/` response, including errors, sends `X-Robots-Tag: noindex`, in `apps/api/tests/integration/server.test.ts`
-- [ ] T006 Add `showingAt: Array<{ id, name, cityId, cityName }>` to `MovieDetailResponseSchema` in `packages/shared/src/api.ts`, one query in `apps/api/src/db/queries.ts` with no N+1, and the field in `apps/api/src/routes/movies.ts`
-- [ ] T007 Send `X-Robots-Tag: noindex` on `/api/` responses from `apps/api/src/server.ts`, kept out of `SECURITY_HEADERS` because `tests/unit/vercel-config.test.ts` keeps those equal to `vercel.json`'s page headers. Comment on why robots.txt doesn't block the API instead (research §7)
-- [ ] T008 Document `showingAt` in `specs/001-cinema-showtimes/contracts/public-api.md`, run all quality gates, run a reviewer agent over the change against `.specify/memory/constitution.md` and fix what it finds (Constitution I), then commit. **Ask the owner to approve a PR from this branch, carrying the 003 documents and the API addition**, wait for CI to pass, and merge. After it merges, confirm the PR shows as merged, and confirm `curl https://seansai.vercel.app/api/v1/movies/<id>?city=all` includes `showingAt`, and continue on a new branch from `main`, `003-seo-pages`
-
-**Checkpoint**: Production's API has `showingAt`, and nothing visible has changed.
+- [ ] T006 [P] Add the one public address, `export const SITE_URL = 'https://seansai.vercel.app'`, with a comment that a move to `seansai.lt` changes only this line (FR-022), in `apps/web/src/lib/site.ts`
+- [ ] T007 [P] In `apps/web/vite.config.ts`, using `defineConfig(({ isPreview, isSsrBuild }) => ...)`: set `build.cssCodeSplit: false` so one stylesheet is linked from every page (research §2). Set `build.outDir` from `BUILD_OUT_DIR`, default `dist`, with `-prerender` added for SSR builds, so concurrent builds never share a folder. For `vite preview` only, use `appType: 'mpa'`, because the development server needs its fallback to `index.html`, and add a `configurePreviewServer` plugin that adds the trailing slash when the path is a directory, keeping any query string. Without it, `/lt/movie/x` answers 404 from `x/index.html` (measured, research §10)
+- [ ] T007a [P] Add `apps/web/scripts/build-paths.ts`, exporting the output folder from `BUILD_OUT_DIR` with default `dist`, and use it in `apps/web/scripts/compress-assets.ts` and `apps/web/scripts/check-bundle-size.ts`, which hardcode `dist` today. `apps/web/scripts/prerender.ts` is its third user (Constitution I)
+- [ ] T008 [P] Ignore `dist-*/` in `.gitignore`, `.prettierignore` and `eslint.config.js`
 
 ### Rendering pipeline
 
 - [ ] T009 [P] Add failing tests for the escaping helper: a title containing `</script>`, `<`, `>`, `&` and U+2028/9 can't break out of embedded JSON, and quotes can't break out of attributes, in `apps/web/tests/unit/html-escape.test.ts`
-- [ ] T010 [P] Add failing tests: `useCity` returns city `all` and `isChosen: false` when nothing is remembered or the stored city is no longer supported, and a remembered city stays, in `apps/web/tests/unit/router.test.tsx`
+- [ ] T010 [P] Add failing tests: `useCity` returns city `all` and `isChosen: false` when nothing is remembered, and a remembered city stays; when the API answers `invalid_city` for a stored city or a `?city=` link, that city is forgotten, the option is removed from the address, and the page shows all of Lithuania with `isChosen: false`, in `apps/web/tests/unit/router.test.tsx`, with `forgetCity` in `apps/web/tests/unit/settings.test.ts`
 - [ ] T011 Add `escapeHtml` and `serializeForScript` in `apps/web/src/lib/html-escape.ts`
-- [ ] T012 Change `useCity` in `apps/web/src/app/city.tsx` to return the effective city, `all` until chosen, plus `isChosen`. Remove `city === null` branches from `apps/web/src/api/hooks.ts`, `apps/web/src/pages/MovieListPage.tsx`, `apps/web/src/pages/MoviePage.tsx`, `apps/web/src/components/organisms/CitySwitcher/CitySwitcher.tsx` and `pageContext` in `apps/web/src/app/router.tsx`. The first-visit dialog stops opening here, and US1 adds its replacement
+- [ ] T012 Change `useCity` in `apps/web/src/app/city.tsx` to return the effective city, `all` until chosen, plus `isChosen`. Remove `city === null` branches from `apps/web/src/api/hooks.ts`, `apps/web/src/pages/MovieListPage.tsx`, `apps/web/src/pages/MoviePage.tsx`, `apps/web/src/components/organisms/CitySwitcher/CitySwitcher.tsx` and `pageContext` in `apps/web/src/app/router.tsx`. Add `forgetCity` to `apps/web/src/storage/settings.ts` and to `city.tsx`, and call it from an effect in both pages on `invalid_city`, since only they can see that error (research §9). The first-visit dialog stops opening here, and US1 adds its replacement
 - [ ] T013 Show `ErrorState` only when a query has no data at all, so a failed background refetch never replaces content (research §7), with tests, in `apps/web/src/pages/MoviePage.tsx`, `apps/web/src/pages/MovieListPage.tsx` and `apps/web/tests/unit/MoviePage.test.tsx`
 - [ ] T014 Add `apps/web/src/entry-prerender.tsx`: `renderPage(url, queryClient)` runs `createStaticHandler(createRoutes(queryClient))`, renders `AppProviders` and `StaticRouterProvider` with `hydrate={false}` through `renderToString`, and returns the markup with the dehydrated cache
 - [ ] T015 Add `apps/web/public/boot-gate.js`, a small blocking script that sets `data-boot="client"` on `<html>` when the address has a query string, `seansai.city` is in localStorage, or `<meta name="snapshot-date">` isn't today in Vilnius, wrapped so unavailable storage counts as nothing remembered. Any query string counts, including ones the app ignores such as `fbclid`, because the worst case is what visitors get today (research §10). Link it from `apps/web/index.html`, and hide `#root` in that state in `apps/web/src/styles/global.scss`
@@ -84,8 +84,8 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 - [ ] T017 [US1] Add a snapshot server to `apps/web/playwright.config.ts` and `SNAPSHOT_PORT` to `apps/web/tests/e2e/ports.ts`: start the fixture API on its own port, wait for it, build with `SNAPSHOT_API_URL` and `BUILD_OUT_DIR=dist-snapshot` so it doesn't collide with the production server's build, then run `vite preview` with `BUILD_OUT_DIR=dist-snapshot` and `API_PORT` set to that API
 - [ ] T018 [P] [US1] Add failing tests for `pageHead`: unique title per movie including the year when known, description "Up to about 155 characters" in the page's language built from known facts only, missing year, genres or poster are left out rather than guessed, and two records with the same title and year are still reported, in `apps/web/tests/unit/page-head.test.ts`
-- [ ] T019 [P] [US1] Add failing tests for the deploy hook: one `POST` when at least one source has status `success`, none when all failed or the URL is unset, a failure or 10 s timeout is logged and doesn't change the result, and the URL is never logged, in `apps/api/tests/unit/deploy-hook.test.ts`, with the setting in `apps/api/tests/unit/config.test.ts`
-- [ ] T020 [P] [US1] Add failing tests for the build's safety checks: a failed request after retries, a response failing validation, an empty general list, a page with no `<h1>` and a page over budget each exit non-zero and write nothing to the output, in `apps/web/tests/unit/prerender.test.ts`
+- [ ] T019 [P] [US1] Add failing tests for the deploy hook: one `POST` when at least one source has status `success`, none when all failed or the URL is unset, one retry after a failure or 10 s timeout, a second failure is logged and doesn't change the result, and the URL is never logged, in `apps/api/tests/unit/deploy-hook.test.ts`, with the setting in `apps/api/tests/unit/config.test.ts`
+- [ ] T020 [P] [US1] Add failing tests for the build's safety checks: a failed request after retries, a response failing validation, an empty general list, a page with no `<h1>` and a page over budget each exit non-zero and write nothing to the output; two pages sharing a title or description log a warning naming them and don't fail the build, in `apps/web/tests/unit/prerender.test.ts`
 - [ ] T021 [P] [US1] Add failing tests for `CityChoice`: it shows only when no city is chosen, is normal page content rather than a dialog, doesn't take focus, "Keep all of Lithuania" remembers `all` and removes it, and "Choose city" opens the existing dialog, in `apps/web/tests/unit/CityChoice.test.tsx`
 - [ ] T022 [P] [US1] Add failing no-script tests, with JavaScript disabled, against the snapshot server: a movie page has its title, facts, summary, screenings and ticket links; a movie with none today has its summary and next-date link; `/lt/` has plain links to every movie; `<html lang>` and exactly one `<h1>` are right, in `apps/web/tests/e2e/seo.spec.ts`
 - [ ] T023 [P] [US1] Add failing browser tests with `page.clock` set to the fixture time (`helpers.ts` gives the instant): a first visit has content at first paint and no prompt covering it, no hydration or CSP messages in the console, no accessibility violations; with a remembered city, no all-of-Lithuania content is ever visible and that city's content then appears; a first-time visitor opening `?date=`, `?city=` or a filter link never sees the plain snapshot, sees the requested view, and gets no hydration messages; with a snapshot from an earlier day, current data replaces it; a failed background API request leaves the content in place, in `apps/web/tests/e2e/seo.spec.ts`
@@ -98,8 +98,8 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 - [ ] T026 [P] [US1] Add `CityChoice` with its stylesheet and index in `apps/web/src/components/organisms/CityChoice/`, new texts in `apps/web/src/i18n/lt.ts` and `apps/web/src/i18n/en.ts`, and show it from `apps/web/src/components/templates/PageLayout/PageLayout.tsx`. Update `CitySwitcher`'s comment, since the page no longer asks first
 - [ ] T027 [US1] Add a visible summary of when and where the movie is next showing to `MovieHeader`, from `screeningDates[0]` and `showingAt` (city names for all of Lithuania, cinema names within a city), in `apps/web/src/pages/MoviePage.tsx` and `apps/web/src/pages/MoviePage.module.scss` (FR-005)
 - [ ] T028 [US1] Add `useDocumentHead(head)` in `apps/web/src/app/document-head.ts`, updating the existing head tags as people navigate, and call it from `apps/web/src/pages/MoviePage.tsx`, `apps/web/src/pages/MovieListPage.tsx` and `apps/web/src/pages/NotFoundPage.tsx`
-- [ ] T029 [US1] Add `apps/web/scripts/prerender.ts`: read data as in `specs/003-seo-friendly-web/contracts/snapshot.md` (`snapshot={build time}` on every request, "At most 8 requests at once, each retried twice", shared schemas), render `/{lang}/` and `/{lang}/movie/{movieId}` in both languages, write each to `{outDir}/{path}/index.html` from the built `index.html` with `<html lang>`, head tags, `<meta name="snapshot-date">`, markup and `#initial-data`, and apply the safety checks and HTML budgets (movie ≤ 40 kB and list ≤ 80 kB compressed). Commit nothing generated
-- [ ] T030 [US1] Update the `build` script in `apps/web/package.json`: `vite build`, then `vite build --ssr src/entry-prerender.tsx`, whose output folder comes from T002, then the existing compression and bundle checks, then `node scripts/prerender.ts`, which runs when `VERCEL` or `SNAPSHOT_API_URL` is set and otherwise exits without writing pages
+- [ ] T029 [US1] Add `apps/web/scripts/prerender.ts`: read data as in `specs/003-seo-friendly-web/contracts/snapshot.md` (`snapshot={build time}` on every request, "At most 8 requests at once, each retried twice", shared schemas), render `/{lang}/` and `/{lang}/movie/{movieId}` in both languages, write each to `{outDir}/{path}/index.html` from the built `index.html` with `<html lang>`, head tags, `<meta name="snapshot-date">`, markup and `#initial-data`, apply the safety checks and HTML budgets (movie ≤ 40 kB and list ≤ 80 kB compressed), and compare all pages' titles and descriptions, logging a warning for duplicates (SC-002). Commit nothing generated
+- [ ] T030 [US1] Update the `build` script in `apps/web/package.json`: `vite build`, then `vite build --ssr src/entry-prerender.tsx`, whose output folder comes from T007, then the existing compression and bundle checks, then `node scripts/prerender.ts`, which runs when `VERCEL` or `SNAPSHOT_API_URL` is set and otherwise exits without writing pages
 - [ ] T031 [P] [US1] Add `apps/api/src/refresh/deploy-hook.ts`, the optional `VERCEL_DEPLOY_HOOK_URL` in `apps/api/src/config.ts`, and call the hook from `runAll` in `apps/api/src/refresh/pipeline.ts`, which serves both the home job and the cron route. Log `Snapshot build requested` or an error
 - [ ] T032 [US1] Run `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test` and `npm run test:e2e`, then commit `feat(web): serve real movie pages as a daily snapshot (003 US1)` and push to create a preview
 - [ ] T033 [US1] On the preview, do the checks from `specs/003-seo-friendly-web/quickstart.md` §2 for hydration, CSP and non-ASCII movie addresses. For anything that fails, apply the fallback in `specs/003-seo-friendly-web/research.md` §2, §5 or §6, and record what was measured in that file
@@ -205,8 +205,8 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: None.
-- **Foundational (Phase 2)**: After Setup. T008 merges separately and must be live first, since every later build reads production's API.
+- **API addition (Phase 1)**: None. T005 merges separately and must be live first, since every later build reads production's API.
+- **Foundational (Phase 2)**: After T005 is merged, on `003-seo-pages`.
 - **US1 (Phase 3)**: After Phase 2.
 - **US2 (Phase 4)**: After US1, as it extends the snapshot script and page descriptions.
 - **US3 (Phase 5)**: After US1. Its site map and canonical parts use US2's work, so do it after US2.
@@ -221,8 +221,8 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 ### Parallel Opportunities
 
-- **Setup**: T001, T002, T002a, T003.
-- **API addition**: T004, T005.
+- **API addition**: T001, T002.
+- **Setup**: T006, T007, T007a, T008.
 - **Pipeline**: T009, T010.
 - **US1 tests**: T018–T023, T024a. **US1 implementation**: T025, T026, T031.
 - **US2 tests**: T034–T038a. **US2 implementation**: T041, T042.
@@ -247,7 +247,7 @@ T022 and T023 share one file, so they're parallel with these but not with each o
 
 ### MVP First
 
-1. Phases 1 and 2, with T008's PR merged.
+1. Phase 1, with T005's PR merged, then Phase 2.
 2. Phase 3 (US1), and confirm the unproven parts on a preview at T033. **Stop here if hydration or CSP fails, and apply the fallback before building further.**
 
 US1 alone gives readable pages, but don't release it to Google yet. Without US2, unknown addresses still answer 200 and there's no site map.
@@ -263,8 +263,8 @@ US1 alone gives readable pages, but don't release it to Google yet. Without US2,
 
 | Phase | Tasks |
 |-------|-------|
-| Setup | 4 |
-| Foundational | 13 |
+| API addition | 5 |
+| Foundational | 12 |
 | US1 | 18 |
 | US2 | 14 |
 | US3 | 9 |
