@@ -80,5 +80,5 @@ New and changed fields on the API's `Config`:
 ### Refresh secret (spec Key Entity)
 
 `CRON_SECRET` is a random value of at least 32 hex characters, set in the Vercel project's
-environment variables for Production only. Vercel Cron sends it as `Authorization: Bearer
+environment variables for Production only. The maintainer sends it as `Authorization: Bearer
 <secret>`. It's never committed or logged.

@@ -129,15 +129,14 @@ and run the self-hosted container with saved test data and confirm it works as b
   after one refresh, with no duplicate screenings.
 - **First deploy**: the database is empty until the first refresh. Visitors see the existing "no
   screenings" state, and the maintainer triggers a refresh right after deploying.
-- **Daylight-saving time**: the refresh runs just after midnight Lithuanian time in winter and just
-  after 01:00 in summer. Both are before morning use.
-- **Cinemas that publish only today's sessions (Cinamon)**: changes they make later that day are
-  not picked up until the next night. This is an accepted, documented gap.
+- **Cinemas that publish only today's sessions (Cinamon)**: the refresh sees only that day's
+  remaining sessions, so a machine first switched on at 19:00 shows only that evening's, and changes
+  made later that day wait for the next day's run. This is an accepted, documented gap.
 - **Approaching a free-plan limit**: the providers warn by email. The site must never move to a
   paid tier automatically.
 - **Preview deployments**: they use their own database, separate from production's, so a preview
   (including one with a database change) can never alter production's data or its structure. They
-  never run the nightly refresh, so previews cannot double the load on cinema websites. The
+  never run the daily refresh, so previews cannot double the load on cinema websites. The
   maintainer fills a preview's database by hand when needed.
 
 ## Requirements *(mandatory)*
@@ -177,8 +176,8 @@ and run the self-hosted container with saved test data and confirm it works as b
   (content restrictions, no framing, no content-type sniffing, limited referrer).
 - **FR-013**: Database credentials, the refresh secret and the contact address MUST be set in the
   hosting provider's settings and MUST NOT be stored in the repository.
-- **FR-014**: Each change MUST be viewable on its own preview address before it goes live. Only the
-  production site runs the nightly refresh.
+- **FR-014**: Each change MUST be viewable on its own preview address before it goes live. Only
+  production's database gets the daily refresh.
 - **FR-015**: The self-hosted container and local development MUST keep their current behaviour:
   hourly refresh, 3-hour staleness, local data file, and the saved-test-data mode.
 - **FR-016**: The project documentation MUST explain how to deploy Seansai for free, which settings
@@ -188,9 +187,9 @@ and run the self-hosted container with saved test data and confirm it works as b
 
 - **Refresh run**: one collection of schedules from all enabled cinemas followed by the cleanup.
   It has a start time, an outcome per source (updated, failed, or disabled) and the number of
-  screenings and movies removed. It is started by the nightly schedule or by the maintainer.
-- **Refresh secret**: a value known only to the hosting platform's scheduler and the maintainer.
-  Holding it is the only way to start a refresh in the hosted deployment.
+  screenings and movies removed. It is started by the job at home or by the maintainer.
+- **Refresh secret**: a value known only to the maintainer. Holding it is the only way to start a
+  refresh from the hosted deployment.
 - **Schedule data**: the movies, screenings and per-source refresh status defined in feature 001.
   Unchanged by this feature, except that it now lives in a shared hosted store.
 

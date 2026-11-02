@@ -390,11 +390,11 @@ US2 (T044).
   - `curl -s localhost:3000/` returns `index.html`.
   - If Docker isn't available, record that this check was skipped in the PR description.
 - [ ] T052 [US3] Check the kill switch on production (quickstart §5).
-  - Set `DISABLED_SOURCES=forum` in Production and redeploy.
-  - Trigger the cron by hand: the summary shows `forum: disabled`, and Forum's cinemas are gone from the site.
-  - Remove the variable and redeploy.
+  - Set `DISABLED_SOURCES=forum` in Production and in `refresh.env`, and redeploy.
+  - Run the job by hand: the log shows `forum: disabled`, and Forum's cinemas are gone from the site.
+  - Remove the variable from both and redeploy.
 - [ ] T053 [US3] Commit `build: drop the native toolchain from the container (002 US3)` on the follow-up branch.
-- [ ] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, Vercel's Cron Jobs tab shows a successful run and `/api/v1/health` showed that night's `lastSuccessAt`.
+- [ ] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, `/api/v1/health` showed that day's `lastSuccessAt`.
   - Vercel Usage: invocations, Active CPU, Provisioned Memory, Fast Origin and Fast Data Transfer are each < 50% of the Hobby allowance, prorated.
   - Turso: rows read and written, and storage, are each < 50% of Free.
   - Both accounts have no charges and no payment method.

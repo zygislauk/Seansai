@@ -2,12 +2,7 @@ import { loadConfig } from './config.ts';
 import { openDb } from './db/index.ts';
 import { Repository } from './db/repository.ts';
 import { createLogger } from './lib/logger.ts';
-import {
-  exitCodeOf,
-  minHoursBetweenRuns,
-  refreshIfDue,
-  requireSharedDatabase,
-} from './refresh/if-due.ts';
+import { exitCodeOf, refreshIfDue, requireSharedDatabase } from './refresh/if-due.ts';
 import { createRefreshPipeline } from './refresh/pipeline.ts';
 import { logRobotsOverrides } from './sources/index.ts';
 import { createClock } from './sources/runtime.ts';
@@ -30,7 +25,7 @@ async function main(): Promise<void> {
     sources: () => repo.listSources(),
     run: createRefreshPipeline(config, repo, clock, logger).runAll,
     clock,
-    minHours: minHoursBetweenRuns(process.argv.slice(2)),
+    args: process.argv.slice(2),
     logger,
   });
   db.close();

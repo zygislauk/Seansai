@@ -40,7 +40,7 @@ change.
 | `TURSO_AUTH_TOKEN`   | Production; Preview   | Turso integration (or by hand) | database credentials (FR-013), one token per database |
 | `CRON_SECRET`        | Production            | maintainer, `openssl rand -hex 32` | protects the refresh trigger (FR-008)      |
 | `SEANSAI_CONTACT`    | Production, Preview   | maintainer                     | sent in the User-Agent to cinemas (001)         |
-| `DISABLED_SOURCES`   | Production (optional) | maintainer                     | kill switch (001)                               |
+| `DISABLED_SOURCES`   | Production (optional) and the job's `refresh.env` | maintainer | kill switch (001): Production hides the cinemas, `refresh.env` stops contacting them |
 
 - Previews use their own database, `seansai-preview`, on the same Turso Free account (spec
   Assumptions). A preview's migrations and writes can never reach production's database.

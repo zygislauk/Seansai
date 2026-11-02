@@ -1,36 +1,39 @@
 import type { Config } from '../config.ts';
 import type { SourceRecord } from '../db/repository.ts';
 import type { Logger } from '../lib/logger.ts';
+import { localDateOf } from '../lib/time.ts';
 import type { DailyRefreshResult } from './daily.ts';
 
 const HOUR_MS = 60 * 60 * 1000;
-/** The limit for every source (research.md §1b), which also holds for a refresh run by hand. */
-const MIN_HOURS_BY_HAND = 1;
-/**
- * The scheduled job checks every hour, so that a machine that was asleep or offline catches up,
- * and this makes it run once a day. Under 24 h, so the time of day is free to move earlier.
- */
-const MIN_HOURS_IF_DUE = 20;
+/** The limit for every source (research.md §1b), however a refresh is started. */
+const MIN_HOURS_BETWEEN_RUNS = 1;
 
-export function minHoursBetweenRuns(args: readonly string[]): number {
-  return args.includes('--if-due') ? MIN_HOURS_IF_DUE : MIN_HOURS_BY_HAND;
+/**
+ * Whether to contact the cinemas now. The scheduled job (`--if-due`) checks every hour, so that a
+ * machine that was asleep or offline catches up, and runs on the first check of each Vilnius day.
+ * That keeps the time from drifting, and it is what suits a cinema listing only today's sessions.
+ */
+export function isDue(lastAttempt: Date | null, now: Date, args: readonly string[]): boolean {
+  if (lastAttempt === null) return true;
+  if (now.getTime() - lastAttempt.getTime() < MIN_HOURS_BETWEEN_RUNS * HOUR_MS) return false;
+  return !args.includes('--if-due') || localDateOf(lastAttempt) !== localDateOf(now);
 }
 
-/** Runs the refresh unless any source was attempted within `minHours`; null when it did not. */
+/** Runs the refresh if it is due, going by the latest attempt of any source; null if it was not. */
 export async function refreshIfDue(deps: {
   sources: () => Promise<SourceRecord[]>;
   run: () => Promise<DailyRefreshResult>;
   clock: () => Date;
-  minHours: number;
+  args: readonly string[];
   logger: Logger;
 }): Promise<DailyRefreshResult | null> {
-  const { sources, run, clock, minHours, logger } = deps;
+  const { sources, run, clock, args, logger } = deps;
   const attempts = (await sources()).flatMap(({ lastAttemptAt }) =>
     lastAttemptAt === null ? [] : [lastAttemptAt.getTime()],
   );
-  const hoursSince = (clock().getTime() - Math.max(0, ...attempts)) / HOUR_MS;
-  if (hoursSince < minHours) {
-    logger.info({ hoursSince, minHours }, 'Refreshed too recently; not contacting the cinemas');
+  const latest = attempts.length > 0 ? new Date(Math.max(...attempts)) : null;
+  if (!isDue(latest, clock(), args)) {
+    logger.info({ lastAttemptAt: latest }, 'Refreshed too recently; not contacting the cinemas');
     return null;
   }
   return run();
