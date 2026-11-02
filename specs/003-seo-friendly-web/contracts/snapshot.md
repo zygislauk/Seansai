@@ -26,8 +26,8 @@ produces pages.
 
 ## Reading data
 
-- Requests: `/cities`, `/movies?city=all`, `/movies?city={id}`, `/movies/{id}?city=all`, and
-  `/movies/{id}/screenings?city=all`.
+- Requests: `/cities?lang={lang}`, `/movies?city=all`, `/movies?city={id}`, `/movies/{id}?city=all&lang={lang}`,
+  and `/movies/{id}/screenings?city=all&lang={lang}`.
 - Each carries `snapshot={build time}`, to avoid reading what the CDN cached before the refresh.
 - At most 8 requests at once, each retried twice. Responses are validated with `packages/shared`.
 

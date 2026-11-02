@@ -15,6 +15,9 @@ imported by both the API and the web app.
   `ETag`. `s-maxage` lets Vercel's CDN cache them for 5 minutes and is removed before the
   browser; self-hosted it has no effect
   ([002 hosting contract](../../002-vercel-deploy/contracts/hosting.md#api-response-caching-change-to-feature-001s-public-api)).
+- **Search engines**: responses send `X-Robots-Tag: noindex`, so they stay out of search while the
+  pages that use them can still be rendered (feature 003). Fastify's own 414 and malformed-address
+  400 are written before the header is added.
 - **Errors**: non-2xx responses use
 
   ```json
@@ -81,23 +84,29 @@ start on later dates (by first date).
 
 Search by title (FR-004) is done client-side over this list (≤ a few hundred items).
 
-## `GET /api/v1/movies/{movieId}?city={city}`
+## `GET /api/v1/movies/{movieId}?city={city}&lang={lang}`
 
-Movie details plus the dates on which it has screenings in the city (US2: dates with screenings
-are visibly distinguished).
+Movie details plus when and where it has screenings in the city (US2: dates with screenings are
+visibly distinguished).
 
 ```json
 {
   "movie": { "...": "MovieSummary", "genres": ["drama"], "year": 2026 },
   "screeningDates": ["2026-10-30", "2026-10-31", "2026-11-02"],
-  "availableDates": ["2026-10-30", "2026-10-31", "2026-11-01", "...", "2026-11-19"]
+  "availableDates": ["2026-10-30", "2026-10-31", "2026-11-01", "...", "2026-11-19"],
+  "showingAt": [
+    { "id": "forum-kaunas", "name": "Forum Cinemas Kaunas", "cityId": "kaunas", "cityName": "Kaunas" }
+  ]
 }
 ```
 
-`availableDates` = today … furthest date any cinema has published (FR-010). `404 movie_not_found`
-if the id is unknown.
+- `availableDates` = today … furthest date any cinema has published (FR-010).
+- `showingAt` = cinemas with a screening of this movie that hasn't started, within `city`, ordered by
+  city name, then cinema name; empty when there are none. `cityName` follows `lang`, default `lt`
+  (feature 003).
+- `404 movie_not_found` if the id is unknown.
 
-## `GET /api/v1/movies/{movieId}/screenings?city={city}&date={date}`
+## `GET /api/v1/movies/{movieId}/screenings?city={city}&date={date}&lang={lang}`
 
 `date` is optional and defaults to today (Europe/Vilnius, server clock), so the web app can ask
 for today's screenings in parallel with the movie details instead of waiting for

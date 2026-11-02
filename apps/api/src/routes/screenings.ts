@@ -1,9 +1,8 @@
 import { DateSchema, type ScreeningsResponse } from '@seansai/shared';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { cityName, type Queries } from '../db/queries.ts';
+import { cinemaSummary, type Queries } from '../db/queries.ts';
 import { formatInstant, todayIn } from '../lib/time.ts';
-import { findCity } from '../registry/cities.ts';
 import { ApiError, citySchema, langSchema, parseQuery, setListCaching } from './http.ts';
 import { findMovie } from './movies.ts';
 
@@ -51,19 +50,11 @@ export const screeningsRoutes: FastifyPluginAsync<ScreeningsRouteOptions> = (
       setListCaching(reply);
       return {
         date,
-        screenings: screenings.map(({ cinema, startsAt, ...screening }) => {
-          const cinemaCity = findCity(cinema.cityId);
-          return {
-            ...screening,
-            startsAt: formatInstant(startsAt),
-            cinema: {
-              id: cinema.id,
-              name: cinema.name,
-              cityId: cinema.cityId,
-              cityName: cinemaCity ? cityName(cinemaCity, lang) : cinema.cityId,
-            },
-          };
-        }),
+        screenings: screenings.map(({ cinema, startsAt, ...screening }) => ({
+          ...screening,
+          startsAt: formatInstant(startsAt),
+          cinema: cinemaSummary(cinema, lang),
+        })),
         nextDateWithScreenings,
         freshness,
       };

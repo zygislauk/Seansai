@@ -17,6 +17,7 @@ showingAt: Array<{ id: string; name: string; cityId: string; cityName: string }>
 - Cinemas with a screening of this movie that hasn't started, within the requested `city` (`all` means every
   shown cinema).
 - Ordered by city name, then cinema name. Empty when there are none.
+- `cityName` follows the route's new `lang` option, default `lt`, as on the screenings route.
 - One query, with no N+1 (Constitution VI).
 
 With `screeningDates[0]`, this gives the movie summary (FR-005): when and where the movie is next showing.

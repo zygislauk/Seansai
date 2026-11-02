@@ -194,6 +194,21 @@ describe('GET /movies/{id}', () => {
         year: 2026,
       },
       screeningDates: ['2026-10-30', '2026-10-31'],
+      showingAt: [
+        {
+          id: 'apollo-akropolis',
+          name: 'Apollo Akropolis',
+          cityId: 'vilnius',
+          cityName: 'Vilnius',
+        },
+        {
+          id: 'forum-vingis',
+          name: 'Forum Cinemas Vingis',
+          cityId: 'vilnius',
+          cityName: 'Vilnius',
+        },
+        { id: 'skalvija', name: 'Skalvija', cityId: 'vilnius', cityName: 'Vilnius' },
+      ],
       // Today up to the furthest date any cinema has published (6 November).
       availableDates: [
         '2026-10-30',

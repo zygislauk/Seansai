@@ -95,6 +95,21 @@ describe('buildServer', () => {
     expect(gunzipSync(gzipped.rawPayload).toString()).toBe(plain.body);
   });
 
+  // Sends the header rather than blocking /api/ in robots.txt (research.md §7). The exceptions are
+  // Fastify's 414 for a too-long path parameter and 400 for a malformed address, written before any
+  // hook runs; search engines don't index 4xx answers anyway.
+  test.each([
+    ['an answer', '/api/v1/health', 200],
+    ['an invalid request', '/api/v1/test/query?city=riga', 400],
+    ['an unknown route', '/api/v1/nothing-here', 404],
+    ['a server error', '/api/v1/test/boom', 500],
+  ])('%s from the API asks search engines not to index it', async (_, url, status) => {
+    const response = await app.inject(url);
+
+    expect(response.statusCode).toBe(status);
+    expect(response.headers['x-robots-tag']).toBe('noindex');
+  });
+
   test('list responses are cacheable for 5 minutes and carry an ETag', async () => {
     const first = await app.inject('/api/v1/test/list');
 

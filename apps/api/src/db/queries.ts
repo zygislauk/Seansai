@@ -1,8 +1,8 @@
-import type { Freshness, Lang, ScreeningFormat } from '@seansai/shared';
+import type { CinemaSummary, Freshness, Lang, ScreeningFormat } from '@seansai/shared';
 import { addDays, formatInstant } from '../lib/time.ts';
 import { deriveSourceStatus } from '../refresh/status.ts';
 import type { Cinema, CinemaRegistry } from '../registry/cinemas.ts';
-import { cities, type City } from '../registry/cities.ts';
+import { cities, findCity, type City } from '../registry/cities.ts';
 import type { Db } from './index.ts';
 import { Repository, toMovieRecord, type MovieRecord, type MovieRow } from './repository.ts';
 
@@ -47,7 +47,7 @@ type QueriesOptions = {
   staleAfterMs: number;
 };
 
-const collator = new Intl.Collator('lt');
+export const collator = new Intl.Collator('lt');
 const IN_CINEMAS = 'cinema_id IN (SELECT value FROM json_each(@cinemaIds))';
 
 const SQL = {
@@ -66,6 +66,9 @@ const SQL = {
     SELECT DISTINCT local_date FROM screenings
     WHERE movie_id = @movieId AND ${IN_CINEMAS} AND starts_at > @now
     ORDER BY local_date`,
+  cinemasShowing: `
+    SELECT DISTINCT cinema_id FROM screenings
+    WHERE movie_id = @movieId AND ${IN_CINEMAS} AND starts_at > @now`,
   lastDate: 'SELECT MAX(local_date) AS last_date FROM screenings',
   screenings: `
     SELECT id, cinema_id, starts_at, hall, format, spoken_language, subtitle_language,
@@ -147,6 +150,18 @@ export class Queries {
       args: { ...this.#bounds(cinemas, now), movieId },
     });
     return (rows as unknown as Array<{ local_date: string }>).map((row) => row.local_date);
+  }
+
+  /** Which of these cinemas still have a screening of the movie. */
+  async cinemasShowing(movieId: string, cinemas: readonly Cinema[], now: Date): Promise<Cinema[]> {
+    const { rows } = await this.#db.execute({
+      sql: SQL.cinemasShowing,
+      args: { ...this.#bounds(cinemas, now), movieId },
+    });
+    const showing = new Set(
+      (rows as unknown as Array<{ cinema_id: string }>).map((row) => row.cinema_id),
+    );
+    return cinemas.filter((cinema) => showing.has(cinema.id));
   }
 
   /** Today up to the furthest date any cinema has published (FR-010). */
@@ -253,4 +268,14 @@ export class Queries {
 
 export function cityName(city: City, lang: Lang): string {
   return lang === 'en' ? city.nameEn : city.nameLt;
+}
+
+export function cinemaSummary(cinema: Cinema, lang: Lang): CinemaSummary {
+  const city = findCity(cinema.cityId);
+  return {
+    id: cinema.id,
+    name: cinema.name,
+    cityId: cinema.cityId,
+    cityName: city ? cityName(city, lang) : cinema.cityId,
+  };
 }

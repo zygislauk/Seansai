@@ -1,10 +1,10 @@
 import type { MovieDetailResponse, MovieSummary, MoviesResponse } from '@seansai/shared';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import type { Queries } from '../db/queries.ts';
+import { cinemaSummary, collator, type Queries } from '../db/queries.ts';
 import type { MovieRecord } from '../db/repository.ts';
 import { todayIn } from '../lib/time.ts';
-import { ApiError, citySchema, parseQuery, setListCaching } from './http.ts';
+import { ApiError, citySchema, langSchema, parseQuery, setListCaching } from './http.ts';
 
 type MoviesRouteOptions = { queries: Queries; now: () => Date };
 
@@ -40,6 +40,7 @@ export async function findMovie(queries: Queries, movieId: string): Promise<Movi
 
 export const moviesRoutes: FastifyPluginAsync<MoviesRouteOptions> = (app, { queries, now }) => {
   const QuerySchema = z.object({ city: citySchema((city) => queries.isCity(city)) });
+  const DetailQuerySchema = QuerySchema.extend({ lang: langSchema });
   const codes = { city: 'invalid_city' } as const;
 
   /** The "currently showing" list for a city, ordered as FR-003 requires. */
@@ -62,22 +63,29 @@ export const moviesRoutes: FastifyPluginAsync<MoviesRouteOptions> = (app, { quer
     };
   });
 
-  /** Movie details plus the dates on which it has screenings in the city (US2). */
+  /** Movie details plus when (US2) and where it has screenings in the city. */
   app.get<{ Params: { movieId: string } }>(
     '/movies/:movieId',
     async (request, reply): Promise<MovieDetailResponse> => {
-      const { city } = parseQuery(QuerySchema, request.query, codes);
+      const { city, lang } = parseQuery(DetailQuerySchema, request.query, codes);
       const movie = await findMovie(queries, request.params.movieId);
       const at = now();
-      const [screeningDates, availableDates] = await Promise.all([
-        queries.screeningDates(movie.id, queries.cinemasIn(city), at),
+      const cinemas = queries.cinemasIn(city);
+      const [screeningDates, availableDates, showing] = await Promise.all([
+        queries.screeningDates(movie.id, cinemas, at),
         queries.availableDates(todayIn(at)),
+        queries.cinemasShowing(movie.id, cinemas, at),
       ]);
       setListCaching(reply);
       return {
         movie: { ...movieSummary(movie), genres: movie.genres, year: movie.year },
         screeningDates,
         availableDates,
+        showingAt: showing
+          .map((cinema) => cinemaSummary(cinema, lang))
+          .sort(
+            (a, b) => collator.compare(a.cityName, b.cityName) || collator.compare(a.name, b.name),
+          ),
       };
     },
   );
