@@ -19,6 +19,13 @@
   all cities. Movie pages are not repeated per city.
 - Q: Which public address does this feature target? → A: `seansai.vercel.app` for now. The owner plans
   to move to `seansai.lt` later, and that move isn't part of this feature.
+- Q: Should pages carry a structured description of the movie and its screenings? → A: No. Google's
+  event results don't cover Lithuania or Lithuanian, so it would bring no visible benefit today. This
+  removed User Story 5, FR-019 and SC-009. Other numbers are unchanged.
+- Q: Should crawlers be kept out of the data service? → A: No. They need it to render pages, so its
+  addresses stay reachable and ask not to be listed (FR-011).
+- Q: Which readers may see a screening that has already started? → A: Only readers without scripts,
+  until the next data refresh. This follows from pages being a daily snapshot.
 
 ## Current State
 
@@ -146,27 +153,6 @@ title, description and image match the movie.
 
 ---
 
-### User Story 5 - Search engines understand the content (Priority: P3)
-
-A search engine can read, in a structured form, that a page is about a particular movie and that
-specific screenings take place at specific cinemas and times. This makes the site eligible for
-richer search results.
-
-**Why this priority**: It can make results stand out, but search engines decide whether to use it,
-so it can't be relied on.
-
-**Independent Test**: Run a sample of movie pages through a search engine's public structured-data
-checker and confirm there are no errors.
-
-**Acceptance Scenarios**:
-
-1. **Given** a movie page with screenings, **When** its structured description is read, **Then** the
-   movie and screenings in it match what people see on the page, including ticket links.
-2. **Given** a value isn't known, such as a missing duration, **When** the description is produced,
-   **Then** the value is left out and is never guessed.
-
----
-
 ### Edge Cases
 
 - **Data service down when a page is requested**: the response says "temporarily unavailable". It is
@@ -174,8 +160,8 @@ checker and confirm there are no errors.
   remove the page from search results.
 - **Data not refreshed because the owner's Mac is off (002)**: pages are still served with the newest
   data available and its "updated at" time, so nothing claims to be fresher than it is.
-- **A screening started since the page was produced**: readers without scripts may still see it, within
-  the age limit in FR-003. In the running app people never see it, as FR-007 of feature 001 requires.
+- **A screening started since the page was produced**: readers without scripts may still see it, until
+  the next data refresh. In the running app people never see it, as FR-007 of feature 001 requires.
 - **A movie's address changes because duplicate listings were merged**: the old address leads to the
   surviving movie's page rather than "not found", when the system knows the two are the same movie.
 - **A shared link with `?city=`**: it keeps working and keeps saving that city for people.
@@ -227,8 +213,9 @@ checker and confirm there are no errors.
 - **FR-010**: The site MUST publish a site map of the general list page, every city list page with
   current movies, and every current movie page, in both languages. It MUST reflect each data refresh,
   within the limit in FR-003.
-- **FR-011**: The site MUST publish instructions for crawlers that allow the public pages, keep them
-  out of the data service's addresses, and point to the site map.
+- **FR-011**: The site MUST publish instructions for crawlers that allow the public pages and point to
+  the site map. Crawlers need the data service to render pages, so its addresses MUST stay reachable
+  and instead ask not to be listed.
 - **FR-012**: Every page MUST name its preferred address. A movie address with date, filter or city
   options MUST name the plain movie page, and a list address with a city option MUST name that city's
   list page. These addresses MUST otherwise keep working as they do today.
@@ -241,14 +228,12 @@ checker and confirm there are no errors.
 - **FR-016**: Only the public production address MUST be listed as preferred or be open to crawlers;
   other copies of the site MUST ask not to be listed.
 
-**Sharing, structure and limits**
+**Sharing and limits**
 
 - **FR-017**: Every page MUST provide a link-preview title, description and image: the movie's poster
   if it has one, otherwise a general Seansai image. The site MUST also have a site icon.
 - **FR-018**: Pages MUST keep meeting feature 001's speed and load targets (SC-002, SC-007 there) and
   feature 002's free-plan rule (FR-011 there), now including crawler traffic.
-- **FR-019**: Movie pages with screenings MUST offer a structured description of the movie and its
-  screenings that matches the visible page and leaves out unknown values.
 - **FR-020**: Everything people can do today MUST keep working as it does, including search, dates,
   filters, the language and city switchers, shared links and accessibility (feature 001).
 - **FR-021**: The owner MUST be able to prove ownership of the site to search engines' free owner
@@ -261,8 +246,6 @@ checker and confirm there are no errors.
 - **Public page**: an address people and search engines can open. It has a language, a preferred
   address, a counterpart in the other language, a title, a description and a preview image.
 - **Site map entry**: one current public page, with when its data last changed.
-- **Structured movie description**: a machine-readable account of one movie and its screenings, drawn
-  from the same data as the visible page.
 
 ## Success Criteria *(mandatory)*
 
@@ -284,7 +267,6 @@ checker and confirm there are no errors.
   connection, for at least 75% of visits.
 - **SC-008**: A sample of 10 movie links shows the correct title, description and image in Facebook's
   and Messenger's link previews.
-- **SC-009**: A public structured-data checker reports no errors on a sample of 10 movie pages.
 - **SC-010**: Monthly hosting and database cost stays at zero.
 
 ## Assumptions
@@ -298,12 +280,11 @@ checker and confirm there are no errors.
   work, and FR-022 keeps it small. Search standing may dip for a while after the move.
 - **No synopses**: the site doesn't collect them, so descriptions are composed from known facts. Adding
   synopses would likely improve rankings, but it means collecting new data and is out of scope.
-- **Out of scope**: link building, paid search, advertising, analytics, blog or editorial content, and
-  promotion on other sites.
+- **Out of scope**: link building, paid search, advertising, analytics, blog or editorial content,
+  promotion on other sites, and structured descriptions for richer search results.
 - **Screening pages**: individual dates aren't separate search targets. They stay usable but point to
   the plain movie page (FR-012).
-- **Posters** in previews and structured descriptions stay on the cinemas' own image hosting, as they
-  do on the pages today.
+- **Posters** in previews stay on the cinemas' own image hosting, as they do on the pages today.
 - **Cinemas' awareness**: being findable makes the site more visible to the cinemas whose schedules it
   shows. Screening links keep sending people to the cinemas' own ticket pages (feature 001, FR-009).
 - **Dependencies**: the daily refresh from feature 002 keeps movie data current. The owner registers
