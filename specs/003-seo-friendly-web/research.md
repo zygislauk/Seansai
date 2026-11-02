@@ -161,14 +161,24 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
 ## 10. Returning visitors and the first paint
 
 - **Decision**: `boot-gate.js`, a small blocking script in `<head>`, sets `data-boot="client"` on `<html>`
-  when localStorage holds a city, or when the snapshot's date isn't today in Vilnius. CSS hides `#root` in
-  that state. `main.tsx` makes the same check: match means `hydrateRoot`, otherwise `createRoot`.
+  when the address has a query string, when localStorage holds a city, or when the snapshot's date isn't
+  today in Vilnius. CSS hides `#root` in that state. `main.tsx` reads that attribute: unset means
+  `hydrateRoot`, set means `createRoot`, and it removes the attribute when the first render commits, so
+  `#root` is shown again.
 - **Rationale**: Without it, a returning Vilnius visitor sees all of Lithuania's movies flash before their
   own. With it, they get what they get today, and first-time visitors get the snapshot straight away.
-- **Comparison**: both functions share one module, so they can't disagree. `hydrateRoot` falls back to a
-  client render if there's a mismatch (for example if Node and the browser format a date differently), and
-  `onRecoverableError` logs it. Playwright fails on any such message.
+- **Query strings**: a snapshot only ever holds the plain page, so a link with `?date=`, `?city=` or a filter
+  would otherwise show the wrong content and then fail to hydrate. Any query string counts, even ones the app
+  ignores such as `fbclid`, which keeps the rule simple. Those visitors get what they get today.
+- **Comparison**: `main.tsx` has only one source for the decision, so the two can't disagree. `hydrateRoot`
+  falls back to a client render if there's a mismatch (for example if Node and the browser format a date
+  differently), and `onRecoverableError` logs it. Playwright fails on any such message.
 - **Without scripts**: the gate doesn't run, so the content stays visible.
+- **Testing the snapshot locally** (measured 2026-11-02 on Vite 8.3.5 with a throwaway site): `vite preview` in
+  `mpa` mode answers 404 for `/lt/movie/x` when the file is `lt/movie/x/index.html`, though `/lt/movie/x/`
+  works. A `configurePreviewServer` middleware that adds the slash when the path is a directory made it answer
+  200, including with a query string and a percent-encoded non-ASCII id, while unknown addresses stayed 404. This
+  is about Vite's preview server only: Vercel's behaviour for such paths is still checked on the first preview.
 
 ## 11. City pages
 

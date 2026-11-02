@@ -10,8 +10,8 @@ produces pages.
 `npm run build -w @seansai/web` runs, in order:
 
 1. `vite build`: the browser app, with one merged stylesheet.
-2. `vite build --ssr src/entry-prerender.tsx --outDir dist-prerender`: the page renderer, outside what is
-   served.
+2. `vite build --ssr src/entry-prerender.tsx`: the page renderer, written to `{output folder}-prerender`,
+   outside what is served.
 3. The existing compression and bundle-size steps. Compression comes first so the snapshot doesn't get
    `.br` and `.gz` copies of every page, which only the self-hosted server uses.
 4. `node scripts/prerender.ts`: runs when `VERCEL` or `SNAPSHOT_API_URL` is set, and is skipped otherwise. It
@@ -22,6 +22,7 @@ produces pages.
 | `VERCEL` set | Snapshot required. It reads `${SITE_URL}/api/v1`. |
 | `SNAPSHOT_API_URL` set | Snapshot reads this API instead. Used by CI and local checks. |
 | Neither | No snapshot: the Docker image and ordinary `npm run build` |
+| `BUILD_OUT_DIR` set | The output folder, default `dist`. Lets concurrent test builds stay apart. |
 
 ## Reading data
 

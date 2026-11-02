@@ -15,8 +15,8 @@ prompt. The schedule data changes once a day, so the pages become a **daily stat
 - **Pages**: each page carries its own title, description, preferred address, language links and
   preview tags. Each language gets one list page per city, at `/{lang}/city/{cityId}`.
 - **Taking over in the browser**: first-time visitors' pages are hydrated from data embedded in the
-  page. Returning visitors with a remembered city, and visitors to a page from an earlier day, get a
-  normal client render, as they do today.
+  page. Returning visitors with a remembered city, links with a query string, and visitors to a page
+  from an earlier day get a normal client render, as they do today.
 - **First visit**: the blocking city dialog is replaced by a choice that doesn't block the page, with
   all of Lithuania shown meanwhile.
 - **Real responses**: `/` and unknown languages redirect in the response. Unknown addresses answer
@@ -41,7 +41,7 @@ SSR build are all parts of what's already installed.
 - Playwright against a real snapshot built from the fixture API: content without scripts, status codes,
   hydration without errors, the first-visit flow, and accessibility. It's served with `vite preview`,
   set to `appType: 'mpa'` for preview only, because the development server still needs its fallback to
-  `index.html`.
+  `index.html`, plus a small preview-only plugin for directory addresses (research §10).
 - Manual checks on the first preview and on production ([quickstart.md](./quickstart.md)).
 
 **Target Platform**: Vercel Hobby, as in 002. The web service stays static, and the API stays one
@@ -142,6 +142,7 @@ specs/003-seo-friendly-web/
 apps/web/
 ├── public/                     # Site icon, default preview image, boot-gate.js, owner verification file
 ├── scripts/
+│   ├── build-paths.ts          # New: the build's output folder, for the three build scripts
 │   └── prerender.ts            # New: fetch data, render pages, write HTML, site map, robots, 404
 ├── src/
 │   ├── entry-prerender.tsx     # New: renders one page to HTML with the app's routes
