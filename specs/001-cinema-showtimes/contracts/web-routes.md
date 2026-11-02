@@ -17,7 +17,7 @@ reload-safe (FR-011). The language is part of the path so shared links open in t
 | `city` | all | city id or `all` | Overrides the remembered city for this link, so shared links show the same screenings; also saved as the new remembered city |
 | `date` | movie | `YYYY-MM-DD` | Omitted = today (US2 scenario 1) |
 | `cinema` | movie | comma-separated cinema ids | Filter (US3) |
-| `format` | movie | comma-separated formats | Filter (US3) |
+| `format` | movie | comma-separated formats: `3D`, `IMAX`, `4DX`, `ScreenX`, `other` | Filter (US3); `2D` is not a filter and is ignored like any unknown value |
 | `audio` | movie | `original`, `dubbed` | Language filter (US3): original language with subtitles, or dubbed |
 
 Unknown parameters are ignored; unknown `movieId` shows a "movie not found" page with a link to the

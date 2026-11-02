@@ -47,8 +47,8 @@ Run with `SOURCES_MODE=fixtures` so results are deterministic. Fixture "today" i
    **Expect**: movie list with posters; today's movies first, most screenings first
    ([public-api.md](./contracts/public-api.md) `GET /movies`).
 3. Select a movie shown at several Vilnius cinemas.
-   **Expect**: one timeline sorted by start time; each row shows cinema, time, hall, format,
-   language/subtitles; no screenings that already started.
+   **Expect**: one timeline sorted by start time; each row shows cinema, time, hall, special format
+   (never 2D), language/subtitles; no screenings that already started.
 4. Click **Pirkti bilietą** (Buy ticket) on a row.
    **Expect**: the cinema's page opens in a new tab.
 5. Open a movie with no screenings left today.
@@ -68,7 +68,7 @@ Run with `SOURCES_MODE=fixtures` so results are deterministic. Fixture "today" i
 1. Switch city to **Visa Lietuva**, then to **Kaunas**.
    **Expect**: movie list and screenings update; reload keeps Kaunas.
 2. Filter by one cinema, then by format `3D`, then by original language.
-   **Expect**: only matching rows; URL reflects filters.
+   **Expect**: only matching rows; URL reflects filters; no `2D` choice is offered.
 3. Apply filters that match nothing.
    **Expect**: "no screenings match" message with **Clear filters**.
 

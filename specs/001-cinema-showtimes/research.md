@@ -129,6 +129,15 @@ Conditions, so the decision stays low-risk and reversible:
 - **Romuva**: calendar events are embedded in the ticket page as a JSON array; `start` is local
   time (`YYYY-MM-DD HH:MM`); no format or language fields.
 
+### Owner decision: do not show 2D (2026-11-02)
+
+2D is the default viewing experience, so the web app shows neither a 2D badge nor a 2D filter
+(FR-008, FR-012). It is hidden in the web app only: adapters, the database and the API keep `2D`.
+That needs no migration or refresh, and keeps "known to be 2D" apart from "cinema did not say"
+(`null`). Normalising 2D to `null` in the adapters was rejected because it would lose that fact.
+
+---
+
 ## 2. Backend: Node.js vs .NET
 
 **Decision**: **Node.js 24 LTS with TypeScript**, using **Fastify** for the HTTP API.

@@ -13,7 +13,8 @@ export type Filters = {
 
 export const noFilters: Filters = { cinemas: [], formats: [], audio: null };
 
-const FORMATS = ScreeningFormatSchema.options;
+/** 2D is the default viewing experience, so it is not a choice; only special formats are. */
+const FORMATS = ScreeningFormatSchema.options.filter((format) => format !== '2D');
 const AUDIO: readonly Audio[] = ['original', 'dubbed'];
 
 /**

@@ -52,7 +52,7 @@ describe('applyFilters', () => {
 
   test('keeps screenings in the chosen formats; an unknown format matches no format filter', () => {
     expect(ids({ formats: ['3D'] })).toEqual(['a']);
-    expect(ids({ formats: ['2D', 'IMAX'] })).toEqual(['b', 'd']);
+    expect(ids({ formats: ['3D', 'IMAX'] })).toEqual(['a', 'd']);
   });
 
   test('"original" keeps screenings not dubbed into Lithuanian; unknown audio is left out', () => {
@@ -81,10 +81,15 @@ describe('URL parameters', () => {
     expect(parseFilters(new URLSearchParams('audio=loud&cinema='))).toEqual(noFilters);
   });
 
+  test('ignores format=2D, which is no longer a filter', () => {
+    expect(parseFilters(new URLSearchParams('format=2D'))).toEqual(noFilters);
+    expect(parseFilters(new URLSearchParams('format=2D,IMAX')).formats).toEqual(['IMAX']);
+  });
+
   test('writes the filters and keeps the other parameters', () => {
     const params = toSearchParams(
       { cinemas: ['skalvija', 'vue-vilnius'], formats: ['3D'], audio: 'original' },
-      new URLSearchParams('date=2026-10-31&format=2D'),
+      new URLSearchParams('date=2026-10-31&format=IMAX'),
     );
     expect(params.toString()).toBe(
       'date=2026-10-31&format=3D&cinema=skalvija%2Cvue-vilnius&audio=original',
@@ -110,7 +115,7 @@ test('filterOptions lists only values present in the list, plus any already sele
       { id: 'skalvija', name: 'Skalvija' },
       { id: 'vue-vilnius', name: 'Vue Vilnius' },
     ],
-    formats: ['2D', '3D', 'IMAX'],
+    formats: ['3D', 'IMAX'],
     audio: ['original', 'dubbed'],
   });
   expect(

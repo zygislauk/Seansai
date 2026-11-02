@@ -6,7 +6,7 @@ import { MemoryRouter, useLocation } from 'react-router';
 import { useFilters } from '../../src/app/filters.ts';
 import { FilterBar } from '../../src/components/organisms/FilterBar/index.ts';
 import { I18nProvider } from '../../src/i18n/index.tsx';
-import { diggerScreenings } from '../helpers/mock-api.ts';
+import { diggerScreenings, screening } from '../helpers/mock-api.ts';
 
 /** FilterBar wired to the URL as the movie page wires it; shows the query string. */
 function Harness({ screenings }: { screenings: Screening[] }) {
@@ -41,7 +41,7 @@ test('offers only the cinemas, formats and audio present in the list', () => {
       .getAllByRole('button')
       .map((button) => button.textContent);
   expect(names('Cinema')).toEqual(['Apollo Akropolis', 'Skalvija', 'Vue Vilnius']);
-  expect(names('Format')).toEqual(['2D', '3D']);
+  expect(names('Format')).toEqual(['3D']);
   expect(names('Language')).toEqual(['Original language', 'Dubbed']);
 });
 
@@ -49,6 +49,28 @@ test('hides a group with a single option', () => {
   renderBar(undefined, diggerScreenings.slice(0, 1));
 
   expect(screen.queryByRole('group', { name: 'Cinema' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Format' })).not.toBeInTheDocument();
+});
+
+test('offers a lone special format when it would narrow the list', () => {
+  const imax = screening({ id: 'forum:1', format: 'IMAX' });
+  renderBar(undefined, [imax, screening({ id: 'vue:1', format: '2D' })]);
+
+  expect(within(group('Format')).getByRole('button', { name: 'IMAX' })).toBeInTheDocument();
+});
+
+test('hides the format group when every screening is 2D or every one is the same format', () => {
+  const { unmount } = render(
+    <MemoryRouter>
+      <I18nProvider lang="en">
+        <Harness screenings={[screening({ format: '2D' }), screening({ format: '2D' })]} />
+      </I18nProvider>
+    </MemoryRouter>,
+  );
+  expect(screen.queryByRole('group', { name: 'Format' })).not.toBeInTheDocument();
+  unmount();
+
+  renderBar(undefined, [screening({ format: 'IMAX' }), screening({ format: 'IMAX' })]);
   expect(screen.queryByRole('group', { name: 'Format' })).not.toBeInTheDocument();
 });
 

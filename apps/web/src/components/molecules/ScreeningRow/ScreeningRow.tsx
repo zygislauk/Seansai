@@ -5,7 +5,10 @@ import { Icon } from '../../atoms/Icon/index.ts';
 import { VisuallyHidden } from '../../atoms/VisuallyHidden/index.ts';
 import styles from './ScreeningRow.module.scss';
 
-/** One screening: time, cinema and city, hall, format and language, and the ticket link. */
+/**
+ * One screening: time, cinema and city, hall, format and language, and the ticket link. 2D gets no
+ * badge: it is the default, so only special formats stand out.
+ */
 export function ScreeningRow({ screening }: { screening: Screening }) {
   const { t, formatTime, languageName } = useT();
   const { cinema, hall, format, spokenLanguage, subtitleLanguage, isDubbed } = screening;
@@ -15,7 +18,7 @@ export function ScreeningRow({ screening }: { screening: Screening }) {
   );
 
   const badges = [
-    format !== null && <Badge key="format">{format}</Badge>,
+    format !== null && format !== '2D' && <Badge key="format">{format}</Badge>,
     isDubbed === true && <Badge key="dubbed">{t('screening.dubbed')}</Badge>,
     isDubbed !== true && spokenLanguage !== null && (
       <Badge key="spoken">{code(spokenLanguage)}</Badge>
