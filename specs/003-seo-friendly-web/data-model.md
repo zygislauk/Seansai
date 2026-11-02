@@ -67,7 +67,9 @@ dist/
 Each HTML file contains:
 
 - `<html lang>`, the PageHead tags and the stylesheet link.
-- Rendered markup inside `#root`, with `data-snapshot-date="YYYY-MM-DD"` on that element.
+- `<meta name="snapshot-date" content="YYYY-MM-DD">`, in `<head>` so `boot-gate.js` can read it before the
+  body is parsed.
+- Rendered markup inside `#root`.
 - `<script type="application/json" id="initial-data">`: the dehydrated query cache for the page.
 
 ### Lifecycle

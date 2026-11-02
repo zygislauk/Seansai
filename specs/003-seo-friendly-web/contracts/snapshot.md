@@ -12,8 +12,10 @@ produces pages.
 1. `vite build`: the browser app, with one merged stylesheet.
 2. `vite build --ssr src/entry-prerender.tsx --outDir dist-prerender`: the page renderer, outside what is
    served.
-3. `node scripts/prerender.ts`: runs when `VERCEL` or `SNAPSHOT_API_URL` is set, and is skipped otherwise.
-4. The existing compression and bundle-size steps, now also checking HTML sizes.
+3. The existing compression and bundle-size steps. Compression comes first so the snapshot doesn't get
+   `.br` and `.gz` copies of every page, which only the self-hosted server uses.
+4. `node scripts/prerender.ts`: runs when `VERCEL` or `SNAPSHOT_API_URL` is set, and is skipped otherwise. It
+   also checks HTML sizes.
 
 | Setting | Effect |
 |---------|--------|
