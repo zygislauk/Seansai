@@ -23,7 +23,7 @@ of the first deploy and the review:
 
 | Environment                     | Database URL                                   | Refresh                         | Stale after |
 | ------------------------------- | ---------------------------------------------- | ------------------------------- | ----------- |
-| Vercel production               | `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (database `seansai`) | daily cron | 27 h |
+| Vercel production               | `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (database `seansai`) | once a day from a machine at home | 48 h |
 | Vercel previews                 | `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (database `seansai-preview`) | none; filled from a laptop when needed | 27 h |
 | Vercel in fixture mode          | `:memory:` (`vercel dev` with saved test data) | one startup refresh, from files | 3 h         |
 | Docker                          | `file:/data/seansai.sqlite` (`DB_PATH`)        | in-process scheduler, hourly    | 3 h         |
@@ -73,7 +73,7 @@ New and changed fields on the API's `Config`:
 | ------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `db`          | `{ url: string; authToken: string \| null }` | `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN` (live mode only, so fixture data never reaches a real database), else `file:${DB_PATH}`, else `:memory:` in fixture mode, else the default file. **Error** on Vercel in live mode without `TURSO_DATABASE_URL`. Replaces `dbPath`. |
 | `refreshMode` | `'scheduler' \| 'cron'`                      | `'cron'` when `VERCEL` is set and `SOURCES_MODE=live`, otherwise `'scheduler'`                       |
-| `staleAfterMs`| `number`                                     | 27 h in `cron` mode, 3 h otherwise                                                                   |
+| `staleAfterMs`| `number`                                     | 48 h in `cron` mode, 3 h otherwise                                                                   |
 | `cronSecret`  | `string \| null`                             | `CRON_SECRET`; when null, the cron route isn't registered                                            |
 | `serveWebApp` | `boolean` (existing)                         | `NODE_ENV=production` and not on Vercel                                                              |
 

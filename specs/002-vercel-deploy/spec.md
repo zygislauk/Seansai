@@ -21,6 +21,11 @@ Decisions agreed with the project owner before this specification was written:
 - Q: How often is data refreshed? → A: Once a day, because the free plan allows scheduled work at
   most once a day. The owner accepted this.
 - Q: Budget? → A: It is a hobby project: everything MUST stay free.
+- Q (2026-11-02, after production): Pasaka and Cinamon refuse requests from Vercel with HTTP 403, so
+  where should refreshing run? → A: The owner chose to treat all venues the same: every source is
+  refreshed once a day from the owner's machine at home, and Vercel only serves the site. The owner
+  accepted that the site stops updating while that machine is off, and that this routes around
+  those cinemas' refusal of Vercel's requests.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -53,27 +58,27 @@ self-hosted copy with the same data.
 
 ### User Story 2 - Schedules stay current without anyone stepping in (Priority: P2)
 
-Every night, shortly after midnight Lithuanian time, Seansai collects the latest schedules from
-all supported cinemas and removes screenings that are over. A visitor in the morning sees the day's
-screenings. If a cinema could not be read, the site still shows everything else and flags that
-cinema once its data is more than a day old.
+Once a day, whenever the owner's machine is on, Seansai collects the latest schedules from all
+supported cinemas and removes screenings that are over. A visitor sees the coming days' screenings.
+If a cinema could not be read, the site still shows everything else and flags that cinema once its
+data is more than two days old.
 
 **Why this priority**: Without refreshing, the data is useful for at most a few days. It depends
 on Story 1, which makes the site reachable.
 
-**Independent Test**: Leave the deployed site alone for two nights. Each morning, screenings for the
-new day are listed and the previous day's are gone, with no manual action. Then disable one cinema
-for a night and check that the site flags it once its data is more than 27 hours old.
+**Independent Test**: With the machine used normally for two days, each day's screenings are listed
+and the previous day's are gone, with no manual action. Then disable one cinema and check that the
+site flags it once its data is more than 48 hours old.
 
 **Acceptance Scenarios**:
 
-1. **Given** the site is deployed in production, **When** the nightly refresh time passes, **Then**
-   every enabled cinema's schedule is updated and past screenings are removed, without anyone
-   acting.
-2. **Given** one cinema's website fails during the nightly refresh, **When** the refresh finishes,
+1. **Given** the site is deployed in production and the machine is on at some point in the day,
+   **When** the daily refresh is due, **Then** every enabled cinema's schedule is updated and past
+   screenings are removed, without anyone acting.
+2. **Given** one cinema's website fails during the daily refresh, **When** the refresh finishes,
    **Then** the other cinemas are still updated, that cinema keeps its previous screenings, and the
    failure is recorded.
-3. **Given** a cinema has had no successful refresh for more than 27 hours, **When** a visitor views
+3. **Given** a cinema has had no successful refresh for more than 48 hours, **When** a visitor views
    movies in its city, **Then** the site says that cinema's information may be missing or
    outdated, as feature 001 does.
 4. **Given** visitors are using the site, **When** they browse, **Then** no request is ever sent to
@@ -115,8 +120,9 @@ and run the self-hosted container with saved test data and confirm it works as b
 
 ### Edge Cases
 
-- **The nightly refresh does not run or fails for every cinema**: visitors keep seeing the previous
-  data. Once it is more than 27 hours old, every affected cinema is flagged.
+- **The daily refresh does not run or fails for every cinema**, for example because the machine is
+  off: visitors keep seeing the previous data. Once it is more than 48 hours old, every affected
+  cinema is flagged.
 - **The refresh is cut off by the platform's time limit**: each cinema's update is all-or-nothing,
   so a cinema has either its complete new schedule or its complete previous one, never a mix.
 - **The refresh is triggered twice at once** (manual and scheduled): the data ends up the same as
@@ -145,14 +151,14 @@ and run the self-hosted container with saved test data and confirm it works as b
   answer.
 - **FR-003**: Schedule data MUST be stored so that every visitor sees the same data no matter which
   server answers, and the data MUST survive restarts, redeploys and periods with no traffic.
-- **FR-004**: In the hosted deployment, schedule data MUST be refreshed automatically once a day,
-  between 00:00 and 02:00 Lithuanian time. This replaces feature 001's FR-014 ("at least every 3
+- **FR-004**: In the hosted deployment, schedule data MUST be refreshed automatically once a day
+  from the owner's machine, at any time of day, whenever that machine is on. This replaces feature 001's FR-014 ("at least every 3
   hours") for the hosted deployment only. FR-014's "show when the data was last updated" part still
   applies.
 - **FR-005**: The daily run MUST also remove past screenings and old movies, under feature 001's
   existing rules.
 - **FR-006**: In the hosted deployment, a cinema MUST be flagged as possibly outdated once its data
-  has had no successful refresh for 27 hours. This replaces feature 001's 3-hour threshold (FR-015,
+  has had no successful refresh for 48 hours. This replaces feature 001's 3-hour threshold (FR-015,
   SC-005) for the hosted deployment only.
 - **FR-007**: Serving visitors MUST NOT cause any request to a cinema's website. Cinemas MUST be
   contacted only by the daily refresh or a refresh triggered by the maintainer, under the existing
@@ -196,8 +202,8 @@ and run the self-hosted container with saved test data and confirm it works as b
   checks, with the same results as a self-hosted copy holding the same data.
 - **SC-002**: Running the site costs €0 a month. After the first full month in production, the
   hosting and database billing pages show no charges.
-- **SC-003**: On 7 consecutive days, by 08:00 Lithuanian time, the site lists that day's
-  screenings and none from previous days, with no manual action.
+- **SC-003**: On 7 consecutive days on which the machine is on, the site lists that day's screenings
+  and none from previous days, with no manual action.
 - **SC-004**: The movie list and a movie's screenings appear within feature 001's 2-second target
   (SC-002 there) for visitors in Lithuania. The first visit after the site has been idle for an hour
   or more appears within 3 seconds.
@@ -226,8 +232,8 @@ and run the self-hosted container with saved test data and confirm it works as b
   - Seansai's data is about 1 MB with around 3,000 rows, so it fits easily.
 - Feature 001's product behaviour is unchanged apart from FR-004 and FR-006 above, which apply only
   to the hosted deployment.
-- The 27-hour threshold allows for the scheduled run starting anywhere in its hour, plus
-  daylight-saving shifts. One missed nightly refresh is therefore flagged the next day.
+- The 48-hour threshold allows for the daily refresh running at any time of day, and one missed day
+  is not flagged. A longer gap is.
 - Preview deployments get their own database on the same free database account. The free plan
   allows up to 100 databases, so the separation costs nothing.
 - The public address is the default one Vercel provides. A custom domain is out of scope.

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Checks every hour; the refresh itself runs once a day (specs/002-vercel-deploy/quickstart.md §5). -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>lt.seansai.refresh</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__CHECKOUT__/scripts/home-refresh.sh</string>
+    <string>--if-due</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>__NODE_DIR__:/usr/bin:/bin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Minute</key>
+    <integer>5</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__LOGS__/seansai-refresh.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOGS__/seansai-refresh.log</string>
+</dict>
+</plist>

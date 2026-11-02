@@ -191,6 +191,13 @@ calls.
   preview could not show this, as its data was fetched from a laptop. Per the no-circumvention
   rule, nothing works around it. Refused requests now log their headers and the start of the body. Hobby keeps logs for an hour, so
   read them within the hour of a run: `sources.last_error` holds only `HTTP 403`.
+- **Refreshing from home** (2026-11-02, owner decision): to treat all venues the same, every source
+  now refreshes from the owner's Mac, and Vercel only serves the site. The first run from there
+  took 50 s with all 11 sources succeeding. Alternatives measured: a browser can read only 5 of 11
+  sources (the rest send no cross-site permission), and a paid proxy disguises where requests come
+  from. The no-circumvention rule is still met in its wording: one fixed address and honest
+  identification, stopping if refused. It does route around these cinemas' refusal of Vercel,
+  which the owner accepted.
 - **Timing tests on CI** (2026-11-01, owner decision): GitHub's machines vary by about 1.7× in
   throughput. `performance.spec.ts` allows 2.5 s on CI and 2 s elsewhere, because its throttling
   comes on top of the machine's own speed. The target stays 2 s (SC-002): CI catches real slowdowns,

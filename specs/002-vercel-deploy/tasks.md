@@ -346,7 +346,12 @@ from that night, and no manual action (spec US2, SC-003, quickstart §5).
   - one manual `curl -H "Authorization: Bearer $CRON_SECRET" https://<production>/api/v1/cron/daily` returns 200 with every enabled source `success`, and its duration in Runtime Logs is < 300 s;
   - then quickstart §5's check on two consecutive mornings. This is the release gate; SC-003's full 7 consecutive days are confirmed in T054.
 
-**Open from T047** (2026-11-02): the nightly cron ran by itself, but Pasaka and Cinamon refuse Vercel's requests with HTTP 403 ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)). T047 stays open until they allow Seansai or are switched off with the kill switch.
+**Changed after T047's first run** (2026-11-02, owner decision): Pasaka and Cinamon refuse Vercel's requests with HTTP 403 ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)), so every source now refreshes from the owner's Mac.
+
+- [X] T047a [US2] Add `refresh-now.ts`, `scripts/home-refresh.sh` and the launchd job. Remove `crons`. Raise the threshold to 48 h.
+- [ ] T047b [US2] With the owner's go-ahead, merge, set up the job (quickstart §5) and confirm its first run: every enabled source `success`.
+- [ ] T047c [US2] Replaces T047's cron checks: quickstart §5's check on two consecutive days.
+
 
 **Checkpoint**: The site keeps itself current every night with no manual action.
 

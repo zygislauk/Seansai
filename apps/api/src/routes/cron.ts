@@ -8,8 +8,8 @@ type CronRouteOptions = { secret: string; run: () => Promise<DailyRefreshResult>
 const digest = (value: string): Buffer => createHash('sha256').update(value).digest();
 
 /**
- * The daily refresh, called by Vercel Cron (or the maintainer) with `Authorization: Bearer
- * <CRON_SECRET>`. Anyone else gets the unknown-route 404, so the route reveals nothing and no
+ * A refresh on demand, the fallback when the home machine is away, called with
+ * `Authorization: Bearer <CRON_SECRET>`. Anyone else gets the unknown-route 404, so the route reveals nothing and no
  * cinema is contacted (FR-008, contracts/cron-endpoint.md). The header is never logged.
  */
 export const cronRoutes: FastifyPluginAsync<CronRouteOptions> = (app, { secret, run }) => {

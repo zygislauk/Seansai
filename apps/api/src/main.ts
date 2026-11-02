@@ -3,16 +3,11 @@ import { loadConfig } from './config.ts';
 import { openDb } from './db/index.ts';
 import { Repository } from './db/repository.ts';
 import { createLogger } from './lib/logger.ts';
-import { todayIn } from './lib/time.ts';
-import { loadAliases } from './matching/match.ts';
-import { runDailyRefresh } from './refresh/daily.ts';
-import { refreshSource, type RefreshOutcome } from './refresh/refresh-source.ts';
+import { createRefreshPipeline } from './refresh/pipeline.ts';
 import { startBackgroundRefresh } from './refresh/startup.ts';
-import { cinemaRegistry } from './registry/cinemas.ts';
 import { buildServer } from './server.ts';
-import { adapters, findSourceConfig, logRobotsOverrides, sourceConfigs } from './sources/index.ts';
-import { adapterNow, createClock, createHttpClient } from './sources/runtime.ts';
-import type { SourceAdapter } from './sources/types.ts';
+import { logRobotsOverrides, sourceConfigs } from './sources/index.ts';
+import { createClock } from './sources/runtime.ts';
 
 const WEB_DIST_DIR = fileURLToPath(new URL('../../web/dist', import.meta.url));
 const HOUR_MS = 60 * 60 * 1000;
@@ -32,32 +27,7 @@ async function main(): Promise<void> {
   }
   logRobotsOverrides(logger);
 
-  const enabledAdapters = adapters.filter((adapter) => findSourceConfig(adapter.id)?.enabled);
-  const httpClients = new Map(
-    enabledAdapters.map((adapter) => [adapter.id, createHttpClient(adapter, config, logger)]),
-  );
-  const aliases = loadAliases();
-
-  const refresh = (adapter: SourceAdapter, now: Date): Promise<RefreshOutcome> => {
-    const http = httpClients.get(adapter.id);
-    if (!http) throw new Error(`No HTTP client for source ${adapter.id}`);
-    return refreshSource(adapter, {
-      repo,
-      registry: cinemaRegistry,
-      http,
-      now,
-      sourceNow: adapterNow(adapter.id, config, now),
-      aliases,
-      logger,
-      disabledSources: config.disabledSources,
-    });
-  };
-  const cleanup = async (now: Date): Promise<{ screenings: number; movies: number }> => {
-    const screenings = await repo.deletePastScreenings(todayIn(now));
-    const movies = await repo.deleteStaleMovies(now);
-    logger.info({ screenings, movies }, 'Daily cleanup removed past screenings and old movies');
-    return { screenings, movies };
-  };
+  const pipeline = createRefreshPipeline(config, repo, clock, logger);
 
   const server = buildServer({
     db,
@@ -68,27 +38,21 @@ async function main(): Promise<void> {
       .map((source) => source.id),
     webDistDir: config.serveWebApp ? WEB_DIST_DIR : null,
     staleAfterMs: config.staleAfterMs,
-    cron: config.cronSecret
-      ? {
-          secret: config.cronSecret,
-          run: () =>
-            runDailyRefresh({ adapters: enabledAdapters, refresh, cleanup, clock, logger }),
-        }
-      : null,
+    cron: config.cronSecret ? { secret: config.cronSecret, run: pipeline.runAll } : null,
   });
   await server.listen({ port: config.port, host: config.host });
 
-  const scheduler = startBackgroundRefresh(config.refreshMode, enabledAdapters, {
+  const scheduler = startBackgroundRefresh(config.refreshMode, pipeline.adapters, {
     mode: config.sourcesMode,
     clock,
     logger,
-    refresh,
-    cleanup,
+    refresh: pipeline.refresh,
+    cleanup: pipeline.cleanup,
   });
   logger.info(
     {
       mode: config.sourcesMode,
-      sources: enabledAdapters.map((adapter) => adapter.id),
+      sources: pipeline.adapters.map((adapter) => adapter.id),
       now: clock(),
     },
     'Seansai API started',

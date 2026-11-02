@@ -44,7 +44,7 @@ describe('loadConfig', () => {
     expect(config.serveWebApp).toBe(false);
   });
 
-  test('on Vercel flags data as stale after 27 hours and protects the refresh with CRON_SECRET', () => {
+  test('on Vercel flags data as stale after 48 hours and protects the refresh with CRON_SECRET', () => {
     const secret = '0123456789abcdef0123456789abcdef';
     const config = loadConfig({
       SEANSAI_CONTACT: 'hello@seansai.lt',
@@ -53,7 +53,7 @@ describe('loadConfig', () => {
       TURSO_AUTH_TOKEN: 't',
       CRON_SECRET: secret,
     });
-    expect(config.staleAfterMs).toBe(27 * 60 * 60 * 1000);
+    expect(config.staleAfterMs).toBe(48 * 60 * 60 * 1000);
     expect(config.cronSecret).toBe(secret);
   });
 

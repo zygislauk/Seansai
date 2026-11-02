@@ -23,16 +23,14 @@ change.
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "api" } },     // FR-001
     { "source": "/(.*)", "destination": { "service": "web" } }
-  ],
-  "crons": [{ "path": "/api/v1/cron/daily", "schedule": "0 22 * * *" }]  // FR-004, Hobby: at most daily
+  ]
 }
 ```
 
 - **No bindings.** No service calls another.
-- **Fallbacks** (research §3, §6):
-  - If `crons` is rejected in services mode, `.github/workflows/daily-refresh.yml` calls the same
-    URL on the same schedule with the secret.
-  - If `regions` is rejected, the region is set in the project settings.
+- **No `crons`.** The daily refresh runs from a machine at home (quickstart §5), because some
+  cinemas refuse requests from Vercel (research §5).
+- **Fallback** (research §6): if `regions` is rejected, the region is set in the project settings.
 
 ## Environment variables (Vercel project)
 
@@ -46,7 +44,7 @@ change.
 
 - Previews use their own database, `seansai-preview`, on the same Turso Free account (spec
   Assumptions). A preview's migrations and writes can never reach production's database.
-- Previews never refresh: crons run only in production, and `CRON_SECRET` isn't set for Preview.
+- Previews never refresh: `CRON_SECRET` isn't set for Preview.
 - None of these values are committed (FR-013).
 
 ## API response caching (change to feature 001's public API)

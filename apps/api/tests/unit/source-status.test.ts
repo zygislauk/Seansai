@@ -49,16 +49,16 @@ describe('deriveSourceStatus', () => {
     ).toBe('stale');
   });
 
-  test('on Vercel, a daily refresh is stale only after 27 hours', () => {
-    const staleAfterMs = 27 * 60 * 60 * 1000;
+  test('on Vercel, a daily refresh is stale only after 48 hours', () => {
+    const staleAfterMs = 48 * 60 * 60 * 1000;
     const success = (hours: number) => ({
       lastAttemptAt: hoursAgo(hours),
       lastSuccessAt: hoursAgo(hours),
       lastError: null,
     });
 
-    expect(deriveSourceStatus(success(26), NOW, staleAfterMs)).toBe('healthy');
-    expect(deriveSourceStatus(success(27), NOW, staleAfterMs)).toBe('stale');
+    expect(deriveSourceStatus(success(47), NOW, staleAfterMs)).toBe('healthy');
+    expect(deriveSourceStatus(success(48), NOW, staleAfterMs)).toBe('stale');
     expect(deriveSourceStatus(success(3), NOW)).toBe('stale');
   });
 });

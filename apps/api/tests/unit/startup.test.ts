@@ -44,9 +44,7 @@ describe('startBackgroundRefresh', () => {
     expect(opts.refresh).not.toHaveBeenCalled();
     expect(opts.cleanup).not.toHaveBeenCalled();
     expect(
-      log
-        .lines()
-        .filter((line) => line.msg === 'Refresh runs from Vercel Cron; scheduler not started'),
+      log.lines().filter((line) => line.msg === 'Refresh runs from outside; scheduler not started'),
     ).toHaveLength(1);
   });
 

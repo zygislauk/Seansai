@@ -13,7 +13,7 @@ type Service = {
 };
 type VercelConfig = {
   regions?: string[];
-  crons?: Array<{ path: string; schedule: string }>;
+  crons?: unknown;
   services: Record<string, Service>;
   rewrites: Array<{ source: string; destination: unknown }>;
 };
@@ -73,16 +73,7 @@ describe('vercel.json', () => {
     }
   });
 
-  test('refreshes once a day just after midnight in Vilnius (22:00 UTC)', () => {
-    expect(config.crons).toEqual([{ path: '/api/v1/cron/daily', schedule: '0 22 * * *' }]);
-  });
-
-  test('schedules crons no more than daily, as Hobby allows, and routes them to the API', () => {
-    for (const cron of config.crons ?? []) {
-      const [minute, hour] = cron.schedule.split(' ');
-      expect(minute).toMatch(/^\d+$/);
-      expect(hour).toMatch(/^\d+$/);
-      expect(cron.path.startsWith('/api/')).toBe(true);
-    }
+  test('schedules nothing: a machine other than Vercel refreshes, because cinemas refuse Vercel', () => {
+    expect(config.crons).toBeUndefined();
   });
 });

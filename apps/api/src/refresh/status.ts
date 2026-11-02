@@ -7,7 +7,7 @@ export const STALE_AFTER_MS = 3 * 60 * 60 * 1000;
 /**
  * - `healthy`: the last attempt succeeded.
  * - `degraded`: the last attempt failed, but the data is still younger than the stale threshold.
- * - `stale`: no successful refresh within the stale threshold (3 h self-hosted, 27 h on Vercel,
+ * - `stale`: no successful refresh within the stale threshold (3 h self-hosted, 48 h on Vercel,
  *   which refreshes once a day); a new source starts here.
  */
 export function deriveSourceStatus(

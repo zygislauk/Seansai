@@ -4,7 +4,9 @@
 
 ## `GET /api/v1/cron/daily`
 
-Refreshes every enabled source, in parallel, then removes past screenings and stale movies.
+A fallback since 2026-11-02: the daily refresh runs from a machine at home (quickstart §5), so no
+Vercel Cron Job calls this. It refreshes every enabled source, in parallel, then removes past
+screenings and stale movies.
 Callers:
 - Vercel Cron (production only, once a day, `0 22 * * *` UTC);
 - the maintainer, by hand.
