@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useLocation, useMatch, useNavigate, useParams, useSearchParams } from 'react-router';
 import { forgetCity as forgetStoredCity, getCity, setCity } from '../storage/settings.ts';
 
 type RememberedCity = {
@@ -28,34 +28,35 @@ const RememberedCityContext = createContext<RememberedCity | null>(null);
 export function CityProvider({ children }: { children: ReactNode }) {
   const [city, setRemembered] = useState(getCity);
   const [forgotten, setForgotten] = useState<string | null>(null);
+  // Stable, so an effect that remembers a city runs for a new city, not for each change of it.
+  const remember = useCallback((next: string) => {
+    setCity(next);
+    setRemembered(next);
+  }, []);
+  const forget = useCallback((unsupported: string) => {
+    forgetStoredCity();
+    setRemembered(null);
+    setForgotten(unsupported);
+  }, []);
   const value = useMemo<RememberedCity>(
-    () => ({
-      city,
-      forgotten,
-      remember: (next) => {
-        setCity(next);
-        setRemembered(next);
-      },
-      forget: (unsupported) => {
-        forgetStoredCity();
-        setRemembered(null);
-        setForgotten(unsupported);
-      },
-    }),
-    [city, forgotten],
+    () => ({ city, forgotten, remember, forget }),
+    [city, forgotten, remember, forget],
   );
   return <RememberedCityContext value={value}>{children}</RememberedCityContext>;
 }
 
 /**
- * The city to show (contracts/web-routes.md): a `?city=` link wins, so shared links show the same
- * screenings, and becomes the remembered city; otherwise the city remembered on this device;
- * otherwise all of Lithuania, with `isChosen` false.
+ * The city to show (contracts/web-routes.md): a city page's own city; then a `?city=` link, so
+ * shared links show the same screenings, which becomes the remembered city; otherwise the city
+ * remembered on this device; otherwise all of Lithuania, with `isChosen` false.
  */
 export function useCity(): {
   city: string;
   isChosen: boolean;
+  /** Remembers the city, and on a list page goes to that city's page. */
   chooseCity: (city: string) => void;
+  /** Only the page can tell a city page's city is real, so it remembers it once it knows. */
+  rememberCity: (city: string) => void;
   /** For a city the API doesn't know: only the pages can see that error (research.md §9). */
   forgetCity: () => void;
 } {
@@ -64,13 +65,17 @@ export function useCity(): {
   const { city, forgotten, remember, forget } = remembered;
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { lang, cityId } = useParams();
+  const { pathname } = useLocation();
+  const onGeneralList = useMatch('/:lang') !== null;
+  const onCityPage = useMatch('/:lang/city/:cityId') !== null;
   const named = params.get('city');
-  const fromLink = named === forgotten ? null : named;
-  const chosen = fromLink ?? city;
+  const fromLink = onCityPage || named === forgotten ? null : named;
+  const chosen = cityId ?? fromLink ?? city;
 
   useEffect(() => {
-    if (fromLink !== null && fromLink !== city) remember(fromLink);
-  }, [fromLink, city, remember]);
+    if (fromLink !== null) remember(fromLink);
+  }, [fromLink, remember]);
 
   const replaceSearch = useCallback(
     (search: URLSearchParams) => {
@@ -85,6 +90,11 @@ export function useCity(): {
 
   const chooseCity = (next: string) => {
     remember(next);
+    if (onGeneralList || onCityPage) {
+      const page = next === 'all' ? `/${lang ?? ''}/` : `/${lang ?? ''}/city/${next}`;
+      if (page !== pathname || params.size > 0) void navigate(page);
+      return;
+    }
     // A link's city would otherwise keep overriding the new choice, and cinema filters name
     // cinemas of the old city.
     if (fromLink === null && !params.has('cinema')) return;
@@ -102,5 +112,11 @@ export function useCity(): {
     replaceSearch(search);
   }, [chosen, forget, named, params, replaceSearch]);
 
-  return { city: chosen ?? 'all', isChosen: chosen !== null, chooseCity, forgetCity };
+  return {
+    city: chosen ?? 'all',
+    isChosen: chosen !== null,
+    chooseCity,
+    rememberCity: remember,
+    forgetCity,
+  };
 }

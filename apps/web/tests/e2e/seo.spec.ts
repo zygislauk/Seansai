@@ -1,5 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { MoviesResponseSchema, ScreeningsResponseSchema } from '@seansai/shared';
+import {
+  CitiesResponseSchema,
+  MoviesResponseSchema,
+  ScreeningsResponseSchema,
+} from '@seansai/shared';
 import {
   expect,
   test,
@@ -17,6 +21,8 @@ import { SNAPSHOT_PORT } from './ports.ts';
 
 /** The daily snapshot over the fixture data: what search engines and first-time visitors get. */
 test.use({ baseURL: `http://localhost:${String(SNAPSHOT_PORT)}` });
+
+const SITE = 'https://seansai.vercel.app';
 
 test.beforeEach(async ({ context, request }) => {
   await answerExternalRequestsLocally(context);
@@ -114,9 +120,107 @@ test.describe('without scripts', () => {
   });
 });
 
-test.describe('what search engines are told', () => {
-  const SITE = 'https://seansai.vercel.app';
+test.describe('city pages', () => {
+  test.describe('without scripts', () => {
+    test.use({ javaScriptEnabled: false });
 
+    test('a city page names the city and lists only its movies', async ({ page, request }) => {
+      await page.goto('/lt/city/kaunas');
+      await expect(page).toHaveTitle('Kino seansai Kaune');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Kino seansai Kaune');
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+        'href',
+        `${SITE}/lt/city/kaunas`,
+      );
+
+      const kaunas = await listedMovies(request, 'kaunas');
+      const all = await listedMovies(request);
+      const links = page.locator('main a[href*="/movie/"]');
+      await expect(links).toHaveCount(kaunas.length);
+      expect(kaunas.length).toBeLessThan(all.length);
+    });
+
+    test('the general list has a plain link to each city page', async ({ page, request }) => {
+      await page.goto('/en/');
+      const cities = CitiesResponseSchema.parse(
+        await (await request.get('/api/v1/cities?lang=en')).json(),
+      ).cities.filter((city) => city.hasMovies);
+      const nav = page.getByRole('navigation', { name: 'Browse by city' });
+      for (const { id, name } of cities) {
+        await expect(nav.getByRole('link', { name })).toHaveAttribute('href', `/en/city/${id}`);
+      }
+    });
+
+    test('an unknown city answers 404', async ({ page }) => {
+      const response = await page.goto('/lt/city/riga');
+      expect(response?.status()).toBe(404);
+    });
+  });
+
+  test.describe('in a browser', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.clock.setFixedTime(FIXTURE_INSTANT);
+    });
+
+    test('isn’t asked for a city, and opening a movie shows that city', async ({ page }) => {
+      const consoleProblems: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') consoleProblems.push(message.text());
+      });
+
+      await page.goto('/en/city/kaunas');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        'Cinema screenings in Kaunas',
+      );
+      await expect(page.getByRole('region', { name: 'City' })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Change city: Kaunas' })).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+
+      const saved = () => page.evaluate("window.localStorage.getItem('seansai.city')");
+      await expect.poll(saved).toBe('kaunas');
+
+      const screenings = page.waitForRequest(
+        (request) => request.url().includes('/screenings') && request.url().includes('city=kaunas'),
+      );
+      await page.locator('main a[href*="/movie/"]').first().click();
+      await screenings;
+      await expect(page.getByRole('button', { name: 'Change city: Kaunas' })).toBeVisible();
+      expect(consoleProblems).toEqual([]);
+    });
+
+    test('switching city goes to that city’s page, or to the list', async ({ page }) => {
+      await page.goto('/en/city/kaunas');
+
+      await page.getByRole('button', { name: 'Change city: Kaunas' }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: /Vilnius/ })
+        .click();
+      await expect(page).toHaveURL(/\/en\/city\/vilnius$/);
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        'Cinema screenings in Vilnius',
+      );
+
+      await page.getByRole('button', { name: 'Change city: Vilnius' }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: /All of Lithuania/ })
+        .click();
+      await expect(page).toHaveURL(/\/en\/$/);
+      await expect(
+        page.getByRole('button', { name: 'Change city: All of Lithuania' }),
+      ).toBeVisible();
+    });
+
+    test('an unknown city shows the not-found page', async ({ page }) => {
+      await page.goto('/en/city/riga');
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page not found');
+      await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+    });
+  });
+});
+
+test.describe('what search engines are told', () => {
   async function sitemapAddresses(request: APIRequestContext) {
     const response = await request.get('/sitemap.xml');
     expect(response.status()).toBe(200);
@@ -131,7 +235,10 @@ test.describe('what search engines are told', () => {
   test('every address in the site map answers directly', async ({ request }) => {
     const paths = await sitemapAddresses(request);
     const movies = await listedMovies(request);
-    expect(paths).toHaveLength(2 * (movies.length + 1));
+    const cities = CitiesResponseSchema.parse(
+      await (await request.get('/api/v1/cities')).json(),
+    ).cities.filter((city) => city.hasMovies);
+    expect(paths).toHaveLength(2 * (movies.length + cities.length + 1));
 
     for (const path of paths) {
       const response = await request.get(path, { maxRedirects: 0 });
@@ -336,12 +443,13 @@ test.describe('in a browser', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.locator('body')).toBeFocused();
     // The date picker works, so the app has taken over.
-    await page
+    const nextDate = page
       .getByRole('toolbar', { name: 'Pasirinkite datą' })
       .getByRole('button')
-      .nth(1)
-      .click();
+      .nth(1);
+    await nextDate.click();
     await expect(page).toHaveURL(/\?date=/);
+    await expect(nextDate).toHaveAttribute('aria-pressed', 'true');
     await expectNoAccessibilityViolations(page);
     expect(messages).toEqual([]);
   });

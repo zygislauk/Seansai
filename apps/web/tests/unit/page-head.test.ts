@@ -1,6 +1,9 @@
 import type { MovieDetailResponse } from '@seansai/shared';
 import { describe, expect, test } from 'vitest';
+import { cities as registryCities } from '../../../api/src/registry/cities.ts';
+import { cityLocatives } from '../../src/i18n/lt.ts';
 import { pageHead } from '../../src/lib/page-head.ts';
+import { SITE_URL } from '../../src/lib/site.ts';
 import { diggerDetail } from '../helpers/mock-api.ts';
 
 const DESCRIPTION_LIMIT = 155;
@@ -149,6 +152,66 @@ describe('the general list', () => {
       description: 'Screenings at every cinema in Lithuania, all in one place.',
       robots: null,
     });
+  });
+});
+
+describe('a city page', () => {
+  const cityHead = (lang: 'lt' | 'en', cityId = 'vilnius', name = 'Vilnius') =>
+    pageHead({ kind: 'city', cityId, name }, lang);
+
+  test('names the city in Lithuanian, in the form the sentence needs', () => {
+    expect(cityHead('lt').title).toBe('Kino seansai Vilniuje');
+    expect(cityHead('lt').description).toContain('Vilniuje');
+    expect(cityHead('lt', 'klaipeda', 'Klaipėda').title).toBe('Kino seansai Klaipėdoje');
+  });
+
+  test('names the city in English', () => {
+    expect(cityHead('en').title).toBe('Cinema screenings in Vilnius');
+    expect(cityHead('en', 'klaipeda', 'Klaipeda').description).toContain('Klaipeda');
+  });
+
+  test('a city with no Lithuanian form yet still reads correctly', () => {
+    expect(cityHead('lt', 'alytus', 'Alytus').title).toBe('Kino seansai: Alytus');
+    expect(cityHead('lt', 'alytus', 'Alytus').description).toContain('Alytus');
+  });
+
+  test('every city in the registry has its Lithuanian form', () => {
+    expect(registryCities.map(({ id }) => id).filter((id) => !(id in cityLocatives))).toEqual([]);
+  });
+
+  test('is its own preferred address, in both languages', () => {
+    expect(cityHead('en').canonical).toBe(`${SITE_URL}/en/city/vilnius`);
+    expect(cityHead('lt').alternates).toEqual([
+      { hreflang: 'lt', href: `${SITE_URL}/lt/city/vilnius` },
+      { hreflang: 'en', href: `${SITE_URL}/en/city/vilnius` },
+      { hreflang: 'x-default', href: `${SITE_URL}/lt/city/vilnius` },
+    ]);
+  });
+
+  test('descriptions fit where search results cut them off', () => {
+    for (const lang of ['lt', 'en'] as const) {
+      for (const { id, nameLt } of registryCities) {
+        expect(cityHead(lang, id, nameLt).description.length).toBeLessThanOrEqual(
+          DESCRIPTION_LIMIT,
+        );
+      }
+    }
+  });
+});
+
+describe('the list with a city in its address', () => {
+  test('names the city page as its preferred address', () => {
+    expect(pageHead({ kind: 'list', city: 'vilnius' }, 'lt').canonical).toBe(
+      `${SITE_URL}/lt/city/vilnius`,
+    );
+  });
+
+  test('all of Lithuania is the plain list', () => {
+    expect(pageHead({ kind: 'list', city: 'all' }, 'en').canonical).toBe(`${SITE_URL}/en/`);
+  });
+
+  test('with no city it names itself', () => {
+    expect(pageHead({ kind: 'list', city: null }, 'lt').canonical).toBe(`${SITE_URL}/lt/`);
   });
 });
 

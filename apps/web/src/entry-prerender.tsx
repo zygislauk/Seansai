@@ -67,6 +67,25 @@ export async function renderListPage(
   };
 }
 
+export async function renderCityPage(
+  lang: Lang,
+  {
+    cities,
+    city,
+    movies,
+  }: { cities: CitiesResponse; city: CitiesResponse['cities'][number]; movies: MoviesResponse },
+) {
+  const queryClient = createQueryClient();
+  queryClient.setQueryData(citiesQuery(lang).queryKey, cities);
+  queryClient.setQueryData(moviesQuery(city.id).queryKey, movies);
+  const path = `/${lang}/city/${city.id}`;
+  return {
+    path,
+    head: pageHead({ kind: 'city', cityId: city.id, name: city.name }, lang),
+    ...(await renderPage(encodeURI(path), queryClient)),
+  };
+}
+
 export async function renderMoviePage(
   lang: Lang,
   {

@@ -27,6 +27,12 @@ export const en: Messages = {
   'city.keepAll': 'Keep all of Lithuania',
   'head.listTitle': 'Cinema screenings across Lithuania – Seansai',
   'head.listDescription': 'Screenings at every cinema in Lithuania, all in one place.',
+  'head.cityTitle': 'Cinema screenings in {place}',
+  'head.cityDescription':
+    'Movies and screenings in {place}: what’s on and when, with ticket links.',
+  'head.cityTitleNoForm': 'Cinema screenings in {place}',
+  'head.cityDescriptionNoForm':
+    'Movies and screenings in {place}: what’s on and when, with ticket links.',
   'head.movieTitle': '{name} – screenings',
   'head.movieDescription': 'Screenings of {name} in Lithuania.',
   'head.genres': 'Genre: {genres}.',
@@ -41,6 +47,7 @@ export const en: Messages = {
   'search.placeholder': 'Lithuanian or original title',
   'search.clear': 'Clear search',
   'search.noResults': 'No movies match “{query}”.',
+  'movieList.byCity': 'Browse by city',
   'movieList.empty': 'No upcoming screenings in this city.',
   'movieList.emptyBody': 'Try another city or all of Lithuania.',
   'movieCard.today': {

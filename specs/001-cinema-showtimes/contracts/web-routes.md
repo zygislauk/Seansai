@@ -7,6 +7,7 @@ reload-safe (FR-011). The language is part of the path so shared links open in t
 |------|------|-------|
 | `/` | Redirect | → `/{lang}/` using the remembered language, else `lt` |
 | `/{lang}/` | Movie list | `lang` ∈ `lt`, `en`. Shows the city prompt on first visit (FR-013) |
+| `/{lang}/city/{cityId}` | Movie list for a city | Remembers that city. An unknown city shows the not-found page. Choosing a city on a list page goes to that city's page |
 | `/{lang}/movie/{movieId}` | Screenings for today | Same as `?date=` today |
 | `/{lang}/movie/{movieId}?date=YYYY-MM-DD` | Screenings for a date | Invalid/past date → today, with a notice |
 

@@ -1,9 +1,11 @@
-import { renderHook, screen, waitFor } from '@testing-library/react';
+import { renderHook, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { CityProvider, useCity } from '../../src/app/city.tsx';
-import { mockApi } from '../helpers/mock-api.ts';
+import { SITE_URL } from '../../src/lib/site.ts';
+import { mockApi, movies } from '../helpers/mock-api.ts';
 import { renderApp } from '../helpers/render-app.tsx';
 
 afterEach(() => {
@@ -168,5 +170,185 @@ describe('a city that is no longer supported', () => {
     expect(window.localStorage.getItem('seansai.city')).toBeNull();
     expect(api.requested().some((url) => url.includes('city=all'))).toBe(true);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+});
+
+const canonical = () => document.head.querySelector('link[rel="canonical"]')?.getAttribute('href');
+
+describe('a city page (/{lang}/city/{cityId})', () => {
+  afterEach(() => {
+    document.head.querySelector('link[rel="canonical"]')?.remove();
+  });
+
+  test('shows that city, asks nothing and remembers it', async () => {
+    const { requested } = mockApi();
+    renderApp('/en/city/vilnius');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Cinema screenings in Vilnius' }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(window.localStorage.getItem('seansai.city')).toBe('vilnius');
+    });
+    expect(requested().some((url) => url.includes('/movies?city=vilnius'))).toBe(true);
+    expect(screen.queryByRole('region', { name: 'City' })).not.toBeInTheDocument();
+    expect(canonical()).toBe(`${SITE_URL}/en/city/vilnius`);
+  });
+
+  test('wins over the remembered city', async () => {
+    window.localStorage.setItem('seansai.city', 'kaunas');
+    const { requested } = mockApi();
+    renderApp('/en/city/vilnius');
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem('seansai.city')).toBe('vilnius');
+    });
+    expect(requested().some((url) => url.includes('/movies?city=kaunas'))).toBe(false);
+  });
+
+  test('an unknown city shows the not-found page and leaves the remembered city alone', async () => {
+    window.localStorage.setItem('seansai.city', 'kaunas');
+    mockApi();
+    renderApp('/en/city/riga');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Page not found' }),
+    ).toBeInTheDocument();
+    expect(window.localStorage.getItem('seansai.city')).toBe('kaunas');
+    await waitFor(() => {
+      expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
+        'content',
+        'noindex',
+      );
+    });
+    expect(canonical()).toBeUndefined();
+  });
+
+  test('choosing another city goes to its page', async () => {
+    const user = userEvent.setup();
+    mockApi();
+    const app = renderApp('/en/city/vilnius');
+
+    await user.click(await screen.findByRole('button', { name: 'Change city: Vilnius' }));
+    await user.click(await screen.findByRole('button', { name: /Kaunas/ }));
+
+    await waitFor(() => {
+      expect(app.location()).toBe('/en/city/kaunas');
+    });
+    expect(window.localStorage.getItem('seansai.city')).toBe('kaunas');
+  });
+
+  test('choosing all of Lithuania goes to the general list and stays there', async () => {
+    const user = userEvent.setup();
+    mockApi();
+    const app = renderApp('/en/city/vilnius');
+
+    await user.click(await screen.findByRole('button', { name: 'Change city: Vilnius' }));
+    await user.click(await screen.findByRole('button', { name: /All of Lithuania/ }));
+
+    await waitFor(() => {
+      expect(app.location()).toBe('/en/');
+    });
+    await screen.findByRole('button', { name: 'Change city: All of Lithuania' });
+    expect(window.localStorage.getItem('seansai.city')).toBe('all');
+  });
+
+  test('choosing all of Lithuania from a ?city= link also goes to the general list', async () => {
+    const user = userEvent.setup();
+    mockApi();
+    const app = renderApp('/en/?city=vilnius');
+
+    await user.click(await screen.findByRole('button', { name: 'Change city: Vilnius' }));
+    await user.click(await screen.findByRole('button', { name: /All of Lithuania/ }));
+
+    await waitFor(() => {
+      expect(app.location()).toBe('/en/');
+    });
+    await screen.findByRole('button', { name: 'Change city: All of Lithuania' });
+    expect(window.localStorage.getItem('seansai.city')).toBe('all');
+  });
+
+  test('choosing a city on a movie page stays on that page', async () => {
+    const user = userEvent.setup();
+    mockApi();
+    const app = renderApp('/en/movie/digger-2026');
+
+    await user.click(await screen.findByRole('button', { name: 'Change city: All of Lithuania' }));
+    await user.click(await screen.findByRole('button', { name: /Kaunas/ }));
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem('seansai.city')).toBe('kaunas');
+    });
+    expect(app.location()).toBe('/en/movie/digger-2026');
+  });
+
+  test('with no current movies, it shows the empty message', async () => {
+    mockApi({ movies: { ...movies, movies: [] } });
+    renderApp('/en/city/kaunas');
+
+    expect(await screen.findByText('No upcoming screenings in this city.')).toBeInTheDocument();
+  });
+});
+
+describe('the list page’s preferred address follows its address', () => {
+  afterEach(() => {
+    document.head.querySelector('link[rel="canonical"]')?.remove();
+  });
+
+  test('/lt/?city=vilnius names the city page', async () => {
+    mockApi();
+    renderApp('/lt/?city=vilnius');
+
+    await waitFor(() => {
+      expect(canonical()).toBe(`${SITE_URL}/lt/city/vilnius`);
+    });
+  });
+
+  test('/lt/ with Vilnius remembered names /lt/', async () => {
+    window.localStorage.setItem('seansai.city', 'vilnius');
+    mockApi();
+    renderApp('/lt/');
+
+    await waitFor(() => {
+      expect(canonical()).toBe(`${SITE_URL}/lt/`);
+    });
+  });
+
+  test('/lt/?city=riga names /lt/ once the unknown city is forgotten', async () => {
+    mockApi();
+    const app = renderApp('/lt/?city=riga');
+
+    await waitFor(() => {
+      expect(app.location()).toBe('/lt/');
+    });
+    await waitFor(() => {
+      expect(canonical()).toBe(`${SITE_URL}/lt/`);
+    });
+  });
+});
+
+describe('links to city pages on the general list', () => {
+  const someEmpty = {
+    cities: [
+      { id: 'vilnius', name: 'Vilnius', cinemaCount: 8, hasMovies: true },
+      { id: 'kaunas', name: 'Kaunas', cinemaCount: 3, hasMovies: false },
+    ],
+  };
+
+  test('link only to cities with current movies', async () => {
+    mockApi({ cities: someEmpty });
+    renderApp('/en/');
+
+    const nav = await screen.findByRole('navigation', { name: 'Browse by city' });
+    const links = within(nav).getAllByRole('link');
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/en/city/vilnius']);
+  });
+
+  test('stay off a city page', async () => {
+    mockApi();
+    renderApp('/en/city/vilnius');
+
+    await screen.findByRole('heading', { level: 1, name: 'Cinema screenings in Vilnius' });
+    expect(screen.queryByRole('navigation', { name: 'Browse by city' })).not.toBeInTheDocument();
   });
 });

@@ -49,6 +49,14 @@ export type Renderer = {
     lang: Lang,
     data: { cities: CitiesResponse; movies: MoviesResponse },
   ) => Promise<RenderedPage>;
+  renderCityPage: (
+    lang: Lang,
+    data: {
+      cities: CitiesResponse;
+      city: CitiesResponse['cities'][number];
+      movies: MoviesResponse;
+    },
+  ) => Promise<RenderedPage>;
   renderMoviePage: (
     lang: Lang,
     data: { cities: CitiesResponse; detail: MovieDetailResponse; screenings: ScreeningsResponse },
@@ -222,6 +230,16 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
   if (!ltCities || !enCities) throw new Error('Could not read the cities');
   const citiesFor = (lang: Lang) => (lang === 'lt' ? ltCities : enCities);
 
+  // Every city gets a page, so a link to one still works on a day it has nothing on.
+  const cityMovies = new Map(
+    await Promise.all(
+      ltCities.cities.map(
+        async ({ id }) =>
+          [id, await read(`/movies?city=${encodeURIComponent(id)}`, MoviesResponseSchema)] as const,
+      ),
+    ),
+  );
+
   const movieData = await Promise.all(
     movies.map(async ({ movie }) => {
       const path = `/movies/${encodeURIComponent(movie.id)}`;
@@ -238,7 +256,7 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
   const snapshotDate = movieData[0]?.details.lt.availableDates[0];
   if (snapshotDate === undefined) throw new Error('The API gave no date for today');
 
-  const pages: Array<{ page: RenderedPage; html: string }> = [];
+  const pages: Array<{ page: RenderedPage; html: string; inSiteMap: boolean }> = [];
   for (const lang of LANGS) {
     const list = await renderer.renderListPage(lang, {
       cities: citiesFor(lang),
@@ -246,7 +264,16 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
     });
     const listHtml = pageHtml(template, lang, list, snapshotDate);
     checkPage(list, listHtml, LIST_BUDGET_BYTES);
-    pages.push({ page: list, html: listHtml });
+    pages.push({ page: list, html: listHtml, inSiteMap: true });
+
+    for (const city of citiesFor(lang).cities) {
+      const movies = cityMovies.get(city.id);
+      if (!movies) throw new Error(`The cities differ between languages: ${city.id}`);
+      const page = await renderer.renderCityPage(lang, { cities: citiesFor(lang), city, movies });
+      const html = pageHtml(template, lang, page, snapshotDate);
+      checkPage(page, html, LIST_BUDGET_BYTES);
+      pages.push({ page, html, inSiteMap: city.hasMovies });
+    }
 
     for (const { details, screenings } of movieData) {
       const page = await renderer.renderMoviePage(lang, {
@@ -256,7 +283,7 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
       });
       const html = pageHtml(template, lang, page, snapshotDate);
       checkPage(page, html, MOVIE_BUDGET_BYTES);
-      pages.push({ page, html });
+      pages.push({ page, html, inSiteMap: true });
     }
   }
 
@@ -273,7 +300,13 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
     writeFileSync(file, html);
   }
   writeFileSync(join(outDir, '404.html'), notFound);
-  writeFileSync(join(outDir, 'sitemap.xml'), siteMapXml(rendered, snapshotDate));
+  writeFileSync(
+    join(outDir, 'sitemap.xml'),
+    siteMapXml(
+      pages.filter(({ inSiteMap }) => inSiteMap).map(({ page }) => page),
+      snapshotDate,
+    ),
+  );
   writeFileSync(join(outDir, 'robots.txt'), ROBOTS_TXT);
   log.info(`Snapshot: wrote ${String(pages.length)} pages for ${snapshotDate}`);
 }

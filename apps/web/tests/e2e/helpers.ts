@@ -21,6 +21,11 @@ export async function answerExternalRequestsLocally(context: BrowserContext) {
 }
 
 export async function expectNoAccessibilityViolations(page: Page) {
+  // Part-way through a colour transition, a scan can catch text in its old colour on its new
+  // background, which no visitor is left with.
+  await page.evaluate(
+    'Promise.allSettled(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished))',
+  );
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();

@@ -1,5 +1,6 @@
 import type { CinemaSummary, Lang, MovieDetailResponse } from '@seansai/shared';
 import { createTranslator, type Translator } from '../i18n/index.tsx';
+import { cityLocatives } from '../i18n/lt.ts';
 import { SITE_URL } from './site.ts';
 
 /** About what search results show before cutting a description off. */
@@ -16,7 +17,9 @@ export type PageHead = {
 };
 
 export type HeadPage =
-  | { kind: 'list' }
+  /** `city` is the `?city=` in the address, never the remembered one: that isn't the address's. */
+  | { kind: 'list'; city?: string | null }
+  | { kind: 'city'; cityId: string; name: string }
   | { kind: 'movie'; detail: MovieDetailResponse; city: string }
   | { kind: 'notFound' };
 
@@ -82,6 +85,25 @@ function addresses(path: string, lang: Lang): Pick<PageHead, 'canonical' | 'alte
   };
 }
 
+/** Lithuanian needs the city's locative, and a city without one gets a sentence that needs none. */
+function cityText(
+  cityId: string,
+  name: string,
+  t: Translator,
+  withForm: 'head.cityTitle' | 'head.cityDescription',
+  withoutForm: 'head.cityTitleNoForm' | 'head.cityDescriptionNoForm',
+): string {
+  const place = t.lang === 'lt' ? cityLocatives[cityId] : name;
+  return place === undefined ? t.t(withoutForm, { place: name }) : t.t(withForm, { place });
+}
+
+/** The title and heading of a city's page. */
+export function cityTitle(cityId: string, name: string, t: Translator): string {
+  return cityText(cityId, name, t, 'head.cityTitle', 'head.cityTitleNoForm');
+}
+
+const cityPath = (cityId: string) => `city/${encodeURIComponent(cityId)}`;
+
 /** Pure, so the snapshot and the running app say the same about a page. */
 export function pageHead(page: HeadPage, lang: Lang): PageHead {
   const t = createTranslator(lang);
@@ -91,7 +113,20 @@ export function pageHead(page: HeadPage, lang: Lang): PageHead {
         title: t.t('head.listTitle'),
         description: t.t('head.listDescription'),
         robots: null,
-        ...addresses('', lang),
+        ...addresses(page.city && page.city !== 'all' ? cityPath(page.city) : '', lang),
+      };
+    case 'city':
+      return {
+        title: cityTitle(page.cityId, page.name, t),
+        description: cityText(
+          page.cityId,
+          page.name,
+          t,
+          'head.cityDescription',
+          'head.cityDescriptionNoForm',
+        ),
+        robots: null,
+        ...addresses(cityPath(page.cityId), lang),
       };
     case 'movie': {
       const { title, year } = page.detail.movie;

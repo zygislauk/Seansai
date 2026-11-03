@@ -45,7 +45,7 @@ function RouteLoading() {
 function pageContext({ params, request }: LoaderFunctionArgs) {
   return {
     lang: LangSchema.catch(DEFAULT_LANG).parse(params.lang),
-    city: new URL(request.url).searchParams.get('city') ?? getCity() ?? 'all',
+    city: params.cityId ?? new URL(request.url).searchParams.get('city') ?? getCity() ?? 'all',
     date: new URL(request.url).searchParams.get('date'),
   };
 }
@@ -70,6 +70,19 @@ function pageChanged({ currentUrl, nextUrl }: ShouldRevalidateFunctionArgs): boo
  * page then finds them in the query cache.
  */
 export function createRoutes(queryClient: QueryClient): RouteObject[] {
+  const listRoute = {
+    loader: (args: LoaderFunctionArgs) => {
+      const { lang, city } = pageContext(args);
+      queryClient.query(citiesQuery(lang)).catch(ignore);
+      queryClient.query(moviesQuery(city)).catch(ignore);
+      return null;
+    },
+    shouldRevalidate: pageChanged,
+    lazy: async () => ({
+      Component: (await import('../pages/MovieListPage.tsx')).MovieListPage,
+    }),
+  };
+
   return [
     {
       path: '/',
@@ -82,19 +95,8 @@ export function createRoutes(queryClient: QueryClient): RouteObject[] {
       Component: LanguageRoot,
       HydrateFallback: RouteLoading,
       children: [
-        {
-          index: true,
-          loader: (args) => {
-            const { lang, city } = pageContext(args);
-            queryClient.query(citiesQuery(lang)).catch(ignore);
-            queryClient.query(moviesQuery(city)).catch(ignore);
-            return null;
-          },
-          shouldRevalidate: pageChanged,
-          lazy: async () => ({
-            Component: (await import('../pages/MovieListPage.tsx')).MovieListPage,
-          }),
-        },
+        { index: true, ...listRoute },
+        { path: 'city/:cityId', ...listRoute },
         {
           path: 'movie/:movieId',
           loader: (args) => {

@@ -54,7 +54,12 @@ const links = (path: string) => ({
 function apiAnswers(url: URL): unknown {
   const path = decodeURIComponent(url.pathname.replace('/api/v1', ''));
   if (path === '/cities') {
-    return { cities: [{ id: 'vilnius', name: 'Vilnius', cinemaCount: 1, hasMovies: true }] };
+    return {
+      cities: [
+        { id: 'vilnius', name: 'Vilnius', cinemaCount: 1, hasMovies: true },
+        { id: 'kaunas', name: 'Kaunas', cinemaCount: 1, hasMovies: false },
+      ],
+    };
   }
   if (path === '/movies') {
     return {
@@ -100,6 +105,18 @@ const renderer: Renderer = {
       },
       markup: `<h1>List</h1>${data.movies.movies.map(({ movie }) => movie.title).join()}`,
       initialData: { lang },
+    }),
+  renderCityPage: (lang, data) =>
+    Promise.resolve({
+      path: `/${lang}/city/${data.city.id}`,
+      head: {
+        title: `${data.city.name} ${lang}`,
+        description: `In ${data.city.name} ${lang}`,
+        robots: null,
+        ...links(`/${lang}/city/${data.city.id}`),
+      },
+      markup: `<h1>${data.city.name}</h1>${String(data.movies.movies.length)} movies`,
+      initialData: { lang, city: data.city.id },
     }),
   renderMoviePage: (lang, data) =>
     Promise.resolve({
@@ -267,6 +284,8 @@ describe('a good build', () => {
       [
         `${SITE}/lt/`,
         `${SITE}/en/`,
+        `${SITE}/lt/city/vilnius`,
+        `${SITE}/en/city/vilnius`,
         `${SITE}/lt/movie/a-2026`,
         `${SITE}/en/movie/a-2026`,
         `${SITE}/lt/movie/wei%C3%9F-2026`,
@@ -403,6 +422,49 @@ function manyMovies(url: URL): unknown {
   }
   return apiAnswers(url);
 }
+
+describe('city pages', () => {
+  test('writes every city in both languages, from that city’s movies', async () => {
+    await build();
+
+    for (const lang of ['lt', 'en']) {
+      expect(page(`${lang}/city/vilnius`)).toContain('<h1>Vilnius</h1>');
+      expect(page(`${lang}/city/kaunas`)).toContain('<h1>Kaunas</h1>');
+    }
+    expect(requests.map((url) => url.search)).toContainEqual(
+      expect.stringContaining('city=vilnius'),
+    );
+  });
+
+  test('a city with no current movies gets a page, and the build doesn’t fail', async () => {
+    const answerAll = answer;
+    answer = (url) =>
+      url.searchParams.get('city') === 'kaunas' && url.pathname.endsWith('/movies')
+        ? json({ movies: [], freshness })
+        : answerAll(url);
+
+    await build();
+
+    expect(page('lt/city/kaunas')).toContain('0 movies');
+  });
+
+  test('the site map has city pages with current movies, and no others', async () => {
+    await build();
+
+    const siteMap = readFileSync(join(outDir, 'sitemap.xml'), 'utf8');
+    expect(siteMap).toContain('/lt/city/vilnius</loc>');
+    expect(siteMap).toContain('/en/city/vilnius</loc>');
+    expect(siteMap).not.toContain('/city/kaunas');
+  });
+
+  test('a failed city list fails the build', async () => {
+    const answerAll = answer;
+    answer = (url) => (url.searchParams.get('city') === 'vilnius' ? json({}, 500) : answerAll(url));
+
+    await expect(build()).rejects.toThrow('/movies?city=vilnius');
+    expect(outputFiles()).toEqual(['index.html']);
+  });
+});
 
 describe('a build that fails writes nothing', () => {
   const expectFailure = async (message: RegExp, overrides: Partial<Renderer> = {}) => {
