@@ -16,6 +16,7 @@ type VercelConfig = {
   crons?: unknown;
   services: Record<string, Service>;
   rewrites: Array<{ source: string; destination: unknown }>;
+  redirects?: unknown;
 };
 
 /** The deployment's routing and headers (FR-001, FR-002, FR-012), checked in CI. */
@@ -44,8 +45,38 @@ describe('vercel.json', () => {
     expect(existsSync(new URL('../../index.ts', import.meta.url))).toBe(true);
   });
 
-  test('serves index.html for deep links', () => {
-    expect(service('web').rewrites).toContainEqual({ source: '/(.*)', destination: '/index.html' });
+  test('has no catch-all to index.html, so an unknown address can answer 404', () => {
+    expect(service('web').rewrites).toBeUndefined();
+  });
+
+  test('sends / to the remembered language, temporarily as it depends on the visitor', () => {
+    expect(config.redirects).toEqual(
+      expect.arrayContaining([
+        {
+          source: '/',
+          has: [{ type: 'cookie', key: 'seansai_lang', value: 'en' }],
+          destination: '/en/',
+          permanent: false,
+        },
+        { source: '/', destination: '/lt/', permanent: false },
+      ]),
+    );
+  });
+
+  test('checks the cookie before the rule that sends everyone else to Lithuanian', () => {
+    const rules = config.redirects as Array<{ source: string; has?: unknown }>;
+    const forRoot = rules.filter((rule) => rule.source === '/');
+
+    expect(forRoot[0]?.has).toBeDefined();
+    expect(forRoot[1]?.has).toBeUndefined();
+  });
+
+  test('sends an unknown two-letter language to the same page in Lithuanian, permanently', () => {
+    expect(config.redirects).toContainEqual({
+      source: '/:lang((?!lt|en)[a-z]{2})/:path*',
+      destination: '/lt/:path*',
+      permanent: true,
+    });
   });
 
   test("gives every page the API's security headers", () => {

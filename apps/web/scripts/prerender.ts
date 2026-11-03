@@ -32,7 +32,13 @@ const LIST_BUDGET_BYTES = 80_000;
 
 export type RenderedPage = {
   path: string;
-  head: { title: string; description: string; robots: string | null };
+  head: {
+    title: string;
+    description: string;
+    robots: string | null;
+    canonical: string | null;
+    alternates: Array<{ hreflang: string; href: string }>;
+  };
   markup: string;
   initialData: unknown;
 };
@@ -108,11 +114,20 @@ function fill(html: string, piece: string | RegExp, replacement: string): string
   return html.replace(piece, () => replacement);
 }
 
+const robotsMeta = (robots: string) =>
+  `\n    <meta name="robots" content="${escapeHtml(robots)}" />`;
+
+function addressLinks({ canonical, alternates }: RenderedPage['head']): string {
+  const links = alternates.map(
+    ({ hreflang, href }) =>
+      `<link rel="alternate" hreflang="${hreflang}" href="${escapeHtml(href)}" />`,
+  );
+  if (canonical !== null) links.unshift(`<link rel="canonical" href="${escapeHtml(canonical)}" />`);
+  return links.map((link) => `\n    ${link}`).join('');
+}
+
 function pageHtml(template: string, lang: Lang, page: RenderedPage, snapshotDate: string): string {
-  const robots =
-    page.head.robots === null
-      ? ''
-      : `\n    <meta name="robots" content="${escapeHtml(page.head.robots)}" />`;
+  const robots = page.head.robots === null ? '' : robotsMeta(page.head.robots);
   let html = template;
   html = fill(html, '<html lang="lt">', `<html lang="${lang}">`);
   // In the head before boot-gate.js, which reads it while the head is being parsed.
@@ -124,7 +139,7 @@ function pageHtml(template: string, lang: Lang, page: RenderedPage, snapshotDate
   html = fill(
     html,
     /<meta name="description" content="[^"]*" \/>/,
-    `<meta name="description" content="${escapeHtml(page.head.description)}" />`,
+    `<meta name="description" content="${escapeHtml(page.head.description)}" />${addressLinks(page.head)}`,
   );
   html = fill(html, '<title>Seansai</title>', `<title>${escapeHtml(page.head.title)}</title>`);
   return fill(
@@ -133,6 +148,37 @@ function pageHtml(template: string, lang: Lang, page: RenderedPage, snapshotDate
     `<div id="root">${page.markup}</div>\n    <script id="initial-data" type="application/json">${serializeForScript(page.initialData)}</script>`,
   );
 }
+
+/**
+ * What the host answers an unknown address with. It boots the app, which shows its not-found page,
+ * or the real page for a movie newer than the snapshot, and then removes the `noindex`.
+ */
+function notFoundHtml(template: string): string {
+  return fill(
+    template,
+    '<meta charset="UTF-8" />',
+    `<meta charset="UTF-8" />${robotsMeta('noindex')}`,
+  );
+}
+
+function siteMapXml(pages: readonly RenderedPage[], snapshotDate: string): string {
+  const entries = pages.flatMap(({ head: { canonical } }) =>
+    canonical === null
+      ? []
+      : `  <url><loc>${escapeHtml(canonical)}</loc><lastmod>${snapshotDate}</lastmod></url>\n`,
+  );
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries.join('')}</urlset>
+`;
+}
+
+/** The API isn't blocked, as crawlers need it to render pages (research.md §7). */
+const ROBOTS_TXT = `User-agent: *
+Allow: /
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`;
 
 function checkPage(page: RenderedPage, html: string, budgetBytes: number): void {
   const headings = page.markup.match(/<h1[\s>]/g)?.length ?? 0;
@@ -214,12 +260,11 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
     }
   }
 
-  warnAboutDuplicates(
-    pages.map(({ page }) => page),
-    (message) => {
-      log.warn(message);
-    },
-  );
+  const rendered = pages.map(({ page }) => page);
+  warnAboutDuplicates(rendered, (message) => {
+    log.warn(message);
+  });
+  const notFound = notFoundHtml(template);
 
   // Only now that every page has passed, so a failure leaves nothing behind.
   for (const { page, html } of pages) {
@@ -227,6 +272,9 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, html);
   }
+  writeFileSync(join(outDir, '404.html'), notFound);
+  writeFileSync(join(outDir, 'sitemap.xml'), siteMapXml(rendered, snapshotDate));
+  writeFileSync(join(outDir, 'robots.txt'), ROBOTS_TXT);
   log.info(`Snapshot: wrote ${String(pages.length)} pages for ${snapshotDate}`);
 }
 

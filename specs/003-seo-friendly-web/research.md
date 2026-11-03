@@ -114,9 +114,10 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   - Paths with non-ASCII ids are served from their directories: 8 of today's 216 movies have such ids,
     for example `was-marielle-weiß` and `спеціальна-операція`. **Fallback**: they get 404 with a working
     page for people and are left out of the site map until fixed.
-- **Language cookie**: `seansai_lang`, written only when someone uses the language switch. It holds a
-  preference and identifies no one. Visitors who chose a language before this ships have it in
-  localStorage only, and `/` sends them to Lithuanian once; the site has been public for days.
+- **Language cookie**: `seansai_lang`, written when someone uses the language switch, and at startup when
+  localStorage already holds a language (owner, 2026-11-03). It holds a preference and identifies no one.
+  Without the startup copy, visitors who chose a language before this ships would land on Lithuanian from `/`
+  on every visit until they next used the switch. With it, that happens at most once.
 
 ### Measured on the first preview (2026-11-03)
 

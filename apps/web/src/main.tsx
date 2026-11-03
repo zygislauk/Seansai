@@ -6,6 +6,7 @@ import { createBrowserRouter, matchRoutes, RouterProvider, type RouteObject } fr
 import { AppProviders, createQueryClient } from './app/providers.tsx';
 import { createRoutes } from './app/router.tsx';
 import type { InitialData } from './entry-prerender.tsx';
+import { copyLangToCookie } from './storage/settings.ts';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -41,6 +42,8 @@ async function resolveLazyRoutes(routes: RouteObject[]): Promise<void> {
     }),
   );
 }
+
+copyLangToCookie();
 
 const queryClient = createQueryClient();
 const routes = createRoutes(queryClient);

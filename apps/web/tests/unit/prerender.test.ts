@@ -37,6 +37,19 @@ const summary = (id: string, title: string) => ({
 
 const freshness = { updatedAt: '2026-11-03T08:00:00+02:00', staleCinemas: [] };
 
+const SITE = 'https://seansai.vercel.app';
+/** For pages whose addresses a test doesn't look at. */
+const noLinks = { canonical: null, alternates: [] };
+/** What `pageHead` says about the page at this address. */
+const links = (path: string) => ({
+  canonical: `${SITE}${encodeURI(path)}`,
+  alternates: [
+    { hreflang: 'lt', href: `${SITE}${encodeURI(path.replace(/^\/\w\w/, '/lt'))}` },
+    { hreflang: 'en', href: `${SITE}${encodeURI(path.replace(/^\/\w\w/, '/en'))}` },
+    { hreflang: 'x-default', href: `${SITE}${encodeURI(path.replace(/^\/\w\w/, '/lt'))}` },
+  ],
+});
+
 /** A small fake of the API with two movies, one of them with a non-ASCII id. */
 function apiAnswers(url: URL): unknown {
   const path = decodeURIComponent(url.pathname.replace('/api/v1', ''));
@@ -77,7 +90,12 @@ const renderer: Renderer = {
   renderListPage: (lang, data) =>
     Promise.resolve({
       path: `/${lang}/`,
-      head: { title: `List ${lang}`, description: `All ${lang}`, robots: null },
+      head: {
+        title: `List ${lang}`,
+        description: `All ${lang}`,
+        robots: null,
+        ...links(`/${lang}/`),
+      },
       markup: `<h1>List</h1>${data.movies.movies.map(({ movie }) => movie.title).join()}`,
       initialData: { lang },
     }),
@@ -88,6 +106,7 @@ const renderer: Renderer = {
         title: `${data.detail.movie.id} ${lang}`,
         description: `About ${data.detail.movie.id} ${lang}`,
         robots: null,
+        ...links(`/${lang}/movie/${data.detail.movie.id}`),
       },
       markup: `<h1>${data.detail.movie.title}</h1>`,
       initialData: { lang, id: data.detail.movie.id },
@@ -168,7 +187,12 @@ describe('a good build', () => {
       renderListPage: (lang) =>
         Promise.resolve({
           path: `/${lang}/`,
-          head: { title: `${hostile}${lang}`, description: `${hostile}${lang}`, robots: null },
+          head: {
+            title: `${hostile}${lang}`,
+            description: `${hostile}${lang}`,
+            robots: null,
+            ...noLinks,
+          },
           markup: '<h1>List</h1>',
           initialData: { title: hostile },
         }),
@@ -188,13 +212,104 @@ describe('a good build', () => {
       renderListPage: (lang) =>
         Promise.resolve({
           path: `/${lang}/`,
-          head: { title: lang, description: lang, robots: 'noindex' },
+          head: { title: lang, description: lang, robots: 'noindex', ...noLinks },
           markup: '<h1>List</h1>',
           initialData: {},
         }),
     });
 
     expect(page('lt')).toContain('<meta name="robots" content="noindex" />');
+  });
+
+  test('writes each page’s preferred address and language links', async () => {
+    await build();
+
+    const html = page('en/movie/weiß-2026');
+    const address = 'movie/wei%C3%9F-2026';
+    expect(html).toContain(`<link rel="canonical" href="${SITE}/en/${address}" />`);
+    expect(html).toContain(`<link rel="alternate" hreflang="lt" href="${SITE}/lt/${address}" />`);
+    expect(html).toContain(`<link rel="alternate" hreflang="en" href="${SITE}/en/${address}" />`);
+    expect(html).toContain(
+      `<link rel="alternate" hreflang="x-default" href="${SITE}/lt/${address}" />`,
+    );
+  });
+
+  test('keeps an address from breaking out of its attribute', async () => {
+    await build({
+      renderListPage: (lang) =>
+        Promise.resolve({
+          path: `/${lang}/`,
+          head: {
+            title: lang,
+            description: lang,
+            robots: null,
+            canonical: `${SITE}/"><script>`,
+            alternates: [{ hreflang: 'lt', href: `${SITE}/"><script>` }],
+          },
+          markup: '<h1>List</h1>',
+          initialData: {},
+        }),
+    });
+
+    expect(page('lt')).not.toContain('"><script>');
+  });
+
+  test('the site map lists exactly the plain pages, in both languages', async () => {
+    await build();
+
+    const sitemap = readFileSync(join(outDir, 'sitemap.xml'), 'utf8');
+    expect(sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
+    expect(sitemap).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+    const addresses = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+    expect(addresses.toSorted()).toEqual(
+      [
+        `${SITE}/lt/`,
+        `${SITE}/en/`,
+        `${SITE}/lt/movie/a-2026`,
+        `${SITE}/en/movie/a-2026`,
+        `${SITE}/lt/movie/wei%C3%9F-2026`,
+        `${SITE}/en/movie/wei%C3%9F-2026`,
+      ].toSorted(),
+    );
+    expect(sitemap.match(/<lastmod>2026-11-03<\/lastmod>/g)).toHaveLength(addresses.length);
+  });
+
+  test('the site map leaves out a page with no preferred address', async () => {
+    await build({
+      renderListPage: (lang) =>
+        Promise.resolve({
+          path: `/${lang}/`,
+          head: { title: lang, description: lang, robots: 'noindex', ...noLinks },
+          markup: '<h1>List</h1>',
+          initialData: {},
+        }),
+    });
+
+    expect(readFileSync(join(outDir, 'sitemap.xml'), 'utf8')).not.toContain(
+      `<loc>${SITE}/lt/</loc>`,
+    );
+  });
+
+  test('robots.txt allows everything and names the site map, exactly', async () => {
+    await build();
+
+    expect(readFileSync(join(outDir, 'robots.txt'), 'utf8')).toBe(
+      `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
+    );
+  });
+
+  test('404.html is the app shell, not to be listed, with nothing from a page', async () => {
+    await build();
+
+    const html = readFileSync(join(outDir, '404.html'), 'utf8');
+    expect(html).toContain('<meta name="robots" content="noindex" />');
+    expect(html).toContain('<div id="root"></div>');
+    expect(html).toContain('boot-gate.js');
+    expect(html).not.toContain('initial-data');
+    // With no date, the boot gate treats whatever this address turns out to be as not a snapshot.
+    expect(html).not.toContain('snapshot-date');
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).not.toContain('rel="alternate"');
   });
 
   test('reads every answer past the CDN’s cache, with a percent-encoded address', async () => {
@@ -253,7 +368,12 @@ describe('a good build', () => {
       renderMoviePage: (lang, data) =>
         Promise.resolve({
           path: `/${lang}/movie/${data.detail.movie.id}`,
-          head: { title: `Same ${lang}`, description: `Same text ${lang}`, robots: null },
+          head: {
+            title: `Same ${lang}`,
+            description: `Same text ${lang}`,
+            robots: null,
+            ...noLinks,
+          },
           markup: '<h1>Movie</h1>',
           initialData: {},
         }),
@@ -327,7 +447,7 @@ describe('a build that fails writes nothing', () => {
       renderMoviePage: (lang, data) =>
         Promise.resolve({
           path: `/${lang}/movie/${data.detail.movie.id}`,
-          head: { title: 'x', description: 'x', robots: null },
+          head: { title: 'x', description: 'x', robots: null, ...noLinks },
           markup: '<p>No heading</p>',
           initialData: {},
         }),
@@ -339,7 +459,7 @@ describe('a build that fails writes nothing', () => {
       renderListPage: (lang) =>
         Promise.resolve({
           path: `/${lang}/`,
-          head: { title: lang, description: lang, robots: null },
+          head: { title: lang, description: lang, robots: null, ...noLinks },
           markup: '<h1>One</h1><h1>Two</h1>',
           initialData: {},
         }),
@@ -354,7 +474,12 @@ describe('a build that fails writes nothing', () => {
       renderMoviePage: (lang, data) =>
         Promise.resolve({
           path: `/${lang}/movie/${data.detail.movie.id}`,
-          head: { title: `${data.detail.movie.id}${lang}`, description: 'x', robots: null },
+          head: {
+            title: `${data.detail.movie.id}${lang}`,
+            description: 'x',
+            robots: null,
+            ...noLinks,
+          },
           markup: `<h1>${incompressible(50)}</h1>`,
           initialData: {},
         }),
@@ -366,7 +491,7 @@ describe('a build that fails writes nothing', () => {
       renderListPage: (lang) =>
         Promise.resolve({
           path: `/${lang}/`,
-          head: { title: lang, description: lang, robots: null },
+          head: { title: lang, description: lang, robots: null, ...noLinks },
           markup: `<h1>${incompressible(90)}</h1>`,
           initialData: {},
         }),

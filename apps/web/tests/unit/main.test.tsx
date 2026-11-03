@@ -66,6 +66,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
   window.localStorage.clear();
+  document.cookie = 'seansai_lang=; Max-Age=0; Path=/';
   document.body.replaceChildren();
 });
 
@@ -131,4 +132,25 @@ test('with no snapshot at all (self-hosted, or a page newer than the snapshot), 
 
   expect(await screen.findByRole('heading', { name: 'Zuikis' })).toBeInTheDocument();
   expect(document.documentElement.dataset.boot).toBeUndefined();
+});
+
+test('copies a language remembered before the cookie existed, for the `/` redirect', async () => {
+  window.history.pushState({}, '', '/en/');
+  document.body.innerHTML = '<div id="root"></div>';
+  window.localStorage.setItem('seansai.lang', 'en');
+  mockApi();
+
+  await startApp();
+
+  expect(document.cookie).toBe('seansai_lang=en');
+});
+
+test('writes no language cookie for someone who never chose a language', async () => {
+  window.history.pushState({}, '', '/en/');
+  document.body.innerHTML = '<div id="root"></div>';
+  mockApi();
+
+  await startApp();
+
+  expect(document.cookie).toBe('');
 });

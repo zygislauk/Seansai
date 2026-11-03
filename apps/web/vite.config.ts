@@ -1,12 +1,13 @@
-import { statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 
 /**
- * Lets `vite preview` answer `/lt/movie/x` from `lt/movie/x/index.html`, as the host does. Without
- * it, `mpa` mode answers 404 unless the address ends in a slash (research.md §10).
+ * Lets `vite preview` answer as the host does. `/lt/movie/x` comes from `lt/movie/x/index.html`:
+ * without this, `mpa` mode answers 404 unless the address ends in a slash (research.md §10). An
+ * unknown address gets `404.html` with its status: Vite's own 404 has no content.
  */
 function previewDirectoryPages(): Plugin {
   return {
@@ -20,16 +21,38 @@ function previewDirectoryPages(): Plugin {
         }
         next();
       });
+      // Returned, so it runs after Vite has looked for a file and resolved a directory's page.
+      return () => {
+        server.middlewares.use((request, response, next) => {
+          const notFoundPage = join(outDir, '404.html');
+          const [path = ''] = (request.url ?? '').split('?');
+          if (!existsSync(notFoundPage) || isFile(join(outDir, path))) {
+            next();
+            return;
+          }
+          response.statusCode = 404;
+          response.setHeader('content-type', 'text/html');
+          response.end(readFileSync(notFoundPage));
+        });
+      };
     },
   };
 }
 
 function isDirectory(encodedPath: string): boolean {
+  return entryAt(encodedPath)?.isDirectory() ?? false;
+}
+
+function isFile(encodedPath: string): boolean {
+  return entryAt(encodedPath)?.isFile() ?? false;
+}
+
+function entryAt(encodedPath: string) {
   try {
-    return statSync(decodeURI(encodedPath), { throwIfNoEntry: false })?.isDirectory() ?? false;
+    return statSync(decodeURI(encodedPath), { throwIfNoEntry: false });
   } catch {
-    // A malformed address is no directory; the server answers it with its usual 404.
-    return false;
+    // A malformed address is nothing on disk; the server answers it with its usual 404.
+    return undefined;
   }
 }
 

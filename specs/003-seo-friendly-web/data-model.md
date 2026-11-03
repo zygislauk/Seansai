@@ -111,7 +111,7 @@ Priority and change-frequency values are left out because Google ignores them.
 |-----|-------|-------|--------|
 | `seansai.city` | localStorage | City id or `all` | Now means "they've answered". Absent means first visit. |
 | `seansai.lang` | localStorage | `lt`, `en` | Unchanged |
-| `seansai_lang` | Cookie, 1 year, `SameSite=Lax`, `Secure` on HTTPS | `lt`, `en` | New. Written with `seansai.lang`, read only by the `/` redirect. |
+| `seansai_lang` | Cookie, 1 year, `SameSite=Lax`, `Secure` on HTTPS | `lt`, `en` | New. Written with `seansai.lang` and copied from it at startup, read only by the `/` redirect. |
 
 ## Configuration
 

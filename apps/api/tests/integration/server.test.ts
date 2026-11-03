@@ -140,6 +140,16 @@ describe('serving the web app', () => {
     rmSync(webDistDir, { recursive: true, force: true });
   });
 
+  test.each(['/', '/lt/vilnius', '/assets/index-abc123.js', '/api/v1/cities'])(
+    'keeps a self-hosted copy out of search results: %s',
+    async (url) => {
+      const response = await app.inject(url);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['x-robots-tag']).toBe('noindex');
+    },
+  );
+
   test('serves hashed assets with a long cache lifetime', async () => {
     const response = await app.inject('/assets/index-abc123.js');
 

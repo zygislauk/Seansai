@@ -7,6 +7,8 @@ import { LangSchema, type Lang } from '@seansai/shared';
  */
 const CITY_KEY = 'seansai.city';
 const LANG_KEY = 'seansai.lang';
+const LANG_COOKIE = 'seansai_lang';
+const ONE_YEAR_SECONDS = 31_536_000;
 
 function read(key: string): string | null {
   try {
@@ -47,6 +49,23 @@ export function getLang(): Lang | null {
   return parsed.success ? parsed.data : null;
 }
 
+/** Only the `/` redirect in vercel.json reads it, as a redirect can't see localStorage. */
+function writeLangCookie(lang: Lang): void {
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  try {
+    document.cookie = `${LANG_COOKIE}=${lang}; Max-Age=${String(ONE_YEAR_SECONDS)}; Path=/; SameSite=Lax${secure}`;
+  } catch {
+    // Cookies are unavailable: `/` simply goes to the default language.
+  }
+}
+
 export function setLang(lang: Lang): void {
   write(LANG_KEY, lang);
+  writeLangCookie(lang);
+}
+
+/** For a language remembered before the cookie existed, which `/` would otherwise never see. */
+export function copyLangToCookie(): void {
+  const lang = getLang();
+  if (lang !== null) writeLangCookie(lang);
 }

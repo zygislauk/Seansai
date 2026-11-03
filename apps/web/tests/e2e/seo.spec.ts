@@ -114,6 +114,127 @@ test.describe('without scripts', () => {
   });
 });
 
+test.describe('what search engines are told', () => {
+  const SITE = 'https://seansai.vercel.app';
+
+  async function sitemapAddresses(request: APIRequestContext) {
+    const response = await request.get('/sitemap.xml');
+    expect(response.status()).toBe(200);
+    return [...(await response.text()).matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => {
+      const address = match[1];
+      if (!address?.startsWith(SITE))
+        throw new Error(`Not on the public address: ${String(address)}`);
+      return address.slice(SITE.length);
+    });
+  }
+
+  test('every address in the site map answers directly', async ({ request }) => {
+    const paths = await sitemapAddresses(request);
+    const movies = await listedMovies(request);
+    expect(paths).toHaveLength(2 * (movies.length + 1));
+
+    for (const path of paths) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), path).toBe(200);
+      expect(await response.text(), path).toContain(
+        `<link rel="canonical" href="${SITE}${path}" />`,
+      );
+    }
+  });
+
+  test('robots.txt names the site map', async ({ request }) => {
+    const response = await request.get('/robots.txt');
+
+    expect(response.status()).toBe(200);
+    expect(await response.text()).toContain(`Sitemap: ${SITE}/sitemap.xml`);
+  });
+
+  test.describe('without scripts', () => {
+    test.use({ javaScriptEnabled: false });
+
+    test('each page names its preferred address and every language version', async ({
+      page,
+      request,
+    }) => {
+      const movies = await listedMovies(request);
+      const id = encodeURIComponent(movies[0]?.movie.id ?? '');
+
+      for (const [lang, rest] of [
+        ['lt', ''],
+        ['en', ''],
+        ['lt', `movie/${id}`],
+        ['en', `movie/${id}`],
+      ] as const) {
+        await page.goto(`/${lang}/${rest}`);
+
+        await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+          'href',
+          `${SITE}/${lang}/${rest}`,
+        );
+        const language = (hreflang: string) =>
+          page.locator(`link[rel="alternate"][hreflang="${hreflang}"]`);
+        await expect(language('lt')).toHaveAttribute('href', `${SITE}/lt/${rest}`);
+        await expect(language('en')).toHaveAttribute('href', `${SITE}/en/${rest}`);
+        await expect(language('x-default')).toHaveAttribute('href', `${SITE}/lt/${rest}`);
+      }
+    });
+  });
+
+  test('an unknown address answers 404, and a person sees the app’s not-found page', async ({
+    page,
+  }) => {
+    const response = await page.goto('/lt/nonexistent/page');
+
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Puslapis nerastas');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+  });
+
+  test('an unknown movie answers 404, and a person sees the app’s not-found page', async ({
+    page,
+  }) => {
+    const response = await page.goto('/lt/movie/no-such-movie-2026');
+
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Filmas nerastas');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+  });
+
+  test('a movie newer than the snapshot still opens, and is no longer marked noindex', async ({
+    page,
+    request,
+  }) => {
+    const movies = await listedMovies(request);
+    const listing = movies[0];
+    if (!listing) throw new Error('expected a movie');
+    // As if this movie's page weren't in the snapshot yet: the host answers with 404.html.
+    await page.route(`**${moviePath(listing.movie.id)}`, async (route) => {
+      const notFound = await route.fetch({ url: new URL('/404.html', route.request().url()).href });
+      await route.fulfill({ response: notFound, status: 404 });
+    });
+
+    await page.goto(moviePath(listing.movie.id));
+
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(listing.movie.title);
+    await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      `${SITE}${moviePath(listing.movie.id)}`,
+    );
+  });
+
+  test('an address with options names the plain address', async ({ page, request }) => {
+    const movies = await listedMovies(request);
+    const path = moviePath(movies[0]?.movie.id ?? '');
+
+    await page.goto(`${path}?date=2026-10-31`);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}${path}`);
+
+    await page.goto('/lt/?city=all');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}/lt/`);
+  });
+});
+
 /** Adds the production CSP, which the preview server doesn't send, so a violation shows up. */
 async function serveWithProductionCsp(context: BrowserContext) {
   const vercelJson = JSON.parse(

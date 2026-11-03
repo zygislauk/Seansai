@@ -1,5 +1,6 @@
 import type { CinemaSummary, Lang, MovieDetailResponse } from '@seansai/shared';
 import { createTranslator, type Translator } from '../i18n/index.tsx';
+import { SITE_URL } from './site.ts';
 
 /** About what search results show before cutting a description off. */
 const DESCRIPTION_LIMIT = 155;
@@ -9,6 +10,9 @@ export type PageHead = {
   title: string;
   description: string;
   robots: 'noindex' | null;
+  /** Full address of the preferred page, whatever options the address has (FR-012). */
+  canonical: string | null;
+  alternates: Array<{ hreflang: Lang | 'x-default'; href: string }>;
 };
 
 export type HeadPage =
@@ -65,6 +69,19 @@ function movieDescription(detail: MovieDetailResponse, name: string, city: strin
   return cutAtWord(about);
 }
 
+/** The same set on both language versions, with Lithuanian as the default. */
+function addresses(path: string, lang: Lang): Pick<PageHead, 'canonical' | 'alternates'> {
+  const address = (version: Lang) => `${SITE_URL}/${version}/${path}`;
+  return {
+    canonical: address(lang),
+    alternates: [
+      { hreflang: 'lt', href: address('lt') },
+      { hreflang: 'en', href: address('en') },
+      { hreflang: 'x-default', href: address('lt') },
+    ],
+  };
+}
+
 /** Pure, so the snapshot and the running app say the same about a page. */
 export function pageHead(page: HeadPage, lang: Lang): PageHead {
   const t = createTranslator(lang);
@@ -74,6 +91,7 @@ export function pageHead(page: HeadPage, lang: Lang): PageHead {
         title: t.t('head.listTitle'),
         description: t.t('head.listDescription'),
         robots: null,
+        ...addresses('', lang),
       };
     case 'movie': {
       const { title, year } = page.detail.movie;
@@ -82,6 +100,7 @@ export function pageHead(page: HeadPage, lang: Lang): PageHead {
         title: t.t('head.movieTitle', { name }),
         description: movieDescription(page.detail, name, page.city, t),
         robots: null,
+        ...addresses(`movie/${encodeURIComponent(page.detail.movie.id)}`, lang),
       };
     }
     case 'notFound':
@@ -89,6 +108,8 @@ export function pageHead(page: HeadPage, lang: Lang): PageHead {
         title: t.t('head.notFoundTitle'),
         description: t.t('notFound.body'),
         robots: 'noindex',
+        canonical: null,
+        alternates: [],
       };
   }
 }

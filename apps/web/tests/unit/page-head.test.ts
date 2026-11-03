@@ -139,12 +139,12 @@ describe('a movie page', () => {
 
 describe('the general list', () => {
   test('has a title and description in each language', () => {
-    expect(pageHead({ kind: 'list' }, 'lt')).toEqual({
+    expect(pageHead({ kind: 'list' }, 'lt')).toMatchObject({
       title: 'Kino seansai visoje Lietuvoje – Seansai',
       description: 'Visų Lietuvos kino teatrų seansai vienoje vietoje.',
       robots: null,
     });
-    expect(pageHead({ kind: 'list' }, 'en')).toEqual({
+    expect(pageHead({ kind: 'list' }, 'en')).toMatchObject({
       title: 'Cinema screenings across Lithuania – Seansai',
       description: 'Screenings at every cinema in Lithuania, all in one place.',
       robots: null,
@@ -154,10 +154,53 @@ describe('the general list', () => {
 
 describe('the not-found page', () => {
   test('asks not to be listed', () => {
-    expect(pageHead({ kind: 'notFound' }, 'en')).toEqual({
+    expect(pageHead({ kind: 'notFound' }, 'en')).toMatchObject({
       title: 'Page not found – Seansai',
       description: 'This page does not exist. The link may be out of date.',
       robots: 'noindex',
     });
+  });
+});
+
+describe('preferred addresses and language links', () => {
+  const SITE = 'https://seansai.vercel.app';
+  const linksTo = (path: (lang: string) => string) => [
+    { hreflang: 'lt', href: `${SITE}${path('lt')}` },
+    { hreflang: 'en', href: `${SITE}${path('en')}` },
+    { hreflang: 'x-default', href: `${SITE}${path('lt')}` },
+  ];
+
+  test('the list prefers its own address, in each language', () => {
+    expect(pageHead({ kind: 'list' }, 'lt').canonical).toBe(`${SITE}/lt/`);
+    expect(pageHead({ kind: 'list' }, 'en').canonical).toBe(`${SITE}/en/`);
+  });
+
+  test('a movie prefers its own address, in each language', () => {
+    expect(movieHead(detail()).canonical).toBe(`${SITE}/lt/movie/digger-2026`);
+    expect(movieHead(detail(), 'en').canonical).toBe(`${SITE}/en/movie/digger-2026`);
+  });
+
+  test('every version names the same set of language links, with Lithuanian as the default', () => {
+    const list = linksTo((lang) => `/${lang}/`);
+    expect(pageHead({ kind: 'list' }, 'lt').alternates).toEqual(list);
+    expect(pageHead({ kind: 'list' }, 'en').alternates).toEqual(list);
+
+    const movie = linksTo((lang) => `/${lang}/movie/digger-2026`);
+    expect(movieHead(detail()).alternates).toEqual(movie);
+    expect(movieHead(detail(), 'en').alternates).toEqual(movie);
+  });
+
+  test('percent-encodes a movie id with non-ASCII letters', () => {
+    const head = movieHead(detail({ id: 'was-marielle-weiß' }));
+
+    expect(head.canonical).toBe(`${SITE}/lt/movie/was-marielle-wei%C3%9F`);
+    expect(head.alternates[1]?.href).toBe(`${SITE}/en/movie/was-marielle-wei%C3%9F`);
+  });
+
+  test('a not-found page prefers nothing', () => {
+    const head = pageHead({ kind: 'notFound' }, 'lt');
+
+    expect(head.canonical).toBeNull();
+    expect(head.alternates).toEqual([]);
   });
 });
