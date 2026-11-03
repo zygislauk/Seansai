@@ -142,6 +142,7 @@ test('copies a language remembered before the cookie existed, for the `/` redire
 
   await startApp();
 
+  expect(await screen.findByRole('heading', { name: 'Zuikis' })).toBeInTheDocument();
   expect(document.cookie).toBe('seansai_lang=en');
 });
 
@@ -152,5 +153,6 @@ test('writes no language cookie for someone who never chose a language', async (
 
   await startApp();
 
+  expect(await screen.findByRole('heading', { name: 'Zuikis' })).toBeInTheDocument();
   expect(document.cookie).toBe('');
 });
