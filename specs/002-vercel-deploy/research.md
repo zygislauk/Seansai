@@ -209,7 +209,8 @@ calls.
   Atlantis, Garsas, Spindulys and Minija, which crawl 35 to 50 film pages each (about 50 s), failed on
   waking, and the one-attempt-a-day rule left them out of date all day. The sites were fine: the same
   crawl with the Mac awake had no fetch errors. Later checks now retry what failed, within the hourly
-  limit for every source. Refusals aren't retried, and a source that keeps failing for another reason
+  limit for every source, and only for failures from that day, because retrying an older one would
+  date the latest attempt today and so cancel today's full refresh. Refusals aren't retried, and a source that keeps failing for another reason
   is tried hourly until the next day's refresh. Only the error message is stored, so telling them apart
   reads its start, which saved a migration. Overnight, retries can be cut short the same way until
   the Mac is next properly awake.

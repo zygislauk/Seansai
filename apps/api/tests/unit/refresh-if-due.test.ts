@@ -124,6 +124,18 @@ describe('refreshIfDue, after a failed attempt', () => {
     expect(retry).not.toHaveBeenCalled();
   });
 
+  test('leaves a failure from an earlier day to the next full refresh', async () => {
+    // A retry now would date the latest attempt today, and so cancel today's full refresh.
+    const { run, retry, refresh } = setup([
+      source('apollo', 0.5),
+      failed('atlantis', 30, timedOut),
+    ]);
+
+    expect(await refresh()).toBeNull();
+    expect(retry).not.toHaveBeenCalled();
+    expect(run).not.toHaveBeenCalled();
+  });
+
   test('a new day refreshes every source, not only the failed ones', async () => {
     const { run, retry, refresh } = setup([source('apollo', 30), failed('atlantis', 30, timedOut)]);
 

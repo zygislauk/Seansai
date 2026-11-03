@@ -23,7 +23,9 @@ export function isDue(lastAttempt: Date | null, now: Date, args: readonly string
 /**
  * The sources to try again before the next day's refresh. A Mac going back to sleep mid-refresh
  * fails whichever sources were still crawling (002 research.md), which says nothing about the
- * cinema. A cinema that refused us is different: it isn't asked again until the next day.
+ * cinema. A cinema that refused us is different: it isn't asked again until the next day. Only
+ * today's failures count: retrying an older one would date the latest attempt today, and so
+ * cancel today's full refresh.
  */
 function sourcesToRetry(sources: readonly SourceRecord[], now: Date): string[] {
   return sources
@@ -32,6 +34,7 @@ function sourcesToRetry(sources: readonly SourceRecord[], now: Date): string[] {
         lastError !== null &&
         !isRefusal(lastError) &&
         lastAttemptAt !== null &&
+        localDateOf(lastAttemptAt) === localDateOf(now) &&
         now.getTime() - lastAttemptAt.getTime() >= MIN_HOURS_BETWEEN_RUNS * HOUR_MS,
     )
     .map(({ id }) => id);

@@ -125,8 +125,8 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/lt.seansai.refresh.pli
 - **After a failure**: later checks that day retry only the sources that failed, each at most once an
   hour, and the log shows `Retrying the sources that failed`. A cinema that refused the request, or
   whose robots.txt disallows it, isn't asked again until the next day.
-- **By hand**: run `~/.local/share/seansai-refresh/scripts/home-refresh.sh`. It refuses within an
-  hour of the last run, the limit for every source.
+- **By hand**: run `~/.local/share/seansai-refresh/scripts/home-refresh.sh`. Within an hour of
+  the last run, the limit for every source, it only retries a source that failed over an hour ago.
 - **If Node changes**: removing that Node version stops the job, with the reason in the log. To
   change the job, run the `launchctl bootout` below first, then the commands above again.
 - **Logs**: `~/Library/Logs/seansai-refresh.log`. With the hook set, a refresh ends with
