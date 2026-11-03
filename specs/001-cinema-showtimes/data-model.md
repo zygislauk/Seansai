@@ -13,7 +13,7 @@ Static reference data from the cinema registry (versioned config file in the rep
 
 | Field | Type | Rules |
 |-------|------|-------|
-| `id` | string (slug) | e.g. `vilnius`, `kaunas`, `klaipeda`, `siauliai`, `panevezys`, `marijampole`, `gargzdai`; unique |
+| `id` | string (slug) | e.g. `vilnius`, `kaunas`, `klaipeda`, `siauliai`, `panevezys`; unique |
 | `nameLt` | string | e.g. "Vilnius" |
 | `nameEn` | string | e.g. "Vilnius" |
 
@@ -26,7 +26,7 @@ Static reference data from the cinema registry. The registry, not the feed, deci
 |-------|------|-------|
 | `id` | string (slug) | e.g. `forum-vingis`, `apollo-akropolis`; unique |
 | `name` | string | Display name, e.g. "Forum Cinemas Vingis" |
-| `chain` | enum | `apollo` · `forum` · `pasaka` · `skalvija` · `atlantis` · `romuva` · `garsas` · `spindulys` · `minija` · `vue` · `cinamon` |
+| `chain` | enum | `apollo` · `forum` · `pasaka` · `skalvija` · `atlantis` · `romuva` · `garsas` · `vue` · `cinamon` |
 | `cityId` | → City | required |
 | `address` | string | optional |
 | `websiteUrl` | URL | required; fallback ticket link |
@@ -39,7 +39,7 @@ One per adapter configuration. Holds the refresh status shown to users (FR-015).
 
 | Field | Type | Rules |
 |-------|------|-------|
-| `id` | string | `apollo`, `forum`, `pasaka`, `skalvija`, `atlantis`, `garsas`, `spindulys`, `minija`, `romuva`, `vue`, `cinamon` |
+| `id` | string | `apollo`, `forum`, `pasaka`, `skalvija`, `atlantis`, `garsas`, `romuva`, `vue`, `cinamon` |
 | `lastAttemptAt` | instant | set at every refresh attempt |
 | `lastSuccessAt` | instant \| null | set only when a refresh completes and passes validation |
 | `lastError` | string \| null | short technical reason; never shown raw to users |

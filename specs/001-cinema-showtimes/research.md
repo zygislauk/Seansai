@@ -42,8 +42,6 @@ members, regional cinema reports) and checked each one's website and `robots.txt
 |-------|------|----------------|--------|------------|---------|
 | Kauno kino centras **Romuva** | Kaunas | Oldest working cinema in Lithuania; Kaunas' main arthouse cinema (Europa Cinemas member) | `https://bilietai.kcromuva.lt/` embeds its full calendar as a JSON array (`title`, `start`, `url`) | Allows all | ✅ Add (new small adapter) |
 | Kino centras **Garsas** | Panevėžys | Panevėžys' arthouse cinema (Europa Cinemas member since 2009) | Ticket shop `https://bilietai.garsas.lt/filmai` uses the **same Fliko site template as Atlantis** | Allows all except `/checkout/`, `/kasa/` | ✅ Add (reuses Fliko adapter) |
-| **Spindulys** | Marijampolė | Main cinema in Marijampolė (2 halls) | `https://spinduliokinas.lt/` — Fliko template | Same as above | ✅ Add (reuses Fliko adapter) |
-| **Minija** | Gargždai (Klaipėda district) | Regional cinema near Klaipėda | `https://gargzdukinas.lt/` — Fliko template | Same as above | ✅ Add (reuses Fliko adapter) |
 | **Cinamon Mega** | Kaunas | Second multiplex in Kaunas (mainstream releases) | Page state holds today's sessions (`showtime: "YYYY-MM-DD HH:MM:SS"`, cinema `pid` `77139293`); the site's app loads pages from `https://cinamonkino.com/api/page/{name}?cinema_id=&timezone=&locale=` (inferred from its JS bundle, **not yet verified**) | `/api/` disallowed | ⚠️ Included by owner decision (§1b) |
 | **Dainava** | Alytus | Listed as operating in regional-cinema reports | No online schedule or ticket shop found | — | ❌ Not possible without a public schedule |
 
@@ -51,13 +49,13 @@ Not added: one-off or seasonal screening venues (e.g., cultural centres with occ
 nights, outdoor summer cinemas), because they are not regular cinemas; they can be added later if
 users ask for them.
 
-**Decision**: Add Romuva, Garsas, Spindulys and Minija to v1. Three of them need no new code
+**Decision**: Add Romuva and Garsas to v1. Garsas needs no new code
 (the Fliko adapter, renamed from "atlantis"), and Romuva needs one small adapter. Cinamon Mega is
 also included, by owner decision (§1b).
 
 **Rationale**: Romuva and Garsas are the main arthouse cinemas in Lithuania's 2nd and 5th largest
 cities, so leaving them out would leave gaps in Kaunas and Panevėžys. Reusing the Fliko adapter
-makes the regional venues nearly free to support.
+makes Garsas nearly free to support.
 
 **Alternatives considered**: for Cinamon, evaluating the embedded page state (allowed path) gives
 today's screenings only and requires deeply parsing minified scripts; kept only as a fallback if
@@ -119,7 +117,7 @@ Conditions, so the decision stays low-risk and reversible:
 - **Skalvija**: response body starts with PHP warning HTML before the JSON → strip everything
   before the first `{`/`[`; `start_date` is a Unix timestamp; titles are arrays; generic entries
   such as "Repertuarinis seansas" exist and are shown under that title.
-- **Atlantis / Fliko sites** (Atlantis, Garsas, Spindulys, Minija): times are local `HH:MM`
+- **Atlantis / Fliko sites** (Atlantis, Garsas): times are local `HH:MM`
   grouped under `<time datetime="YYYY-MM-DD">` date headers on `/filmai/{slug}` pages; each site's
   `back.*` backend disallows all crawling and must not be called.
 - **Vue**: showing `date` values end in `Z` but are actually local Vilnius time (e.g.

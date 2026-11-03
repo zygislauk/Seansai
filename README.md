@@ -10,15 +10,13 @@ The feature spec, plan and design documents are in
 
 ## Supported cinemas
 
-| City        | Cinemas                                                                                                                                                | Source                              |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
-| Vilnius     | Apollo Akropolis, Apollo Outlet, Pasaka Paupys, Pasaka Senamiestis, Pasaka Kalnų parko estrada (seasonal), Skalvija, Vue Vilnius, Forum Cinemas Vingis | MCS feeds, Skalvija API, Vue, Forum |
-| Kaunas      | Kauno kino centras Romuva, Cinamon Mega, Forum Cinemas Kaunas                                                                                          | Romuva page, Cinamon, Forum         |
-| Klaipėda    | Forum Cinemas Klaipėda                                                                                                                                 | Forum                               |
-| Šiauliai    | Atlantis Cinemas, Forum Cinemas Šiauliai                                                                                                               | Fliko pages, Forum                  |
-| Panevėžys   | Apollo Molas, Kino centras Garsas                                                                                                                      | MCS feed, Fliko pages               |
-| Marijampolė | Kino teatras Spindulys                                                                                                                                 | Fliko pages                         |
-| Gargždai    | Kino teatras Minija                                                                                                                                    | Fliko pages                         |
+| City      | Cinemas                                                                                                                                                | Source                              |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Vilnius   | Apollo Akropolis, Apollo Outlet, Pasaka Paupys, Pasaka Senamiestis, Pasaka Kalnų parko estrada (seasonal), Skalvija, Vue Vilnius, Forum Cinemas Vingis | MCS feeds, Skalvija API, Vue, Forum |
+| Kaunas    | Kauno kino centras Romuva, Cinamon Mega, Forum Cinemas Kaunas                                                                                          | Romuva page, Cinamon, Forum         |
+| Klaipėda  | Forum Cinemas Klaipėda                                                                                                                                 | Forum                               |
+| Šiauliai  | Atlantis Cinemas, Forum Cinemas Šiauliai                                                                                                               | Fliko pages, Forum                  |
+| Panevėžys | Apollo Molas, Kino centras Garsas                                                                                                                      | MCS feed, Fliko pages               |
 
 **Known gaps**
 

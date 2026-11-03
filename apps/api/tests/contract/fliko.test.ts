@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-  atlantisAdapter,
-  garsasAdapter,
-  minijaAdapter,
-  spindulysAdapter,
-} from '../../src/sources/fliko/adapter.ts';
+import { atlantisAdapter, garsasAdapter } from '../../src/sources/fliko/adapter.ts';
 import { findScreening, runOnFixtures } from '../helpers/adapters.ts';
 
 /** Capture instants of the Fliko fixtures (tests/fixtures/README.md). */
@@ -89,14 +84,11 @@ describe('Fliko sites (server-rendered movie pages)', () => {
     });
   });
 
-  test.each([
-    ['spindulys', spindulysAdapter, 'spinduliokinas.lt', 32],
-    ['minija', minijaAdapter, 'gargzdukinas.lt', 16],
-  ] as const)('%s reads its own site', async (cinemaId, adapter, host, count) => {
-    const { screenings, requests } = await runOnFixtures(adapter, GARSAS_NOW);
+  test('garsas reads its own site', async () => {
+    const { screenings, requests } = await runOnFixtures(garsasAdapter, GARSAS_NOW);
 
-    for (const url of requests) expect(new URL(url).host).toBe(host);
-    expect(screenings).toHaveLength(count);
-    expect(new Set(screenings.map((screening) => screening.cinemaId))).toEqual(new Set([cinemaId]));
+    for (const url of requests) expect(new URL(url).host).toBe('bilietai.garsas.lt');
+    expect(screenings.length).toBeGreaterThan(0);
+    expect(new Set(screenings.map((screening) => screening.cinemaId))).toEqual(new Set(['garsas']));
   });
 });

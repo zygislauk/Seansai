@@ -36,8 +36,6 @@ function withLatency(db: Db): Db {
 const SLOW_LAST: readonly string[] = [
   'cinamon',
   'romuva',
-  'spindulys',
-  'minija',
   'garsas',
   'vue',
   'skalvija',

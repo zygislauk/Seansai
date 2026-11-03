@@ -261,7 +261,7 @@ to protect.
   own link appears only while it has movies.
 - **Knowing which cities have movies**: `/cities` gains `hasMovies`, so the snapshot and the running app show
   the same links (FR-002). The field has to be live before the code that reads it (§3). Rejected:
-  - Fetching all 7 city lists on each visit loads data that isn't shown (Constitution VI).
+  - Fetching all 5 city lists on each visit loads data that isn't shown (Constitution VI).
   - Working it out only in the snapshot makes the links differ once the app takes over.
   - Linking every supported city needs no API change, but sends crawlers to empty pages.
 
@@ -302,7 +302,7 @@ itself fails any page over budget, and it passed.
 
 | Budget (plan.md) | Target | Measured |
 |------------------|--------|----------|
-| List page, compressed | ≤ 80 kB | 27.5 kB (`/lt/`), 23.7 kB (`/lt/city/vilnius`), 3.7 kB (`/lt/city/gargzdai`) |
+| List page, compressed | ≤ 80 kB | 27.5 kB (`/lt/`), 23.7 kB (`/lt/city/vilnius`), 3.7 kB (the smallest city page) |
 | Movie page, compressed | ≤ 40 kB | 7.5 kB at most in the sample |
 | JavaScript on first visit, compressed | ≤ 150 kB | 140.3 kB |
 | Rendering all pages in a build | < 3 min | About 29 s, reading production's API |

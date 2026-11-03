@@ -71,15 +71,9 @@ describe('a movie page', () => {
   });
 
   test('stays within about 155 characters, however many places', () => {
-    const everywhere = [
-      'Vilnius',
-      'Kaunas',
-      'Klaipėda',
-      'Šiauliai',
-      'Panevėžys',
-      'Marijampolė',
-      'Gargždai',
-    ].map((name) => cinema(name, `Kinas ${name}`, name, name));
+    const everywhere = ['Vilnius', 'Kaunas', 'Klaipėda', 'Šiauliai', 'Panevėžys'].map((name) =>
+      cinema(name, `Kinas ${name}`, name, name),
+    );
 
     const { description } = movieHead(
       detail(
