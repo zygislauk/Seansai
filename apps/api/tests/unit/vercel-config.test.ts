@@ -10,6 +10,7 @@ type Service = {
   bindings?: unknown;
   rewrites?: Array<{ source: string; destination: string }>;
   headers?: Array<{ source: string; headers: Header[] }>;
+  routes?: unknown;
 };
 type VercelConfig = {
   regions?: string[];
@@ -47,6 +48,13 @@ describe('vercel.json', () => {
 
   test('has no catch-all to index.html, so an unknown address can answer 404', () => {
     expect(service('web').rewrites).toBeUndefined();
+  });
+
+  test('answers an unknown address with the app, as a 404, once no file matched', () => {
+    expect(service('web').routes).toEqual([
+      { handle: 'filesystem' },
+      { src: '/.*', status: 404, dest: '/404.html' },
+    ]);
   });
 
   test('sends / to the remembered language, temporarily as it depends on the visitor', () => {
