@@ -1,9 +1,10 @@
-import type { MovieDetail } from '@seansai/shared';
+import type { MovieDetailResponse } from '@seansai/shared';
 import { useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
 import { useMovie, useScreenings } from '../api/hooks.ts';
 import { useCity } from '../app/city.tsx';
+import { useDocumentHead } from '../app/document-head.ts';
 import { useFilters } from '../app/filters.ts';
 import { Badge } from '../components/atoms/Badge/index.ts';
 import { Button } from '../components/atoms/Button/index.ts';
@@ -19,6 +20,7 @@ import { StaleNotice } from '../components/organisms/StaleNotice/index.ts';
 import { PageLayout } from '../components/templates/PageLayout/index.ts';
 import { useT } from '../i18n/index.tsx';
 import { applyFilters, hasFilters, noFilters } from '../lib/filters.ts';
+import { nextShowing, pageHead } from '../lib/page-head.ts';
 import { secondaryTitle } from '../lib/text.ts';
 import styles from './MoviePage.module.scss';
 import { NotFoundPage } from './NotFoundPage.tsx';
@@ -34,12 +36,15 @@ function withDate(params: URLSearchParams, date: string, today: string | null): 
 
 /** One movie's screenings in the city on one date, today by default (FR-006 to FR-011). */
 export function MoviePage() {
-  const { t, formatTime } = useT();
+  const { t, lang, formatTime } = useT();
   const { movieId = '' } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { city, forgetCity } = useCity();
-  const detail = useMovie(movieId, city);
+  const detail = useMovie(movieId, city, lang);
+  useDocumentHead(
+    detail.data ? pageHead({ kind: 'movie', detail: detail.data, city }, lang) : null,
+  );
 
   // "Today" comes from the server, so it matches the data even on a device with a wrong clock.
   const dates = detail.data?.availableDates ?? [];
@@ -92,7 +97,7 @@ export function MoviePage() {
       )}
       {detail.data && date !== null && (
         <div className={styles.page}>
-          <MovieHeader movie={detail.data.movie} />
+          <MovieHeader detail={detail.data} city={city} />
           <section className={styles.screenings} aria-labelledby="screenings-heading">
             <DatePicker
               dates={dates}
@@ -121,13 +126,17 @@ function DateHeading({ date, isToday }: { date: string; isToday: boolean }) {
   return isToday ? `${t('movie.today')}, ${formatDate(date)}` : formatDate(date);
 }
 
-function MovieHeader({ movie }: { movie: MovieDetail }) {
-  const { t } = useT();
+function MovieHeader({ detail, city }: { detail: MovieDetailResponse; city: string }) {
+  const translator = useT();
+  const { t } = translator;
+  const { movie } = detail;
   const subtitle = secondaryTitle(movie);
   const facts = [
+    movie.year,
     movie.durationMinutes !== null && t('movie.duration', { minutes: movie.durationMinutes }),
     ...movie.genres,
   ].filter(Boolean);
+  const summary = nextShowing(detail, city, translator);
   return (
     <header className={styles.movie}>
       <Poster
@@ -149,6 +158,7 @@ function MovieHeader({ movie }: { movie: MovieDetail }) {
           )}
           {facts.join(' · ')}
         </p>
+        {summary !== null && <p className={styles.summary}>{summary}</p>}
       </div>
     </header>
   );

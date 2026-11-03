@@ -13,7 +13,7 @@ import {
 /** `main.tsx` starts the app when it's imported, so each test imports its own copy. */
 const startApp = () => import('../../src/main.tsx');
 
-/** A page as `prerender.ts` writes it, built from data older than the cache's freshness limit. */
+/** A page as `prerender.ts` writes it. */
 async function writeSnapshot(path: string, { withData = true } = {}) {
   const { citiesQuery, movieQuery, moviesQuery, screeningsQuery } =
     await import('../../src/api/hooks.ts');
@@ -23,7 +23,7 @@ async function writeSnapshot(path: string, { withData = true } = {}) {
   const queryClient = createQueryClient();
   queryClient.setQueryData(citiesQuery('lt').queryKey, cities);
   queryClient.setQueryData(moviesQuery('all').queryKey, movies);
-  queryClient.setQueryData(movieQuery('digger-2026', 'all').queryKey, diggerDetail);
+  queryClient.setQueryData(movieQuery('digger-2026', 'all', 'lt').queryKey, diggerDetail);
   queryClient.setQueryData(screeningsQuery('digger-2026', 'all', null).queryKey, {
     date: TODAY,
     screenings: diggerScreenings,
@@ -31,7 +31,6 @@ async function writeSnapshot(path: string, { withData = true } = {}) {
     freshness,
   });
   const { markup, initialData } = await renderPage(path, queryClient);
-  for (const query of initialData.queryCache.queries) query.state.dataUpdatedAt = 0;
 
   window.history.pushState({}, '', path);
   document.body.innerHTML = `<div id="root">${markup}</div>`;
@@ -72,7 +71,7 @@ afterEach(() => {
 
 test.each([
   ['movie list', '/lt/', '/api/v1/movies?city=all'],
-  ['movie', '/lt/movie/digger-2026', '/api/v1/movies/digger-2026?city=all'],
+  ['movie', '/lt/movie/digger-2026', '/api/v1/movies/digger-2026?city=all&lang=lt'],
 ])('takes over a %s snapshot without replacing it, then refreshes', async (_, path, request) => {
   const heading = await writeSnapshot(path);
   const api = mockApi();

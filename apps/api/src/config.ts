@@ -40,6 +40,8 @@ const EnvSchema = z
     SEANSAI_CONTACT: z.union([z.email(), z.url({ protocol: /^https$/ })]).optional(),
     DISABLED_SOURCES: sourceIdList,
     NODE_ENV: z.string().optional(),
+    /** Starts a snapshot build after a refresh. Anyone holding it can deploy, so it's secret. */
+    VERCEL_DEPLOY_HOOK_URL: z.url({ protocol: /^https$/ }).optional(),
     /** Set by Vercel, where the web app is its own service (vercel.json). */
     VERCEL: z.string().optional(),
   })
@@ -74,6 +76,8 @@ export type Config = {
   disabledSources: string[];
   /** Production serves the built web app; in development Vite serves it, on Vercel its service. */
   serveWebApp: boolean;
+  /** Asked for a new page snapshot after a refresh; null when snapshots aren't in use. */
+  deployHookUrl: string | null;
 };
 
 function parseLastSuccessHours(env: NodeJS.ProcessEnv): Record<string, number> {
@@ -115,6 +119,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     contact: values.SEANSAI_CONTACT ?? null,
     disabledSources: values.DISABLED_SOURCES,
     serveWebApp: values.NODE_ENV === 'production' && !onVercel,
+    deployHookUrl: values.VERCEL_DEPLOY_HOOK_URL ?? null,
   };
 }
 

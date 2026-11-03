@@ -8,7 +8,7 @@ const STALE_TIME_MS = 5 * 60 * 1000;
 export const queryKeys = {
   cities: (lang: Lang) => ['cities', lang] as const,
   movies: (city: string) => ['movies', city] as const,
-  movie: (movieId: string, city: string) => ['movie', movieId, city] as const,
+  movie: (movieId: string, city: string, lang: Lang) => ['movie', movieId, city, lang] as const,
   screenings: (movieId: string, city: string, date: string | null) =>
     ['screenings', movieId, city, date ?? 'today'] as const,
 };
@@ -32,10 +32,10 @@ export const moviesQuery = (city: string) =>
     staleTime: STALE_TIME_MS,
   });
 
-export const movieQuery = (movieId: string, city: string) =>
+export const movieQuery = (movieId: string, city: string, lang: Lang) =>
   queryOptions({
-    queryKey: queryKeys.movie(movieId, city),
-    queryFn: ({ signal }) => getMovie(movieId, city, signal),
+    queryKey: queryKeys.movie(movieId, city, lang),
+    queryFn: ({ signal }) => getMovie(movieId, city, lang, signal),
     staleTime: STALE_TIME_MS,
   });
 
@@ -55,8 +55,8 @@ export function useMovies(city: string) {
   return useQuery(moviesQuery(city));
 }
 
-export function useMovie(movieId: string, city: string) {
-  return useQuery(movieQuery(movieId, city));
+export function useMovie(movieId: string, city: string, lang: Lang) {
+  return useQuery(movieQuery(movieId, city, lang));
 }
 
 /**

@@ -64,6 +64,23 @@ describe('routes (contracts/web-routes.md)', () => {
     });
   });
 
+  test('the list page describes itself to the document', async () => {
+    mockApi();
+    renderApp('/en/');
+
+    await screen.findByRole('heading', { name: 'Zuikis' });
+
+    expect(document.title).toBe('Cinema screenings across Lithuania – Seansai');
+  });
+
+  test('a first visit offers the choice of city without asking first', async () => {
+    mockApi();
+    renderApp('/en/');
+
+    expect(await screen.findByRole('region', { name: 'City' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
   test('an unknown page shows "not found" with a link back to the movie list', async () => {
     renderApp('/en/no/such/page');
 

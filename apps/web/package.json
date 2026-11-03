@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/compress-assets.ts && node scripts/check-bundle-size.ts",
+    "build": "vite build && vite build --ssr src/entry-prerender.tsx && node scripts/compress-assets.ts && node scripts/check-bundle-size.ts && node scripts/prerender.ts",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
     "test": "vitest run",

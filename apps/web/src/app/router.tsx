@@ -101,7 +101,7 @@ export function createRoutes(queryClient: QueryClient): RouteObject[] {
             const { lang, city, date } = pageContext(args);
             const movieId = args.params.movieId ?? '';
             queryClient.query(citiesQuery(lang)).catch(ignore);
-            queryClient.query(movieQuery(movieId, city)).catch(ignore);
+            queryClient.query(movieQuery(movieId, city, lang)).catch(ignore);
             queryClient.query(screeningsQuery(movieId, city, date)).catch(ignore);
             return null;
           },

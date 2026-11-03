@@ -46,7 +46,7 @@ describe('API client', () => {
   test('throws ApiError with the code from an ErrorResponse', async () => {
     mockFetch(404, { error: { code: 'movie_not_found', message: 'No such movie' } });
 
-    const error = await getMovie('nope', 'vilnius').catch((caught: unknown) => caught);
+    const error = await getMovie('nope', 'vilnius', 'lt').catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toMatchObject({ status: 404, code: 'movie_not_found' });
   });

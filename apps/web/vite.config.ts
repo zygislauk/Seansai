@@ -42,6 +42,8 @@ export default defineConfig(({ isPreview, isSsrBuild }) => ({
     // One stylesheet, linked from every page, so a snapshot is styled before any script runs.
     cssCodeSplit: false,
     outDir: `${process.env.BUILD_OUT_DIR ?? 'dist'}${isSsrBuild ? '-prerender' : ''}`,
+    // The page renderer only ever runs during the build, so it has no use for these.
+    copyPublicDir: !isSsrBuild,
   },
   css: {
     preprocessorOptions: {

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { ApiError } from '../api/client.ts';
 import { useMovies } from '../api/hooks.ts';
 import { useCity } from '../app/city.tsx';
+import { useDocumentHead } from '../app/document-head.ts';
 import { EmptyState } from '../components/organisms/EmptyState/index.ts';
 import { ErrorState } from '../components/organisms/ErrorState/index.ts';
 import { LoadingState } from '../components/organisms/LoadingState/index.ts';
@@ -9,13 +10,15 @@ import { MovieGrid } from '../components/organisms/MovieGrid/index.ts';
 import { StaleNotice } from '../components/organisms/StaleNotice/index.ts';
 import { PageLayout } from '../components/templates/PageLayout/index.ts';
 import { useT } from '../i18n/index.tsx';
+import { pageHead } from '../lib/page-head.ts';
 import styles from './MovieListPage.module.scss';
 
 /** The "currently showing" list for the city, all of Lithuania until one is chosen (FR-003, FR-014). */
 export function MovieListPage() {
-  const { t, formatTime } = useT();
+  const { t, lang, formatTime } = useT();
   const { city, forgetCity } = useCity();
   const movies = useMovies(city);
+  useDocumentHead(pageHead({ kind: 'list' }, lang));
 
   const unknownCity = movies.error instanceof ApiError && movies.error.code === 'invalid_city';
   useEffect(() => {

@@ -2,7 +2,7 @@
 import { afterEach, expect, test, vi } from 'vitest';
 import { citiesQuery, movieQuery, moviesQuery, screeningsQuery } from '../../src/api/hooks.ts';
 import { createQueryClient } from '../../src/app/providers.tsx';
-import { renderPage } from '../../src/entry-prerender.tsx';
+import { renderListPage, renderMoviePage, renderPage } from '../../src/entry-prerender.tsx';
 import {
   cities,
   diggerDetail,
@@ -17,7 +17,8 @@ function filledCache() {
   const queryClient = createQueryClient();
   queryClient.setQueryData(citiesQuery('lt').queryKey, cities);
   queryClient.setQueryData(moviesQuery('all').queryKey, movies);
-  queryClient.setQueryData(movieQuery('digger-2026', 'all').queryKey, diggerDetail);
+  queryClient.setQueryData(movieQuery('digger-2026', 'all', 'lt').queryKey, diggerDetail);
+  queryClient.setQueryData(movieQuery('digger-2026', 'all', 'en').queryKey, diggerDetail);
   queryClient.setQueryData(screeningsQuery('digger-2026', 'all', null).queryKey, {
     date: TODAY,
     screenings: diggerScreenings,
@@ -61,6 +62,50 @@ test('returns what the browser needs to take over', async () => {
     'all',
   ]);
   expect(Object.keys(initialData.loaderData).length).toBeGreaterThan(0);
+  // So the browser asks for current data, whatever its clock says.
+  for (const query of initialData.queryCache.queries) expect(query.state.dataUpdatedAt).toBe(0);
+});
+
+test('renders the list and describes it', async () => {
+  const page = await renderListPage('en', { cities, movies });
+
+  expect(page.path).toBe('/en/');
+  expect(page.head.title).toBe('Cinema screenings across Lithuania – Seansai');
+  expect(page.markup).toContain('Now showing');
+  expect(page.markup).toContain('Kasėjas');
+});
+
+test('renders a movie and describes it, with the choice of city beside it', async () => {
+  const page = await renderMoviePage('en', {
+    cities,
+    detail: diggerDetail,
+    screenings: {
+      date: TODAY,
+      screenings: diggerScreenings,
+      nextDateWithScreenings: null,
+      freshness,
+    },
+  });
+
+  expect(page.path).toBe('/en/movie/digger-2026');
+  expect(page.head.title).toBe('Kasėjas (2026) – screenings');
+  expect(page.markup).toContain('Next screening: Friday 30 October');
+  expect(page.markup).toContain('Keep all of Lithuania');
+  expect(page.markup).toContain('https://www.apollokinas.lt/websales/show/1');
+});
+
+test('renders a movie whose address needs percent-encoding', async () => {
+  const detail = { ...diggerDetail, movie: { ...diggerDetail.movie, id: 'weiß-2026' } };
+
+  const page = await renderMoviePage('lt', {
+    cities,
+    detail,
+    screenings: { date: TODAY, screenings: [], nextDateWithScreenings: '2026-10-31', freshness },
+  });
+
+  expect(page.path).toBe('/lt/movie/weiß-2026');
+  expect(page.markup).toContain('Kasėjas');
+  expect(page.markup).toContain('?date=2026-10-31');
 });
 
 test('an address that redirects is not a page', async () => {

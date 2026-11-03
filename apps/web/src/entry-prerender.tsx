@@ -1,8 +1,17 @@
+import type {
+  CitiesResponse,
+  Lang,
+  MovieDetailResponse,
+  MoviesResponse,
+  ScreeningsResponse,
+} from '@seansai/shared';
 import { dehydrate, type DehydratedState, type QueryClient } from '@tanstack/react-query';
 import { renderToString } from 'react-dom/server';
 import { createStaticHandler, createStaticRouter, StaticRouterProvider } from 'react-router';
-import { AppProviders } from './app/providers.tsx';
+import { citiesQuery, movieQuery, moviesQuery, screeningsQuery } from './api/hooks.ts';
+import { AppProviders, createQueryClient } from './app/providers.tsx';
 import { createRoutes } from './app/router.tsx';
+import { pageHead } from './lib/page-head.ts';
 import { SITE_URL } from './lib/site.ts';
 
 /** What a page embeds as `#initial-data`, so the browser takes over without asking again. */
@@ -34,8 +43,47 @@ export async function renderPage(
       />
     </AppProviders>,
   );
+  const queryCache = dehydrate(queryClient);
+  // Old by any clock, so the browser always asks for current data once it has taken over.
+  for (const cached of queryCache.queries) cached.state.dataUpdatedAt = 0;
+  return { markup, initialData: { queryCache, loaderData: context.loaderData } };
+}
+
+/** A snapshot's pages always show all of Lithuania (FR-004). */
+const SNAPSHOT_CITY = 'all';
+
+export async function renderListPage(
+  lang: Lang,
+  { cities, movies }: { cities: CitiesResponse; movies: MoviesResponse },
+) {
+  const queryClient = createQueryClient();
+  queryClient.setQueryData(citiesQuery(lang).queryKey, cities);
+  queryClient.setQueryData(moviesQuery(SNAPSHOT_CITY).queryKey, movies);
+  const path = `/${lang}/`;
   return {
-    markup,
-    initialData: { queryCache: dehydrate(queryClient), loaderData: context.loaderData },
+    path,
+    head: pageHead({ kind: 'list' }, lang),
+    ...(await renderPage(path, queryClient)),
+  };
+}
+
+export async function renderMoviePage(
+  lang: Lang,
+  {
+    cities,
+    detail,
+    screenings,
+  }: { cities: CitiesResponse; detail: MovieDetailResponse; screenings: ScreeningsResponse },
+) {
+  const movieId = detail.movie.id;
+  const queryClient = createQueryClient();
+  queryClient.setQueryData(citiesQuery(lang).queryKey, cities);
+  queryClient.setQueryData(movieQuery(movieId, SNAPSHOT_CITY, lang).queryKey, detail);
+  queryClient.setQueryData(screeningsQuery(movieId, SNAPSHOT_CITY, null).queryKey, screenings);
+  const path = `/${lang}/movie/${movieId}`;
+  return {
+    path,
+    head: pageHead({ kind: 'movie', detail, city: SNAPSHOT_CITY }, lang),
+    ...(await renderPage(encodeURI(path), queryClient)),
   };
 }

@@ -3,7 +3,10 @@ import bootGate from '../../public/boot-gate.js?raw';
 
 const TODAY = '2026-11-02';
 
-/** Runs the gate as the browser does: an ordinary script, with the snapshot's date already in the head. */
+/**
+ * Runs the gate with the snapshot's date already in the head. Evaluated here rather than through a
+ * script element, which jsdom runs in a realm of its own that the test's fake clock doesn't reach.
+ */
 function runGate(snapshotDate: string | null): string | undefined {
   if (snapshotDate !== null) {
     const meta = document.createElement('meta');
@@ -11,9 +14,7 @@ function runGate(snapshotDate: string | null): string | undefined {
     meta.content = snapshotDate;
     document.head.append(meta);
   }
-  const script = document.createElement('script');
-  script.textContent = bootGate;
-  document.head.append(script);
+  globalThis.eval(bootGate);
   return document.documentElement.dataset.boot;
 }
 

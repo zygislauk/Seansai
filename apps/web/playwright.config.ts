@@ -1,7 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
-import { PRODUCTION_PORT, RESILIENCE_PORT } from './tests/e2e/ports.ts';
+import {
+  PRODUCTION_PORT,
+  RESILIENCE_PORT,
+  SNAPSHOT_API_PORT,
+  SNAPSHOT_PORT,
+} from './tests/e2e/ports.ts';
 
 const isCi = Boolean(process.env.CI);
+
+const snapshotApi = `http://localhost:${String(SNAPSHOT_API_PORT)}/api/v1`;
+/** The API answers as soon as it listens, but a snapshot needs every source to have loaded. */
+const waitForSnapshotApi = `until curl -sf ${snapshotApi}/health | grep -q lastSuccessAt && ! curl -sf ${snapshotApi}/health | grep -q '"lastSuccessAt":null'; do sleep 1; done`;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -37,6 +46,21 @@ export default defineConfig({
       url: `http://localhost:${String(PRODUCTION_PORT)}/api/v1/health`,
       reuseExistingServer: !isCi,
       timeout: 120_000,
+    },
+    {
+      // The daily snapshot over the fixture data, in its own folder: seo.spec.ts.
+      command: `node apps/api/src/main.ts & ${waitForSnapshotApi}; npm run build -w @seansai/web && npm run preview -w @seansai/web -- --port ${String(SNAPSHOT_PORT)} --strictPort & wait`,
+      cwd: '../..',
+      env: {
+        SOURCES_MODE: 'fixtures',
+        PORT: String(SNAPSHOT_API_PORT),
+        API_PORT: String(SNAPSHOT_API_PORT),
+        SNAPSHOT_API_URL: snapshotApi,
+        BUILD_OUT_DIR: 'dist-snapshot',
+      },
+      url: `http://localhost:${String(SNAPSHOT_PORT)}/lt/`,
+      reuseExistingServer: !isCi,
+      timeout: 180_000,
     },
     {
       // Vue's refresh fails and last succeeded 4 hours ago: resilience.spec.ts (FR-015).

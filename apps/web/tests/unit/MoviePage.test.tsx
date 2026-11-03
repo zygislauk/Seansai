@@ -2,7 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { freshness, mockApi, TODAY } from '../helpers/mock-api.ts';
+import { diggerDetail, freshness, mockApi, TODAY } from '../helpers/mock-api.ts';
 import { renderApp } from '../helpers/render-app.tsx';
 
 beforeEach(() => {
@@ -190,6 +190,77 @@ test('an unknown movie shows "movie not found" with a way back', async () => {
   expect(
     within(screen.getByRole('main')).getByRole('link', { name: 'Back to the movie list' }),
   ).toHaveAttribute('href', '/en/');
+});
+
+describe('when and where it is next showing (FR-005)', () => {
+  test('for all of Lithuania, names the date and cities, in the page’s language', async () => {
+    window.localStorage.setItem('seansai.city', 'all');
+    const api = mockApi({
+      detail: {
+        ...diggerDetail,
+        screeningDates: ['2026-11-06'],
+        showingAt: [
+          { id: 'a', name: 'Apollo', cityId: 'klaipeda', cityName: 'Klaipeda' },
+          { id: 'b', name: 'Forum', cityId: 'klaipeda', cityName: 'Klaipeda' },
+          { id: 'c', name: 'Skalvija', cityId: 'vilnius', cityName: 'Vilnius' },
+        ],
+      },
+    });
+    renderApp('/en/movie/digger-2026');
+
+    expect(
+      await screen.findByText('Next screening: Friday 6 November. Where: Klaipeda, Vilnius.'),
+    ).toBeInTheDocument();
+    expect(api.requested()).toContain('/api/v1/movies/digger-2026?city=all&lang=en');
+  });
+
+  test('within a city, names its cinemas', async () => {
+    mockApi();
+    renderApp('/en/movie/digger-2026');
+
+    expect(
+      await screen.findByText(
+        'Next screening: Friday 30 October. Where: Apollo Akropolis, Skalvija, Vue Vilnius.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  test('says nothing when it isn’t showing anywhere', async () => {
+    mockApi({ detail: { ...diggerDetail, screeningDates: [], showingAt: [] } });
+    renderApp('/en/movie/digger-2026');
+
+    await screen.findByRole('heading', { level: 1, name: 'Kasėjas' });
+
+    expect(screen.queryByText(/Next screening/)).not.toBeInTheDocument();
+  });
+
+  test('shows the year with the other facts', async () => {
+    mockApi();
+    renderApp('/en/movie/digger-2026');
+
+    expect(await screen.findByText(/2026 · 101 min · drama/)).toBeInTheDocument();
+  });
+});
+
+describe('the document head', () => {
+  test('describes the movie', async () => {
+    mockApi();
+    renderApp('/en/movie/digger-2026');
+
+    await screen.findByRole('heading', { level: 1, name: 'Kasėjas' });
+
+    expect(document.title).toBe('Kasėjas (2026) – screenings');
+  });
+
+  test('marks a movie no longer listed as not for search engines', async () => {
+    mockApi();
+    renderApp('/en/movie/gone-2020');
+
+    await screen.findByRole('heading', { name: 'Movie not found' });
+
+    expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+    document.head.querySelector('meta[name="robots"]')?.remove();
+  });
 });
 
 describe('a failed background refresh', () => {

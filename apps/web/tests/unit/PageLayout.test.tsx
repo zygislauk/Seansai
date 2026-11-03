@@ -72,6 +72,16 @@ test('the header shows the chosen city and lets the user change it (US3)', async
   });
 });
 
+test('the header’s switcher stays available beside the choice of city on a first visit', async () => {
+  mockApi();
+  renderApp('/en/');
+
+  expect(
+    await screen.findByRole('button', { name: 'Change city: All of Lithuania' }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'City' })).toBeInTheDocument();
+});
+
 test('the city dialog closes unchanged with Escape or the close button', async () => {
   const user = userEvent.setup();
   window.localStorage.setItem('seansai.city', 'vilnius');

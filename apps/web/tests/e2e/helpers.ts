@@ -8,6 +8,9 @@ import { expect, type APIRequestContext, type BrowserContext, type Page } from '
  * Vilnius. Forum was captured a day later, so its screenings start on Saturday 31 October.
  */
 
+/** The fixture clock, for tests that need the browser to agree with the API about today. */
+export const FIXTURE_INSTANT = new Date('2026-10-30T17:39:42Z');
+
 /** Tests never contact cinema websites: posters and ticket pages are answered locally. */
 export async function answerExternalRequestsLocally(context: BrowserContext) {
   await context.route(

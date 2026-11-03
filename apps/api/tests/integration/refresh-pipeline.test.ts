@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { loadConfig } from '../../src/config.ts';
 import type { Db } from '../../src/db/index.ts';
 import { Repository } from '../../src/db/repository.ts';
@@ -20,6 +20,7 @@ describe('createRefreshPipeline', () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     cleanup();
   });
 
@@ -39,6 +40,16 @@ describe('createRefreshPipeline', () => {
     );
     expect(Object.values(result.sources)).not.toContain('failed');
     expect((await db.execute('SELECT id FROM screenings LIMIT 1')).rows).toHaveLength(1);
+  });
+
+  test('asks for a snapshot build once every source has finished', async () => {
+    const hook = 'https://api.vercel.com/v1/integrations/deploy/prj/hook';
+    const fetch = vi.fn(() => Promise.resolve(new Response(null, { status: 200 })));
+    vi.stubGlobal('fetch', fetch);
+
+    await pipelineWith({ VERCEL_DEPLOY_HOOK_URL: hook }).runAll();
+
+    expect(fetch).toHaveBeenCalledWith(hook, expect.objectContaining({ method: 'POST' }));
   });
 
   test('the kill switch stops a source being contacted', async () => {
