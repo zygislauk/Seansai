@@ -44,9 +44,9 @@ export function createRefreshPipeline(
     logger.info({ screenings, movies }, 'Daily cleanup removed past screenings and old movies');
     return { screenings, movies };
   };
-  const runAll = async () => {
+  const runAdapters = async (selected: readonly SourceAdapter[]) => {
     const result = await runDailyRefresh({
-      adapters: enabledAdapters,
+      adapters: selected,
       refresh,
       cleanup,
       clock,
@@ -55,6 +55,9 @@ export function createRefreshPipeline(
     await requestSnapshotBuild(result.sources, { url: config.deployHookUrl, logger });
     return result;
   };
+  const runAll = () => runAdapters(enabledAdapters);
+  const runOnly = (sourceIds: readonly string[]) =>
+    runAdapters(enabledAdapters.filter((adapter) => sourceIds.includes(adapter.id)));
 
-  return { adapters: enabledAdapters, refresh, cleanup, runAll };
+  return { adapters: enabledAdapters, refresh, cleanup, runAll, runOnly };
 }

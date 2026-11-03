@@ -84,8 +84,8 @@ in [specs/002-vercel-deploy/quickstart.md](specs/002-vercel-deploy/quickstart.md
 - **Variables**: set `SEANSAI_CONTACT` for Production and Preview, and `CRON_SECRET`
   (`openssl rand -hex 32`) for Production only.
 - **Refreshing**: some cinemas refuse requests from Vercel, so a scheduled job on a machine at home
-  refreshes every source once a day into Turso (setup in
-  [quickstart.md §5](specs/002-vercel-deploy/quickstart.md)). The machine only needs to be on, with you
+  refreshes every source once a day into Turso, and retries failed ones hourly unless the cinema
+  refused (setup in [quickstart.md §5](specs/002-vercel-deploy/quickstart.md)). The machine only needs to be on, with you
   logged in, for about a minute a day. Visits never contact a cinema. A cinema is flagged as possibly outdated
   after **48 hours** on Vercel, instead of the 3 hours that apply to self-hosted copies, which still
   refresh hourly.
