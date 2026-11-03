@@ -44,7 +44,7 @@ Requires Node.js 24 and npm. The full guide, including how to validate each user
 ```bash
 npm install
 SOURCES_MODE=fixtures npm run dev    # saved data, no cinema websites contacted
-SEANSAI_CONTACT=https://github.com/zygispr/Seansai npm run dev    # live data, refreshed hourly
+SEANSAI_CONTACT=https://github.com/zygislauk/Seansai npm run dev    # live data, refreshed hourly
 ```
 
 The API runs on <http://localhost:3000>, the web app on <http://localhost:5173>.
@@ -53,7 +53,7 @@ The API runs on <http://localhost:3000>, the web app on <http://localhost:5173>.
 
 ```bash
 docker build -t seansai .
-docker run -p 3000:3000 -v seansai-data:/data -e SEANSAI_CONTACT=https://github.com/zygispr/Seansai seansai
+docker run -p 3000:3000 -v seansai-data:/data -e SEANSAI_CONTACT=https://github.com/zygislauk/Seansai seansai
 ```
 
 | Variable                                 | Meaning                                                                                  |

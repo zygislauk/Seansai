@@ -66,7 +66,7 @@ curl -s localhost:3000/ | head -c 100     # the web app's index.html
      `vercel env add TURSO_AUTH_TOKEN` once per environment, with that environment's database.
 3. Add the remaining variables:
    - `vercel env add CRON_SECRET production` with the output of `openssl rand -hex 32`;
-   - `vercel env add SEANSAI_CONTACT` with `https://github.com/zygispr/Seansai`.
+   - `vercel env add SEANSAI_CONTACT` with `https://github.com/zygislauk/Seansai`.
 4. Deploy a preview by pushing the branch or running `vercel deploy`.
    - Since feature 003, each build reads pages' data from a public API, and fails if it can't or if
      there are no movies. A new project has neither yet, so for its first deployments set
@@ -95,7 +95,7 @@ production's data.
 Set it up once, on a Mac. Run `nvm use 24` first if you use nvm, as the job keeps that Node's path.
 
 ```bash
-git clone https://github.com/zygispr/Seansai.git ~/.local/share/seansai-refresh
+git clone https://github.com/zygislauk/Seansai.git ~/.local/share/seansai-refresh
 
 # Private, outside any repository: SEANSAI_CONTACT, plus production's TURSO_DATABASE_URL and
 # TURSO_AUTH_TOKEN. To read those, run `vercel env pull <private file> --environment=production` in

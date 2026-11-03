@@ -16,7 +16,7 @@ Each folder contains:
 Refresh a source deliberately (never in CI):
 
 ```bash
-SEANSAI_CONTACT=https://github.com/zygispr/Seansai npm run fixtures:capture -- <sourceId>
+SEANSAI_CONTACT=https://github.com/zygislauk/Seansai npm run fixtures:capture -- <sourceId>
 ```
 
 The capture log below records when each source was captured. In fixture mode the API uses the
