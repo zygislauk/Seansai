@@ -155,13 +155,14 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 ### Tests for User Story 3 ⚠️
 
 - [ ] T047 [P] [US3] Add failing tests for city page heads: "Kino seansai Vilniuje" in Lithuanian, the English form, the fallback "Kino seansai: {name}" for a city not in the map, a list of every registry city confirming it has a form, and `?city=vilnius` naming `/{lang}/city/vilnius`, in `apps/web/tests/unit/page-head.test.ts`
-- [ ] T048 [P] [US3] Add failing router tests: `/{lang}/city/{cityId}` sets and remembers that city and an unknown city shows the not-found page, in `apps/web/tests/unit/router.test.tsx`
-- [ ] T049 [P] [US3] Add failing end-to-end tests: without scripts a city page names the city and lists only its movies; a person isn't asked for a city; switching city on a city page goes to that city's page, or to `/{lang}/` for all of Lithuania; opening a movie from it shows that city's screenings; a city with no current movies shows the empty message and isn't in the site map; without scripts, the general list has a plain link to each city page with current movies and none to the others, in `apps/web/tests/e2e/seo.spec.ts`
+- [ ] T048 [P] [US3] Add failing router tests: `/{lang}/city/{cityId}` sets and remembers that city and an unknown city shows the not-found page. The rendered list page's canonical link follows its address, not the remembered city (FR-012): `/lt/?city=vilnius` names `/lt/city/vilnius`, `/lt/` with Vilnius remembered names `/lt/`, and `/lt/?city=riga` names `/lt/` once the unknown city is forgotten, in `apps/web/tests/unit/router.test.tsx`
+- [ ] T049 [P] [US3] Add failing end-to-end tests: without scripts a city page names the city and lists only its movies; a person isn't asked for a city; switching city on a city page goes to that city's page, or to `/{lang}/` for all of Lithuania; opening a movie from it shows that city's screenings; without scripts, the general list has a plain link to each city page with current movies, in `apps/web/tests/e2e/seo.spec.ts`. A city with no current movies is covered by T049a, as all 7 fixture cities have movies
+- [ ] T049a [US3] Add failing tests for a city with no current movies, using a `cities` option added to `mockApi` in `apps/web/tests/helpers/mock-api.ts`: its page shows the empty message, and the general list links only to cities with `hasMovies`, in `apps/web/tests/unit/router.test.tsx`; its page is still written, the build doesn't fail, and it isn't in the site map, in `apps/web/tests/unit/prerender.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T050 [P] [US3] Add the Lithuanian forms for the 7 current cities (Vilniuje, Kaune, Klaipėdoje, Šiauliuose, Panevėžyje, Marijampolėje, Gargžduose) and the English title in `apps/web/src/i18n/lt.ts` and `apps/web/src/i18n/en.ts`, and city pages in `apps/web/src/lib/page-head.ts`
-- [ ] T051 [US3] Add the route `city/:cityId` using `MovieListPage` in `apps/web/src/app/router.tsx`, and take the city from the address in `apps/web/src/app/city.tsx` and `apps/web/src/pages/MovieListPage.tsx`. An unknown city shows `NotFoundPage`
+- [ ] T050 [P] [US3] Add the Lithuanian forms for the 7 current cities (Vilniuje, Kaune, Klaipėdoje, Šiauliuose, Panevėžyje, Marijampolėje, Gargžduose) and the English title in `apps/web/src/i18n/lt.ts` and `apps/web/src/i18n/en.ts`, and city pages in `apps/web/src/lib/page-head.ts`. `pageHead` also gets the list address's `?city=` option, to name the preferred address from the table in `specs/003-seo-friendly-web/data-model.md`
+- [ ] T051 [US3] Add the route `city/:cityId` using `MovieListPage` in `apps/web/src/app/router.tsx`, and take the city from the address in `apps/web/src/app/city.tsx` and `apps/web/src/pages/MovieListPage.tsx`. An unknown city shows `NotFoundPage`. `MovieListPage` passes `pageHead` the `?city=` in its address, not `useCity`'s city, which can be the remembered one
 - [ ] T052 [US3] Navigate to the chosen city's page when choosing a city on a list page, from `chooseCity` in `apps/web/src/app/city.tsx`
 - [ ] T053 [US3] Add plain links to every city page with `hasMovies` to the general list, from `useCities`, with no extra request per city, in `apps/web/src/pages/MovieListPage.tsx` and `apps/web/src/pages/MovieListPage.module.scss`
 - [ ] T054 [US3] Render city pages and add those with `hasMovies` to the site map in `apps/web/scripts/prerender.ts`, and add `/{lang}/city/{cityId}` to `specs/001-cinema-showtimes/contracts/web-routes.md`
@@ -275,7 +276,7 @@ US1 alone gives readable pages, but don't release it to Google yet. Without US2,
 | Foundational | 12 |
 | US1 | 18 |
 | US2 | 14 |
-| US3 | 12 |
+| US3 | 13 |
 | US4 | 5 |
 | Polish | 10 |
-| **Total** | **76** |
+| **Total** | **77** |
