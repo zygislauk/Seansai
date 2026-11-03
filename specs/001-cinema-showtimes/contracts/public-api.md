@@ -65,8 +65,11 @@ type Screening = {
 Cities with at least one supported cinema, for the first-visit city prompt (FR-013).
 
 ```json
-{ "cities": [ { "id": "vilnius", "name": "Vilnius", "cinemaCount": 6 } ] }
+{ "cities": [ { "id": "vilnius", "name": "Vilnius", "cinemaCount": 6, "hasMovies": true } ] }
 ```
+
+`hasMovies` is true when any shown cinema in the city has a screening that hasn't started. A city
+with none is still listed, as its cinemas are still supported.
 
 ## `GET /api/v1/movies?city={city}`
 

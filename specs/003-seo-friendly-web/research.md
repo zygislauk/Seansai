@@ -197,6 +197,24 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
 - **Discovery**: the general list page links to every city page, and the site map lists them. A city's
   own link appears only while it has movies.
 
+- **Rows read by `hasMovies`** (measured with `.scanstats` on a local copy of the 7,000-screening test
+  database, with 18 cinemas plus one with no screenings; Turso's own counter wasn't used). The query stops at
+  each cinema's first screening:
+
+  | | Rows read per call | Worst case a month, each URL missing the 5-minute cache every time |
+  |---|---|---|
+  | Existing indexes only | ~62,000 | ~1,070 M, over the 500 M allowance |
+  | New index `(cinema_id, starts_at)` | 18 | ~0.3 M, under 0.1% |
+
+  The worst case is 2 URLs × 288 misses a day × 30 days. Real traffic misses less often, but the first row
+  has too little margin even so, so migration 5 adds the index. It costs about 320 kB at that size and one
+  more index to write on each daily refresh, against 002's ~2% of the rows-written allowance. Rolling back is
+  safe: older code ignores the index.
+- **Effect on the movie list**: `/movies` now searches the new index. With a full fortnight ahead that's
+  about the same rows (6,928 against 7,000). Time was about the same in one measurement and a few ms slower in
+  another, both well within the 50 ms budget.
+  It reads less later in a schedule's life, once more screenings have started.
+
 ## 12. Things found in the data
 
 - **Duplicate titles**: "Čarlis ir Harper" has 3 ids today (`carlis-ir-harper`, `charlie-harper-2025`,

@@ -26,6 +26,25 @@ test('on a first visit, asks for the city, offering "All of Lithuania" first', a
   });
 });
 
+test('when the cities cannot be loaded, says so and still offers all of Lithuania', async () => {
+  const user = userEvent.setup();
+  mockApi({ failing: (url) => url.pathname === '/api/v1/cities' });
+  renderApp('/en/');
+
+  const dialog = await screen.findByRole('dialog', { name: 'Choose your city' });
+  expect(await within(dialog).findByRole('alert')).toHaveTextContent('Could not load');
+  expect(within(dialog).queryByRole('status')).not.toBeInTheDocument();
+  const all = within(dialog).getByRole('button', { name: /All of Lithuania/ });
+  await waitFor(() => {
+    expect(all).toHaveFocus();
+  });
+
+  await user.click(all);
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(window.localStorage.getItem('seansai.city')).toBe('all');
+});
+
 test('keeps keyboard focus inside the dialog', async () => {
   const user = userEvent.setup();
   mockApi();

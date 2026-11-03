@@ -46,7 +46,8 @@ function at(movieId: string, cinemaId: string, startsAt: string): ScreeningRecor
  *   but `cinamon` is not one of the sources shown unless a test asks for it.
  * - Anksčiau starts on 1 November (at 00:30, then 19:00), Vėliau on 6 November, also in Klaipėda
  *   and Šiauliai.
- * - Prasidėjęs has only a screening that already started.
+ * - Prasidėjęs has only screenings that already started, the one in Panevėžys being that city's
+ *   only screening.
  * - An event with a very long title has no screenings.
  * Forum last succeeded 4 hours ago (stale); Apollo and Skalvija 1 hour ago.
  */
@@ -113,6 +114,7 @@ export async function seedCatalog(repo: Repository): Promise<void> {
     at(movies.later.id, 'forum-klaipeda', '2026-11-06T18:00:00Z'),
     at(movies.later.id, 'forum-siauliai', '2026-11-06T18:00:00Z'),
     at(movies.started.id, 'apollo-akropolis', '2026-10-30T08:00:00Z'), // already started
+    at(movies.started.id, 'apollo-molas', '2026-10-30T10:00:00Z'), // starts now, so has started
   ];
   for (const sourceId of ['apollo', 'forum', 'skalvija', 'cinamon']) {
     await seedScreenings(

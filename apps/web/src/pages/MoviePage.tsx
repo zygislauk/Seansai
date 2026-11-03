@@ -73,7 +73,11 @@ export function MoviePage() {
   if (city === null || unknownCity) {
     return (
       <PageLayout>
-        <CityPrompt cities={cities.data?.cities ?? null} onSelect={chooseCity} />
+        <CityPrompt
+          cities={cities.data?.cities ?? null}
+          failed={cities.isError}
+          onSelect={chooseCity}
+        />
       </PageLayout>
     );
   }

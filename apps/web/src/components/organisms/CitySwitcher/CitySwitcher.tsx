@@ -37,6 +37,7 @@ export function CitySwitcher() {
       {open && (
         <CityPrompt
           cities={cities.data?.cities ?? null}
+          failed={cities.isError}
           selected={city}
           onSelect={(chosen) => {
             chooseCity(chosen);
