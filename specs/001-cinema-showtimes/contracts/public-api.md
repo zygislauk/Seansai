@@ -18,6 +18,8 @@ imported by both the API and the web app.
 - **Search engines**: responses send `X-Robots-Tag: noindex`, so they stay out of search while the
   pages that use them can still be rendered (feature 003). Fastify's own 414 and malformed-address
   400 are written before the header is added.
+- **Movie ids**: at most 200 bytes. A longer one answers 414, or 404 when the same server also serves
+  the web app.
 - **Errors**: non-2xx responses use
 
   ```json

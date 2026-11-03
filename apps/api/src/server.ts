@@ -8,6 +8,7 @@ import type { Db } from './db/index.ts';
 import { Queries } from './db/queries.ts';
 import { Repository } from './db/repository.ts';
 import { createLogger, type Logger } from './lib/logger.ts';
+import { MAX_MOVIE_ID_BYTES } from './matching/match.ts';
 import { cinemaRegistry } from './registry/cinemas.ts';
 import { citiesRoutes } from './routes/cities.ts';
 import type { DailyRefreshResult } from './refresh/daily.ts';
@@ -72,7 +73,9 @@ export function buildServer(options: ServerOptions): FastifyInstance {
 
   // The logger's own serializers keep request logs free of personal data (lib/logger.ts).
   const loggerInstance: FastifyBaseLogger = options.logger ?? createLogger();
-  const app = Fastify({ loggerInstance });
+  // Movie ids come from titles, and event screenings have long ones. The default of 100 characters
+  // left a listed movie with no page.
+  const app = Fastify({ loggerInstance, routerOptions: { maxParamLength: MAX_MOVIE_ID_BYTES } });
 
   void app.register(fastifyEtag);
   // JSON answers are compressed per request with a fast Brotli level; the web app's files are

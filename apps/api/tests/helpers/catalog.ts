@@ -12,6 +12,9 @@ import {
 } from './temp-db.ts';
 import { createTestLogger } from './test-logger.ts';
 
+/** The length of a real event's id, over the router's default limit of 100 characters. */
+export const LONG_TITLE_MOVIE_ID = `${'ilgas-renginio-pavadinimas-'.repeat(3)}filmai-programa-premjera-vilniuje`;
+
 /** 12:00 on Friday 30 October 2026 in Vilnius. */
 export const NOW = new Date('2026-10-30T10:00:00Z');
 export const TODAY = '2026-10-30';
@@ -44,6 +47,7 @@ function at(movieId: string, cinemaId: string, startsAt: string): ScreeningRecor
  * - Anksčiau starts on 1 November (at 00:30, then 19:00), Vėliau on 6 November, also in Klaipėda
  *   and Šiauliai.
  * - Prasidėjęs has only a screening that already started.
+ * - An event with a very long title has no screenings.
  * Forum last succeeded 4 hours ago (stale); Apollo and Skalvija 1 hour ago.
  */
 export async function seedCatalog(repo: Repository): Promise<void> {
@@ -76,6 +80,12 @@ export async function seedCatalog(repo: Repository): Promise<void> {
       title: 'Prasidėjęs',
       originalTitle: null,
       matchKey: 'prasidejes',
+    }),
+    longTitle: movieRecord({
+      id: LONG_TITLE_MOVIE_ID,
+      title: 'Labai ilgas renginio pavadinimas',
+      originalTitle: null,
+      matchKey: LONG_TITLE_MOVIE_ID.replaceAll('-', ' '),
     }),
   };
   await seedMovies(
