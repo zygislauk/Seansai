@@ -189,7 +189,7 @@ independent; one failing source never blocks others.
 consecutive failures before data becomes stale, and the load on cinema servers stays low.
 
 **Alternatives considered**: external cron / job queue — extra infrastructure not justified for
-eleven small sources.
+nine small sources.
 
 ## 5. Movie matching across cinemas (FR-005)
 

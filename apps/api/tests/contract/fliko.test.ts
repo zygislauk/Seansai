@@ -69,6 +69,7 @@ describe('Fliko sites (server-rendered movie pages)', () => {
   test('Garsas uses the same template, with its own host and halls', async () => {
     const { screenings, requests } = await runOnFixtures(garsasAdapter, GARSAS_NOW);
 
+    expect(new Set(screenings.map((screening) => screening.cinemaId))).toEqual(new Set(['garsas']));
     for (const url of requests) expect(new URL(url).host).toBe('bilietai.garsas.lt');
     expect(screenings).toHaveLength(10);
     expect(findScreening(screenings, 'a3150129-7637-4789-9e5d-a312e5896fd3')).toMatchObject({
@@ -82,13 +83,5 @@ describe('Fliko sites (server-rendered movie pages)', () => {
       hall: 'Kino centro „Garsas“ salė',
       ticketUrl: 'https://bilietai.garsas.lt/kasa/seansas/a3150129-7637-4789-9e5d-a312e5896fd3',
     });
-  });
-
-  test('garsas reads its own site', async () => {
-    const { screenings, requests } = await runOnFixtures(garsasAdapter, GARSAS_NOW);
-
-    for (const url of requests) expect(new URL(url).host).toBe('bilietai.garsas.lt');
-    expect(screenings.length).toBeGreaterThan(0);
-    expect(new Set(screenings.map((screening) => screening.cinemaId))).toEqual(new Set(['garsas']));
   });
 });

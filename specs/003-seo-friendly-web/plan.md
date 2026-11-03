@@ -65,7 +65,7 @@ function. The Docker container stays supported, without a snapshot.
 - The Content-Security-Policy stays strict, with no inline scripts (research §5).
 - Text from cinemas is untrusted and is always escaped in the HTML and JSON written to pages.
 
-**Scale/Scope**: about 448 pages today: 216 movies, 7 city lists and 1 general list, each in 2
+**Scale/Scope**: about 444 pages today: 216 movies, 5 city lists and 1 general list, each in 2
 languages. Load stays at feature 001's 1,000 visitors a day, plus crawlers. Up to 5,000 page fetches a
 day is assumed.
 

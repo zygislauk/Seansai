@@ -94,7 +94,7 @@ new projects, layers or patterns beyond those listed.
 
 - Sources are undocumented and can change without notice → adapters are isolated, validated and
   contract-tested; a failing source degrades gracefully (FR-015); `sources:check` detects drift.
-- Permission: the spec's "collection is acceptable" assumption holds for 9 of the 11 operators
+- Permission: the spec's "collection is acceptable" assumption holds for 7 of the 9 operators
   based on `robots.txt`; Vue and Cinamon are included by owner decision with the safeguards in
   research.md §1b. Written confirmation from each cinema is a recommended follow-up.
 
