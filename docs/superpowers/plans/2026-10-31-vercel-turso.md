@@ -296,7 +296,7 @@ Each step that creates accounts, resources or secrets needs the user's go-ahead.
   - If the install asks for a paid plan or a card on Hobby, stop. Instead, create the database at turso.tech (free, no card), then `vercel env add TURSO_DATABASE_URL` and `vercel env add TURSO_AUTH_TOKEN` for Production and Preview.
 - [ ] **Step 3: Secrets.**
   - `vercel env add CRON_SECRET` with a random value (`openssl rand -hex 32`).
-  - `vercel env add SEANSAI_CONTACT` with `https://github.com/zygispr/Seansai`.
+  - `vercel env add SEANSAI_CONTACT` with `https://github.com/zygislauk/Seansai`.
 - [ ] **Step 4: Preview deploy.**
   - Push the branch, or run `vercel deploy`.
   - Expected: the build succeeds and the `crons` entry is accepted on Hobby.

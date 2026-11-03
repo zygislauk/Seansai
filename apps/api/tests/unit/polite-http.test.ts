@@ -124,13 +124,13 @@ describe('PoliteHttpClient', () => {
         'https://cinema.lt/robots.txt': ALLOW_ALL,
         'https://cinema.lt/schedule': { body: 'ok' },
       },
-      { contact: 'https://github.com/zygispr/Seansai' },
+      { contact: 'https://github.com/zygislauk/Seansai' },
     );
 
     await settle(client.getText('https://cinema.lt/schedule'));
 
     expect(calls[0]?.headers.get('user-agent')).toBe(
-      'Seansai/1.0 (+https://github.com/zygispr/Seansai)',
+      'Seansai/1.0 (+https://github.com/zygislauk/Seansai)',
     );
   });
 

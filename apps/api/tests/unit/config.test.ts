@@ -104,8 +104,8 @@ describe('loadConfig', () => {
   });
 
   test('accepts a project URL as the contact', () => {
-    expect(loadConfig({ SEANSAI_CONTACT: 'https://github.com/zygispr/Seansai' }).contact).toBe(
-      'https://github.com/zygispr/Seansai',
+    expect(loadConfig({ SEANSAI_CONTACT: 'https://github.com/zygislauk/Seansai' }).contact).toBe(
+      'https://github.com/zygislauk/Seansai',
     );
   });
 
