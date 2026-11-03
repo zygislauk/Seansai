@@ -39,9 +39,18 @@ const freshness = { updatedAt: '2026-11-03T08:00:00+02:00', staleCinemas: [] };
 
 const SITE = 'https://seansai.vercel.app';
 /** For pages whose addresses a test doesn't look at. */
-const noLinks = { canonical: null, alternates: [] };
+const noLinks = {
+  canonical: null,
+  alternates: [],
+  image: `${SITE}/og-default.png`,
+  imageAlt: 'Seansai',
+  type: 'website',
+};
 /** What `pageHead` says about the page at this address. */
 const links = (path: string) => ({
+  image: `${SITE}/og-default.png`,
+  imageAlt: 'Seansai',
+  type: 'website',
   canonical: `${SITE}${encodeURI(path)}`,
   alternates: [
     { hreflang: 'lt', href: `${SITE}${encodeURI(path.replace(/^\/\w\w/, '/lt'))}` },
@@ -253,6 +262,67 @@ describe('a good build', () => {
     );
   });
 
+  test('writes what a shared link’s preview shows, in the page’s language', async () => {
+    await build({
+      renderListPage: (lang) =>
+        Promise.resolve({
+          path: `/${lang}/`,
+          head: {
+            title: `Title ${lang}`,
+            description: `About ${lang}`,
+            robots: null,
+            ...links(`/${lang}/`),
+            image: 'https://cinema.example/poster.jpg',
+            imageAlt: `Poster ${lang}`,
+            type: 'video.movie',
+          },
+          markup: '<h1>List</h1>',
+          initialData: {},
+        }),
+    });
+
+    const html = page('en');
+    expect(html).toContain('<meta property="og:title" content="Title en" />');
+    expect(html).toContain('<meta property="og:description" content="About en" />');
+    expect(html).toContain(
+      '<meta property="og:image" content="https://cinema.example/poster.jpg" />',
+    );
+    expect(html).toContain('<meta property="og:image:alt" content="Poster en" />');
+    expect(html).toContain(`<meta property="og:url" content="${SITE}/en/" />`);
+    expect(html).toContain('<meta property="og:type" content="video.movie" />');
+    expect(html).toContain('<meta property="og:locale" content="en_GB" />');
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
+    expect(page('lt')).toContain('<meta property="og:locale" content="lt_LT" />');
+  });
+
+  test('keeps text from cinema websites from breaking out of a preview tag', async () => {
+    const quoted = '"><script>alert(1)</script>';
+    await build({
+      renderListPage: (lang) =>
+        Promise.resolve({
+          path: `/${lang}/`,
+          head: {
+            title: quoted,
+            description: quoted,
+            robots: null,
+            ...links(`/${lang}/`),
+            image: `https://cinema.example/${quoted}`,
+            imageAlt: quoted,
+          },
+          markup: '<h1>List</h1>',
+          initialData: {},
+        }),
+    });
+
+    expect(page('lt')).not.toContain('<script>alert(1)');
+  });
+
+  test('404.html has no preview of any one page', async () => {
+    await build();
+
+    expect(readFileSync(join(outDir, '404.html'), 'utf8')).not.toContain('og:');
+  });
+
   test('keeps an address from breaking out of its attribute', async () => {
     await build({
       renderListPage: (lang) =>
@@ -262,6 +332,7 @@ describe('a good build', () => {
             title: lang,
             description: lang,
             robots: null,
+            ...noLinks,
             canonical: `${SITE}/"><script>`,
             alternates: [{ hreflang: 'lt', href: `${SITE}/"><script>` }],
           },

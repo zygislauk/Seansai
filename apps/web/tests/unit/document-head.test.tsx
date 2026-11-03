@@ -15,6 +15,9 @@ const head = (title: string, robots: 'noindex' | null = null): PageHead => ({
   title,
   description: `About ${title}`,
   robots,
+  image: `${SITE}/og-default.png`,
+  imageAlt: 'Seansai',
+  type: 'website',
   canonical: robots === null ? `${SITE}/lt/${title}` : null,
   alternates:
     robots === null

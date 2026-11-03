@@ -38,6 +38,9 @@ export type RenderedPage = {
     robots: string | null;
     canonical: string | null;
     alternates: Array<{ hreflang: string; href: string }>;
+    image: string;
+    imageAlt: string;
+    type: string;
   };
   markup: string;
   initialData: unknown;
@@ -134,6 +137,26 @@ function addressLinks({ canonical, alternates }: RenderedPage['head']): string {
   return links.map((link) => `\n    ${link}`).join('');
 }
 
+const OG_LOCALES: Record<Lang, string> = { lt: 'lt_LT', en: 'en_GB' };
+
+/** What apps read to show a shared link. They don't run scripts, so only a snapshot has these. */
+function previewTags(lang: Lang, head: RenderedPage['head']): string {
+  const properties = {
+    'og:title': head.title,
+    'og:description': head.description,
+    'og:image': head.image,
+    'og:image:alt': head.imageAlt,
+    'og:url': head.canonical,
+    'og:type': head.type,
+    'og:locale': OG_LOCALES[lang],
+  };
+  const tags = Object.entries(properties).flatMap(([property, content]) =>
+    content === null ? [] : `<meta property="${property}" content="${escapeHtml(content)}" />`,
+  );
+  tags.push('<meta name="twitter:card" content="summary_large_image" />');
+  return tags.map((tag) => `\n    ${tag}`).join('');
+}
+
 function pageHtml(template: string, lang: Lang, page: RenderedPage, snapshotDate: string): string {
   const robots = page.head.robots === null ? '' : robotsMeta(page.head.robots);
   let html = template;
@@ -147,7 +170,7 @@ function pageHtml(template: string, lang: Lang, page: RenderedPage, snapshotDate
   html = fill(
     html,
     /<meta name="description" content="[^"]*" \/>/,
-    `<meta name="description" content="${escapeHtml(page.head.description)}" />${addressLinks(page.head)}`,
+    `<meta name="description" content="${escapeHtml(page.head.description)}" />${addressLinks(page.head)}${previewTags(lang, page.head)}`,
   );
   html = fill(html, '<title>Seansai</title>', `<title>${escapeHtml(page.head.title)}</title>`);
   return fill(

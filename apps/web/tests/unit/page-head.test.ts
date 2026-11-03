@@ -267,3 +267,42 @@ describe('preferred addresses and language links', () => {
     expect(head.alternates).toEqual([]);
   });
 });
+
+describe('link previews', () => {
+  const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
+  const POSTER = 'https://cinema.example/poster.jpg';
+
+  test('a movie with a poster shows it, named by the movie’s title', () => {
+    const head = movieHead(detail({ posterUrl: POSTER }));
+
+    expect(head.image).toBe(POSTER);
+    expect(head.imageAlt).toBe('Kasėjas');
+  });
+
+  test('a movie without a poster uses the general image, named by the site', () => {
+    const head = movieHead(detail({ posterUrl: null }));
+
+    expect(head.image).toBe(DEFAULT_IMAGE);
+    expect(head.imageAlt).toBe('Seansai');
+  });
+
+  test('a movie is a movie, and other pages are websites', () => {
+    expect(movieHead(detail()).type).toBe('video.movie');
+    expect(pageHead({ kind: 'list' }, 'lt').type).toBe('website');
+    expect(pageHead({ kind: 'city', cityId: 'vilnius', name: 'Vilnius' }, 'lt').type).toBe(
+      'website',
+    );
+    expect(pageHead({ kind: 'notFound' }, 'lt').type).toBe('website');
+  });
+
+  test.each([
+    ['the general list', { kind: 'list' }],
+    ['a city', { kind: 'city', cityId: 'vilnius', name: 'Vilnius' }],
+    ['the not-found page', { kind: 'notFound' }],
+  ] as const)('%s uses the general image', (_, page) => {
+    const head = pageHead(page, 'en');
+
+    expect(head.image).toBe(DEFAULT_IMAGE);
+    expect(head.imageAlt).toBe('Seansai');
+  });
+});

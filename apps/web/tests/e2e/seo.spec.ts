@@ -120,6 +120,74 @@ test.describe('without scripts', () => {
   });
 });
 
+test.describe('link previews', () => {
+  test.use({ javaScriptEnabled: false });
+
+  const content = (page: Page, tag: string) => page.locator(`meta[${tag}]`).getAttribute('content');
+
+  async function expectEveryTag(page: Page, path: string, locale: string) {
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+      'content',
+      await page.title(),
+    );
+    expect(await content(page, 'property="og:description"')).toBe(
+      await content(page, 'name="description"'),
+    );
+    expect(await content(page, 'property="og:url"')).toBe(`${SITE}${path}`);
+    expect(await content(page, 'property="og:locale"')).toBe(locale);
+    expect(await content(page, 'name="twitter:card"')).toBe('summary_large_image');
+    await expect(page.locator('link[rel="icon"]').first()).toBeAttached();
+  }
+
+  test('the list page has every tag, with the general image', async ({ page }) => {
+    await page.goto('/lt/');
+
+    await expectEveryTag(page, '/lt/', 'lt_LT');
+    expect(await content(page, 'property="og:type"')).toBe('website');
+    expect(await content(page, 'property="og:image"')).toBe(`${SITE}/og-default.png`);
+    expect(await content(page, 'property="og:image:alt"')).toBe('Seansai');
+  });
+
+  test('a movie with a poster has every tag, with its poster', async ({ page, request }) => {
+    const movies = await listedMovies(request);
+    const listing = movies.find(({ movie }) => movie.posterUrl !== null);
+    if (!listing) throw new Error('expected a movie with a poster');
+    const path = moviePath(listing.movie.id).replace('/lt/', '/en/');
+
+    await page.goto(path);
+
+    await expectEveryTag(page, path, 'en_GB');
+    expect(await content(page, 'property="og:type"')).toBe('video.movie');
+    expect(await content(page, 'property="og:image"')).toBe(listing.movie.posterUrl);
+    expect(await content(page, 'property="og:image:alt"')).toBe(listing.movie.title);
+  });
+
+  test('a movie without a poster uses the general image', async ({ page, request }) => {
+    const movies = await listedMovies(request);
+    const listing = movies.find(({ movie }) => movie.posterUrl === null);
+    if (!listing) throw new Error('expected a movie without a poster');
+
+    await page.goto(moviePath(listing.movie.id));
+
+    expect(await content(page, 'property="og:image"')).toBe(`${SITE}/og-default.png`);
+    expect(await content(page, 'property="og:image:alt"')).toBe('Seansai');
+  });
+
+  test('the site icon and the general image answer', async ({ page, request }) => {
+    await page.goto('/lt/');
+    const icons = page.locator('link[rel="icon"]');
+    await expect(icons).toHaveCount(2);
+    await expect(icons.nth(0)).toHaveAttribute('href', '/favicon.svg');
+    await expect(icons.nth(1)).toHaveAttribute('href', '/favicon.png');
+
+    for (const path of ['/favicon.svg', '/favicon.png', '/og-default.png']) {
+      const response = await request.get(path);
+      expect(response.status(), path).toBe(200);
+      expect(response.headers()['content-type'], path).toMatch(/^image\//);
+    }
+  });
+});
+
 test.describe('city pages', () => {
   test.describe('without scripts', () => {
     test.use({ javaScriptEnabled: false });

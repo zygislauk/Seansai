@@ -3,6 +3,9 @@ import { createTranslator, type Translator } from '../i18n/index.tsx';
 import { cityLocatives } from '../i18n/lt.ts';
 import { SITE_URL } from './site.ts';
 
+/** For a shared link with no poster of its own, named by the site, as the image shows its name. */
+const GENERAL_PREVIEW = { image: `${SITE_URL}/og-default.png`, imageAlt: 'Seansai' };
+
 /** About what search results show before cutting a description off. */
 const DESCRIPTION_LIMIT = 155;
 
@@ -14,6 +17,10 @@ export type PageHead = {
   /** Full address of the preferred page, whatever options the address has (FR-012). */
   canonical: string | null;
   alternates: Array<{ hreflang: Lang | 'x-default'; href: string }>;
+  /** What a shared link's preview shows (FR-017). */
+  image: string;
+  imageAlt: string;
+  type: 'video.movie' | 'website';
 };
 
 export type HeadPage =
@@ -114,6 +121,8 @@ export function pageHead(page: HeadPage, lang: Lang): PageHead {
         description: t.t('head.listDescription'),
         robots: null,
         ...addresses(page.city && page.city !== 'all' ? cityPath(page.city) : '', lang),
+        ...GENERAL_PREVIEW,
+        type: 'website',
       };
     case 'city':
       return {
@@ -127,15 +136,19 @@ export function pageHead(page: HeadPage, lang: Lang): PageHead {
         ),
         robots: null,
         ...addresses(cityPath(page.cityId), lang),
+        ...GENERAL_PREVIEW,
+        type: 'website',
       };
     case 'movie': {
-      const { title, year } = page.detail.movie;
+      const { title, year, posterUrl } = page.detail.movie;
       const name = year === null ? title : `${title} (${String(year)})`;
       return {
         title: t.t('head.movieTitle', { name }),
         description: movieDescription(page.detail, name, page.city, t),
         robots: null,
         ...addresses(`movie/${encodeURIComponent(page.detail.movie.id)}`, lang),
+        ...(posterUrl === null ? GENERAL_PREVIEW : { image: posterUrl, imageAlt: title }),
+        type: 'video.movie',
       };
     }
     case 'notFound':
@@ -145,6 +158,8 @@ export function pageHead(page: HeadPage, lang: Lang): PageHead {
         robots: 'noindex',
         canonical: null,
         alternates: [],
+        ...GENERAL_PREVIEW,
+        type: 'website',
       };
   }
 }

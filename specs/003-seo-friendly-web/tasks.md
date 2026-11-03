@@ -180,14 +180,14 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T056 [P] [US4] Add failing tests: `image` is the poster or the default preview image, `imageAlt` is the title or the site's name, `type` is "`video.movie` for movies, `website` otherwise", in `apps/web/tests/unit/page-head.test.ts`
-- [ ] T057 [P] [US4] Add failing no-script tests that a movie page and the list page have every tag listed in `specs/003-seo-friendly-web/contracts/web-pages.md`, and that the site icon and default image answer 200, in `apps/web/tests/e2e/seo.spec.ts`
+- [X] T056 [P] [US4] Add failing tests: `image` is the poster or the default preview image, `imageAlt` is the title or the site's name, `type` is "`video.movie` for movies, `website` otherwise", in `apps/web/tests/unit/page-head.test.ts`
+- [X] T057 [P] [US4] Add failing no-script tests that a movie page and the list page have every tag listed in `specs/003-seo-friendly-web/contracts/web-pages.md`, and that the site icon and default image answer 200, in `apps/web/tests/e2e/seo.spec.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T058 [P] [US4] Add a site icon (`favicon.svg`, plus a PNG fallback) and a 1200×630 default preview image (`og-default.png`) to `apps/web/public/`, and link the icon from `apps/web/index.html`
-- [ ] T059 [US4] Add `image`, `imageAlt` and `type` to `pageHead` in `apps/web/src/lib/page-head.ts`, and write the `og:` and `twitter:card` tags in `apps/web/scripts/prerender.ts`
-- [ ] T060 [US4] Run all quality gates, commit `feat(web): add link previews and a site icon (003 US4)` and push
+- [X] T058 [P] [US4] Add a site icon (`favicon.svg`, plus a PNG fallback) and a 1200×630 default preview image (`og-default.png`) to `apps/web/public/`, and link the icon from `apps/web/index.html`
+- [X] T059 [US4] Add `image`, `imageAlt` and `type` to `pageHead` in `apps/web/src/lib/page-head.ts`, and write the `og:` and `twitter:card` tags in `apps/web/scripts/prerender.ts`
+- [X] T060 [US4] Run all quality gates, commit `feat(web): add link previews and a site icon (003 US4)` and push
 
 **Checkpoint**: All stories work.
 
