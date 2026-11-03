@@ -87,7 +87,7 @@ One showing of a movie at a cinema.
 | `sourceTitle` | string | the raw title as the cinema published it (for review/debugging) |
 | `refreshedAt` | instant | when this row was last written by a successful refresh |
 
-**Indexes**: (`localDate`, `cinemaId`), (`movieId`, `localDate`).
+**Indexes**: (`localDate`, `cinemaId`), (`movieId`, `localDate`), (`cinemaId`, `startsAt`).
 
 ### MatchReview
 

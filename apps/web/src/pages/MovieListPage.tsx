@@ -33,7 +33,13 @@ export function MovieListPage() {
         <h1 className={styles.title}>{t('movieList.title')}</h1>
         {!askForCity && <MovieListContent query={movies} />}
       </div>
-      {askForCity && <CityPrompt cities={cities.data?.cities ?? null} onSelect={chooseCity} />}
+      {askForCity && (
+        <CityPrompt
+          cities={cities.data?.cities ?? null}
+          failed={cities.isError}
+          onSelect={chooseCity}
+        />
+      )}
     </PageLayout>
   );
 }

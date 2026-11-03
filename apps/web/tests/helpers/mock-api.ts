@@ -15,8 +15,8 @@ export const freshness: Freshness = { updatedAt: '2026-10-30T19:45:00+02:00', st
 
 export const cities: CitiesResponse = {
   cities: [
-    { id: 'vilnius', name: 'Vilnius', cinemaCount: 8 },
-    { id: 'kaunas', name: 'Kaunas', cinemaCount: 3 },
+    { id: 'vilnius', name: 'Vilnius', cinemaCount: 8, hasMovies: true },
+    { id: 'kaunas', name: 'Kaunas', cinemaCount: 3, hasMovies: true },
   ],
 };
 
@@ -117,6 +117,8 @@ type MockOptions = {
   detail?: MovieDetailResponse;
   /** Requests for which this returns true never get an answer, to observe loading states. */
   pending?: (url: URL) => boolean;
+  /** Requests that fail. */
+  failing?: (url: URL) => boolean;
 };
 
 const urlOf = (input: string | URL | Request): string =>
@@ -135,6 +137,8 @@ export function mockApi(options: MockOptions = {}) {
   const fetch = vi.fn((input: string | URL | Request) => {
     const url = new URL(urlOf(input), 'http://localhost');
     if (options.pending?.(url)) return new Promise<Response>(() => undefined);
+    // A 4xx, as those aren't retried, so a test sees the failure straight away.
+    if (options.failing?.(url)) return json(400, { error: { code: 'failed', message: 'failed' } });
     const city = url.searchParams.get('city');
     const badCity = city !== null && !['vilnius', 'kaunas', 'all'].includes(city);
     if (url.pathname === '/api/v1/cities') return json(200, cities);

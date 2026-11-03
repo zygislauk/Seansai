@@ -137,7 +137,7 @@ export function buildServer(options: ServerOptions): FastifyInstance {
   void app.register(
     async (api) => {
       await api.register(healthRoutes, { repo, now: options.now, sourceIds, staleAfterMs });
-      await api.register(citiesRoutes, { queries });
+      await api.register(citiesRoutes, { queries, now: options.now });
       await api.register(moviesRoutes, { queries, now: options.now });
       await api.register(screeningsRoutes, { queries, now: options.now });
       if (options.cron) await api.register(cronRoutes, options.cron);

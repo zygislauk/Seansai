@@ -73,6 +73,7 @@ export const CitiesResponseSchema = z.object({
       id: z.string(),
       name: z.string(),
       cinemaCount: z.number().int(),
+      hasMovies: z.boolean(),
     }),
   ),
 });

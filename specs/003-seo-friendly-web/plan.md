@@ -34,7 +34,7 @@ Reasoning and alternatives are in [research.md](./research.md).
 `createStaticHandler` and `StaticRouterProvider`, TanStack Query's `dehydrate` and `hydrate`, and Vite's
 SSR build are all parts of what's already installed.
 
-**Storage**: no schema change. The snapshot is static files inside each deployment.
+**Storage**: no new tables or columns, and one new index for `hasMovies` (research §11). The snapshot is static files inside each deployment.
 
 **Testing**:
 - Vitest for page descriptions, the site map, escaping, the API addition and hosting config.
@@ -193,3 +193,4 @@ build needs no database access or credentials.
 | Two ways of starting the app (hydrate or client render) | Returning visitors see a different city from the snapshot | Hydrate-only would show another city's movies before correcting them. Client-render-only recreates the page, including its images, for every new visitor. |
 | A small blocking script, `boot-gate.js` | Hides snapshot content before first paint when it isn't for this visitor | The CSP forbids inline scripts, which would be the usual way, and relaxing it weakens the site's security. |
 | A language cookie alongside localStorage | `/` must redirect in the response (FR-014) and still honour a remembered language, and only a cookie reaches that rule | Always redirecting to Lithuanian would drop the remembered language, which FR-014 requires keeping |
+| One new index on screenings, `(cinema_id, starts_at)` | Every page requests `/cities`, and `hasMovies` needs one answer per cinema from a table with no index by cinema | Without it, the query reads about 62,000 rows a call at 7,000 screenings, which could use up the free plan's row allowance (research §11) |

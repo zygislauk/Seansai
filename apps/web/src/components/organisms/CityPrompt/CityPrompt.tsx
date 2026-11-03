@@ -8,8 +8,10 @@ import { CityOption } from '../../molecules/CityOption/index.ts';
 import styles from './CityPrompt.module.scss';
 
 type CityPromptProps = {
-  /** Null while the cities are loading. */
+  /** Null while the cities are loading, or when they couldn't be loaded. */
   cities: CitiesResponse['cities'] | null;
+  /** The cities couldn't be loaded. All of Lithuania needs no list, so it's still offered. */
+  failed?: boolean;
   /** The current choice, when changing an earlier one. */
   selected?: string | null;
   onSelect: (city: string) => void;
@@ -22,12 +24,18 @@ type CityPromptProps = {
  * focus moves into it (to the current city, if any) and stays there until it closes, then
  * returns to where it was.
  */
-export function CityPrompt({ cities, selected = null, onSelect, onClose }: CityPromptProps) {
+export function CityPrompt({
+  cities,
+  failed = false,
+  selected = null,
+  onSelect,
+  onClose,
+}: CityPromptProps) {
   const { t } = useT();
   const titleId = useId();
   const bodyId = useId();
   const dialog = useRef<HTMLDivElement>(null);
-  const hasCities = cities !== null;
+  const hasOptions = cities !== null || failed;
 
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -35,10 +43,10 @@ export function CityPrompt({ cities, selected = null, onSelect, onClose }: CityP
   }, []);
 
   useEffect(() => {
-    if (!hasCities) return;
+    if (!hasOptions) return;
     const current = dialog.current?.querySelector<HTMLElement>('li [aria-pressed="true"]');
     (current ?? dialog.current?.querySelector<HTMLElement>('li button'))?.focus();
-  }, [hasCities]);
+  }, [hasOptions]);
 
   useEffect(() => {
     const element = dialog.current;
@@ -95,7 +103,8 @@ export function CityPrompt({ cities, selected = null, onSelect, onClose }: CityP
         <p id={bodyId} className={styles.body}>
           {t('city.promptBody')}
         </p>
-        {cities === null ? (
+        {cities === null && failed && <p role="alert">{t('error.title')}</p>}
+        {!hasOptions ? (
           <Spinner label={t('common.loading')} />
         ) : (
           <ul className={styles.options}>
@@ -108,7 +117,7 @@ export function CityPrompt({ cities, selected = null, onSelect, onClose }: CityP
                 }}
               />
             </li>
-            {cities.map((city) => (
+            {cities?.map((city) => (
               <li key={city.id}>
                 <CityOption
                   name={city.name}
