@@ -19,8 +19,6 @@ export const cityLocatives: Record<string, string> = {
   klaipeda: 'Klaipėdoje',
   siauliai: 'Šiauliuose',
   panevezys: 'Panevėžyje',
-  marijampole: 'Marijampolėje',
-  gargzdai: 'Gargžduose',
 };
 
 export const lt = {

@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-  atlantisAdapter,
-  garsasAdapter,
-  minijaAdapter,
-  spindulysAdapter,
-} from '../../src/sources/fliko/adapter.ts';
+import { atlantisAdapter, garsasAdapter } from '../../src/sources/fliko/adapter.ts';
 import { findScreening, runOnFixtures } from '../helpers/adapters.ts';
 
 /** Capture instants of the Fliko fixtures (tests/fixtures/README.md). */
@@ -74,6 +69,7 @@ describe('Fliko sites (server-rendered movie pages)', () => {
   test('Garsas uses the same template, with its own host and halls', async () => {
     const { screenings, requests } = await runOnFixtures(garsasAdapter, GARSAS_NOW);
 
+    expect(new Set(screenings.map((screening) => screening.cinemaId))).toEqual(new Set(['garsas']));
     for (const url of requests) expect(new URL(url).host).toBe('bilietai.garsas.lt');
     expect(screenings).toHaveLength(10);
     expect(findScreening(screenings, 'a3150129-7637-4789-9e5d-a312e5896fd3')).toMatchObject({
@@ -87,16 +83,5 @@ describe('Fliko sites (server-rendered movie pages)', () => {
       hall: 'Kino centro „Garsas“ salė',
       ticketUrl: 'https://bilietai.garsas.lt/kasa/seansas/a3150129-7637-4789-9e5d-a312e5896fd3',
     });
-  });
-
-  test.each([
-    ['spindulys', spindulysAdapter, 'spinduliokinas.lt', 32],
-    ['minija', minijaAdapter, 'gargzdukinas.lt', 16],
-  ] as const)('%s reads its own site', async (cinemaId, adapter, host, count) => {
-    const { screenings, requests } = await runOnFixtures(adapter, GARSAS_NOW);
-
-    for (const url of requests) expect(new URL(url).host).toBe(host);
-    expect(screenings).toHaveLength(count);
-    expect(new Set(screenings.map((screening) => screening.cinemaId))).toEqual(new Set([cinemaId]));
   });
 });

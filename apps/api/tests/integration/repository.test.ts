@@ -59,7 +59,7 @@ describe('splitStatements', () => {
 
 describe('openDb', () => {
   test('records the migrations in a table, never in PRAGMA user_version (Turso rejects it)', async () => {
-    expect(await schemaVersion(db)).toBe(5);
+    expect(await schemaVersion(db)).toBe(6);
     expect(await userVersion(db)).toBe(0);
   });
 
@@ -67,7 +67,7 @@ describe('openDb', () => {
     db.close();
     db = await openDb(`file:${path}`);
 
-    expect(await schemaVersion(db)).toBe(5);
+    expect(await schemaVersion(db)).toBe(6);
   });
 
   test('a database migrated before the table existed is not migrated again', async () => {
@@ -90,11 +90,27 @@ describe('openDb', () => {
         .rows[0]?.count,
     ).toBe(1);
     // Only the migrations it lacks run.
-    expect(await schemaVersion(reopened)).toBe(5);
+    expect(await schemaVersion(reopened)).toBe(6);
     expect(
       (await reopened.execute('PRAGMA table_info(screenings)')).rows.map((row) => row.name),
     ).toContain('duration_minutes');
     reopened.close();
+  });
+
+  test('an upgraded database no longer holds anything from the two removed cinemas', async () => {
+    await db.execute('DELETE FROM schema_migrations WHERE version >= 6');
+    for (const source of ['spindulys', 'minija', 'garsas']) {
+      await seedScreenings(repo, source, NOW, [
+        screeningRecord({ id: `${source}:1`, sourceId: source, cinemaId: source }),
+      ]);
+    }
+
+    db.close();
+    db = await openDb(`file:${path}`);
+
+    expect(await screeningIds()).toEqual(['garsas:1']);
+    expect(await ids('SELECT id FROM sources ORDER BY id')).toEqual(['garsas', 'seed']);
+    expect(await count('movies')).toBe(1);
   });
 
   test('an upgraded database keeps matching against the time each movie already has', async () => {
@@ -124,7 +140,7 @@ describe('openDb', () => {
 
     const [first, second] = await Promise.all([openDb(url), openDb(url)]);
 
-    expect(await schemaVersion(first)).toBe(5);
+    expect(await schemaVersion(first)).toBe(6);
     expect(
       (await first.execute("SELECT COUNT(*) AS count FROM sqlite_master WHERE name = 'movies'"))
         .rows[0]?.count,

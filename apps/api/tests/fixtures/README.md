@@ -1,7 +1,7 @@
 # Source fixtures
 
 Saved real responses from each cinema source, one folder per source id
-(`apollo`, `forum`, `pasaka`, `skalvija`, `atlantis`, `garsas`, `spindulys`, `minija`, `romuva`,
+(`apollo`, `forum`, `pasaka`, `skalvija`, `atlantis`, `garsas`, `romuva`,
 `vue`, `cinamon`). They feed the adapter contract tests and `SOURCES_MODE=fixtures`, so tests and
 local runs never contact cinema websites.
 
@@ -32,7 +32,7 @@ source captured on a later day (Forum) simply starts on a later date.
   it holds only today's remaining sessions (the same data as the page state), so the adapter reads
   today's sessions from it and declares the limitation `today-only`. Sessions carry no link of
   their own (the site opens them in its script), so tickets link to the Mega schedule page.
-- **Fliko sites** (Atlantis, Garsas, Spindulys, Minija) — each `urls.json` lists the movie list
+- **Fliko sites** (Atlantis, Garsas) — each `urls.json` lists the movie list
   plus eight movie pages; in fixture mode the other movies answer "not found" and are skipped.
   HTML fixtures are saved without their inline `<style>` contents (megabytes of CSS no adapter
   reads).
@@ -51,10 +51,8 @@ source captured on a later day (Forum) simply starts on a later date.
 | cinamon | 2026-10-30T17:41:11.578Z |
 | forum | 2026-10-31T16:37:09.442Z |
 | garsas | 2026-10-30T17:45:56.804Z |
-| minija | 2026-10-30T17:46:21.519Z |
 | pasaka | 2026-10-30T17:39:44.737Z |
 | romuva | 2026-10-30T17:39:49.023Z |
 | skalvija | 2026-10-30T17:39:47.634Z |
-| spindulys | 2026-10-30T17:46:06.218Z |
 | vue | 2026-10-30T17:39:50.105Z |
 <!-- capture-log:end -->

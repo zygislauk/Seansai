@@ -1,11 +1,6 @@
 import type { Logger } from '../lib/logger.ts';
 import { cinamonAdapter } from './cinamon/adapter.ts';
-import {
-  atlantisAdapter,
-  garsasAdapter,
-  minijaAdapter,
-  spindulysAdapter,
-} from './fliko/adapter.ts';
+import { atlantisAdapter, garsasAdapter } from './fliko/adapter.ts';
 import { forumAdapter } from './forum/adapter.ts';
 import { apolloAdapter, pasakaAdapter } from './mcs/adapter.ts';
 import { romuvaAdapter } from './romuva/adapter.ts';
@@ -37,8 +32,6 @@ export const sourceConfigs: readonly SourceConfig[] = [
   strict('skalvija'),
   strict('atlantis'),
   strict('garsas'),
-  strict('spindulys'),
-  strict('minija'),
   strict('romuva'),
   { id: 'vue', enabled: true, robotsOverride: true, overrideReason: OWNER_OVERRIDE_REASON },
   { id: 'cinamon', enabled: true, robotsOverride: true, overrideReason: OWNER_OVERRIDE_REASON },
@@ -52,8 +45,6 @@ export const adapters: readonly SourceAdapter[] = [
   skalvijaAdapter,
   atlantisAdapter,
   garsasAdapter,
-  spindulysAdapter,
-  minijaAdapter,
   romuvaAdapter,
   vueAdapter,
   cinamonAdapter,

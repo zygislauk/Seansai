@@ -5,17 +5,7 @@ import type { CinemaRegistry } from '../registry/cinemas.ts';
 
 /** One per adapter configuration (data-model.md → Source). */
 export type SourceId =
-  | 'apollo'
-  | 'forum'
-  | 'pasaka'
-  | 'skalvija'
-  | 'atlantis'
-  | 'garsas'
-  | 'spindulys'
-  | 'minija'
-  | 'romuva'
-  | 'vue'
-  | 'cinamon';
+  'apollo' | 'forum' | 'pasaka' | 'skalvija' | 'atlantis' | 'garsas' | 'romuva' | 'vue' | 'cinamon';
 
 const httpUrl = z.url({ protocol: /^https?$/ });
 const languageCode = z.string().regex(/^[a-z]{2}$/, 'must be an ISO 639-1 code');

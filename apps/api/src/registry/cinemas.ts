@@ -1,17 +1,7 @@
 import type { SourceId } from '../sources/types.ts';
 
 export type Chain =
-  | 'apollo'
-  | 'forum'
-  | 'pasaka'
-  | 'skalvija'
-  | 'atlantis'
-  | 'romuva'
-  | 'garsas'
-  | 'spindulys'
-  | 'minija'
-  | 'vue'
-  | 'cinamon';
+  'apollo' | 'forum' | 'pasaka' | 'skalvija' | 'atlantis' | 'romuva' | 'garsas' | 'vue' | 'cinamon';
 
 export type Cinema = {
   id: string;
@@ -152,24 +142,6 @@ export const cinemas: readonly Cinema[] = [
     cityId: 'panevezys',
     websiteUrl: 'https://bilietai.garsas.lt',
     sourceId: 'garsas',
-    sourceVenueKeys: ['main'],
-  },
-  {
-    id: 'spindulys',
-    name: 'Kino teatras Spindulys',
-    chain: 'spindulys',
-    cityId: 'marijampole',
-    websiteUrl: 'https://spinduliokinas.lt',
-    sourceId: 'spindulys',
-    sourceVenueKeys: ['main'],
-  },
-  {
-    id: 'minija',
-    name: 'Kino teatras Minija',
-    chain: 'minija',
-    cityId: 'gargzdai',
-    websiteUrl: 'https://gargzdukinas.lt',
-    sourceId: 'minija',
     sourceVenueKeys: ['main'],
   },
   {

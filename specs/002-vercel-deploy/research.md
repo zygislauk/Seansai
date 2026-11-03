@@ -206,7 +206,7 @@ calls.
   which the owner accepted.
 - **Retrying failed sources** (2026-11-03): the first automatic run, at 00:20, started during one of
   the Mac's maintenance wakes. `pmset -g log` shows it asleep again 27 s later, and awake at 00:38.
-  Atlantis, Garsas, Spindulys and Minija, which crawl 35 to 50 film pages each (about 50 s), failed on
+  The Fliko sites, which crawl 35 to 50 film pages each (about 50 s), failed on
   waking, and the one-attempt-a-day rule left them out of date all day. The sites were fine: the same
   crawl with the Mac awake had no fetch errors. Later checks now retry what failed, within the hourly
   limit for every source, and only for failures from that day, because retrying an older one would

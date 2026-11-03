@@ -11,7 +11,7 @@ import type {
 } from '../types.ts';
 
 /**
- * Cinemas on the shared Fliko site template (Atlantis, Garsas, Spindulys, Minija). `/filmai`
+ * Cinemas on the shared Fliko site template (Atlantis, Garsas). `/filmai`
  * lists the movies; each `/filmai/{slug}` page lists its screenings under
  * `<time datetime="YYYY-MM-DD">` day headers, with local `HH:MM` times on
  * `/kasa/seansas/{id}` links. Only these server-rendered pages are read: each site's `back.*`
@@ -185,12 +185,4 @@ export const atlantisAdapter = createFlikoAdapter({
 export const garsasAdapter = createFlikoAdapter({
   id: 'garsas',
   baseUrl: 'https://bilietai.garsas.lt',
-});
-export const spindulysAdapter = createFlikoAdapter({
-  id: 'spindulys',
-  baseUrl: 'https://spinduliokinas.lt',
-});
-export const minijaAdapter = createFlikoAdapter({
-  id: 'minija',
-  baseUrl: 'https://gargzdukinas.lt',
 });

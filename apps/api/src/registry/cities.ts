@@ -11,8 +11,6 @@ export const cities: readonly City[] = [
   { id: 'klaipeda', nameLt: 'Klaipėda', nameEn: 'Klaipeda' },
   { id: 'siauliai', nameLt: 'Šiauliai', nameEn: 'Siauliai' },
   { id: 'panevezys', nameLt: 'Panevėžys', nameEn: 'Panevezys' },
-  { id: 'marijampole', nameLt: 'Marijampolė', nameEn: 'Marijampole' },
-  { id: 'gargzdai', nameLt: 'Gargždai', nameEn: 'Gargzdai' },
 ];
 
 const citiesById = new Map(cities.map((city) => [city.id, city]));
