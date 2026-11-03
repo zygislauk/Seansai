@@ -2,15 +2,22 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { SECURITY_HEADERS } from '../../src/server.ts';
 
-type Header = { key: string; value: string };
+type Route = {
+  src?: string;
+  headers?: Record<string, string>;
+  continue?: boolean;
+  handle?: string;
+  status?: number;
+  dest?: string;
+};
 type Service = {
   root: string;
   framework: string;
   entrypoint?: string;
   bindings?: unknown;
   rewrites?: Array<{ source: string; destination: string }>;
-  headers?: Array<{ source: string; headers: Header[] }>;
-  routes?: unknown;
+  headers?: unknown;
+  routes?: Route[];
 };
 type VercelConfig = {
   regions?: string[];
@@ -51,7 +58,7 @@ describe('vercel.json', () => {
   });
 
   test('answers an unknown address with the app, as a 404, once no file matched', () => {
-    expect(service('web').routes).toEqual([
+    expect(service('web').routes?.slice(-2)).toEqual([
       { handle: 'filesystem' },
       { src: '/.*', status: 404, dest: '/404.html' },
     ]);
@@ -87,19 +94,28 @@ describe('vercel.json', () => {
     });
   });
 
-  test("gives every page the API's security headers", () => {
-    const pageHeaders = service('web').headers?.find((rule) => rule.source === '/(.*)')?.headers;
+  test("gives every response the API's security headers, before anything can answer", () => {
+    const [first] = service('web').routes ?? [];
 
-    expect(pageHeaders).toEqual(
-      expect.arrayContaining([
-        {
-          key: 'Content-Security-Policy',
-          value: SECURITY_HEADERS['content-security-policy'],
-        },
-        { key: 'X-Content-Type-Options', value: 'nosniff' },
-        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-      ]),
-    );
+    expect(first).toMatchObject({ src: '/(.*)', continue: true });
+    expect(first?.headers).toEqual({
+      'Content-Security-Policy': SECURITY_HEADERS['content-security-policy'],
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+    });
+  });
+
+  test('lets hashed assets be cached forever', () => {
+    expect(service('web').routes?.[1]).toEqual({
+      src: '/assets/(.*)',
+      headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },
+      continue: true,
+    });
+  });
+
+  // Measured on a preview: with `routes` present, a service's `headers` are silently dropped.
+  test('sets no headers beside its routes, where they would have no effect', () => {
+    expect(service('web').headers).toBeUndefined();
   });
 
   test('runs functions in Frankfurt, near Lithuania and the database', () => {
