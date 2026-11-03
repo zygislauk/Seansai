@@ -9,13 +9,21 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-test('on a first visit, asks for the city, offering "All of Lithuania" first', async () => {
+/** A first visit shows all of Lithuania, with the dialog a click away in the header. */
+async function openFromHeader(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: 'Change city: All of Lithuania' }));
+  return screen.getByRole('dialog', { name: 'Choose your city' });
+}
+
+test('offers "All of Lithuania" first, with focus on the current choice', async () => {
+  const user = userEvent.setup();
   mockApi();
   renderApp('/en/');
 
-  const dialog = await screen.findByRole('dialog', { name: 'Choose your city' });
+  const dialog = await openFromHeader(user);
   expect(dialog).toHaveAttribute('aria-modal', 'true');
-  const options = await within(dialog).findAllByRole('button');
+  await within(dialog).findByRole('button', { name: /Kaunas/ });
+  const options = within(within(dialog).getByRole('list')).getAllByRole('button');
   expect(options.map((option) => option.textContent)).toEqual([
     expect.stringContaining('All of Lithuania') as string,
     expect.stringContaining('Vilnius') as string,
@@ -31,7 +39,7 @@ test('when the cities cannot be loaded, says so and still offers all of Lithuani
   mockApi({ failing: (url) => url.pathname === '/api/v1/cities' });
   renderApp('/en/');
 
-  const dialog = await screen.findByRole('dialog', { name: 'Choose your city' });
+  const dialog = await openFromHeader(user);
   expect(await within(dialog).findByRole('alert')).toHaveTextContent('Could not load');
   expect(within(dialog).queryByRole('status')).not.toBeInTheDocument();
   const all = within(dialog).getByRole('button', { name: /All of Lithuania/ });
@@ -50,15 +58,14 @@ test('keeps keyboard focus inside the dialog', async () => {
   mockApi();
   renderApp('/en/');
 
-  const dialog = await screen.findByRole('dialog');
-  const options = await within(dialog).findAllByRole('button');
-  await waitFor(() => {
-    expect(options[0]).toHaveFocus();
-  });
-  await user.tab({ shift: true });
-  expect(options.at(-1)).toHaveFocus();
+  const dialog = await openFromHeader(user);
+  await within(dialog).findByRole('button', { name: /Kaunas/ });
+  const buttons = within(dialog).getAllByRole('button');
+  buttons.at(-1)?.focus();
   await user.tab();
-  expect(options[0]).toHaveFocus();
+  expect(buttons[0]).toHaveFocus();
+  await user.tab({ shift: true });
+  expect(buttons.at(-1)).toHaveFocus();
 });
 
 test('saves the choice and shows that city’s movies', async () => {
@@ -67,13 +74,23 @@ test('saves the choice and shows that city’s movies', async () => {
   renderApp('/en/');
 
   await user.click(
-    await within(await screen.findByRole('dialog')).findByRole('button', { name: /Vilnius/ }),
+    await within(await openFromHeader(user)).findByRole('button', { name: /Vilnius/ }),
   );
 
   expect(window.localStorage.getItem('seansai.city')).toBe('vilnius');
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: 'Zuikis' })).toBeInTheDocument();
   expect(api.requested()).toContain('/api/v1/movies?city=vilnius');
+});
+
+test('a first visit shows all of Lithuania without opening the dialog', async () => {
+  const api = mockApi();
+  renderApp('/en/');
+
+  expect(await screen.findByRole('heading', { name: 'Zuikis' })).toBeInTheDocument();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(api.requested()).toContain('/api/v1/movies?city=all');
+  expect(window.localStorage.getItem('seansai.city')).toBeNull();
 });
 
 test('does not ask again once a city is saved', async () => {
@@ -97,12 +114,4 @@ test('a ?city= link wins over the saved city and becomes the saved city', async 
   await waitFor(() => {
     expect(window.localStorage.getItem('seansai.city')).toBe('all');
   });
-});
-
-test('asks again when the saved city is no longer supported', async () => {
-  window.localStorage.setItem('seansai.city', 'alytus');
-  mockApi();
-  renderApp('/en/');
-
-  expect(await screen.findByRole('dialog', { name: 'Choose your city' })).toBeInTheDocument();
 });

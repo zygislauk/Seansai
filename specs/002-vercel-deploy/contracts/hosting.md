@@ -10,12 +10,20 @@ change.
 ```jsonc
 {
   "regions": ["fra1"],                                   // Hobby: one region, near Lithuania and the database
+  "redirects": [                                         // 003 FR-014, in the response rather than in the app
+    { "source": "/", "has": [{ "type": "cookie", "key": "seansai_lang", "value": "en" }],
+      "destination": "/en/", "permanent": false },
+    { "source": "/", "destination": "/lt/", "permanent": false },
+    { "source": "/:lang((?!lt|en)[a-z]{2})/:path*", "destination": "/lt/:path*", "permanent": true }
+  ],
   "services": {
     "api": { "root": "apps/api", "framework": "fastify", "entrypoint": "index.ts" },
     "web": {
       "root": "apps/web",
       "framework": "vite",
-      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],   // FR-002 deep links
+      // 003: every page is a file in the daily snapshot, so anything else is really not found.
+      // 404.html boots the app, which keeps FR-002's deep links working for newer movies.
+      "rewrites": [{ "source": "/(.*)", "destination": "/404.html", "statusCode": 404 }],
       "headers": [ /* CSP, X-Content-Type-Options, Referrer-Policy on every page (FR-012);
                       immutable caching for /assets/* */ ]
     }
@@ -31,6 +39,13 @@ change.
 - **No `crons`.** The daily refresh runs from a machine at home (quickstart §5), because some
   cinemas refuse requests from Vercel (research §5).
 - **Fallback** (research §6): if `regions` is rejected, the region is set in the project settings.
+- **Daily snapshot**: each build renders every page from the public API
+  ([feature 003's contract](../../003-seo-friendly-web/contracts/snapshot.md)). If it fails, the
+  previous deployment stays live.
+- **Rollback**: a rollback stops later deployments going live, including the daily hook's, until it's
+  undone with **Undo Rollback** or `vercel promote`. Until then, pages stay frozen, with no error.
+- **A broken production API**: builds read the live API, so a fix's build fails too. Roll back first
+  ([README](../../../README.md#findable-in-search-engines)).
 
 ## Environment variables (Vercel project)
 
@@ -41,10 +56,12 @@ change.
 | `CRON_SECRET`        | Production            | maintainer, `openssl rand -hex 32` | protects the refresh trigger (FR-008)      |
 | `SEANSAI_CONTACT`    | Production, Preview   | maintainer                     | sent in the User-Agent to cinemas (001)         |
 | `DISABLED_SOURCES`   | Production (optional) and the job's `refresh.env` | maintainer | kill switch (001): Production hides the cinemas, `refresh.env` stops contacting them |
+| `VERCEL_DEPLOY_HOOK_URL` | Production (optional) and the job's `refresh.env` | maintainer | asks for a new snapshot after a refresh (003). A secret: anyone holding it can start deployments |
 
 - Previews use their own database, `seansai-preview`, on the same Turso Free account (spec
   Assumptions). A preview's migrations and writes can never reach production's database.
-- Previews never refresh: `CRON_SECRET` isn't set for Preview.
+- Previews never refresh: `CRON_SECRET` isn't set for Preview. For the same reason they never call
+  the deploy hook.
 - None of these values are committed (FR-013).
 
 ## API response caching (change to feature 001's public API)

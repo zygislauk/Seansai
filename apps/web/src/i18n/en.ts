@@ -21,6 +21,24 @@ export const en: Messages = {
   'city.promptBody': 'We will show screenings at cinemas in this city and remember your choice.',
   'city.all': 'All of Lithuania',
   'city.change': 'Change city',
+  'city.choiceLabel': 'City',
+  'city.choiceBody': 'Showing screenings across Lithuania. Want only your city?',
+  'city.choose': 'Choose city',
+  'city.keepAll': 'Keep all of Lithuania',
+  'head.listTitle': 'Cinema screenings across Lithuania – Seansai',
+  'head.listDescription': 'Screenings at every cinema in Lithuania, all in one place.',
+  'head.cityTitle': 'Cinema screenings in {place}',
+  'head.cityDescription':
+    'Movies and screenings in {place}: what’s on and when, with ticket links.',
+  'head.cityTitleNoForm': 'Cinema screenings in {place}',
+  'head.cityDescriptionNoForm':
+    'Movies and screenings in {place}: what’s on and when, with ticket links.',
+  'head.movieTitle': '{name} – screenings',
+  'head.movieDescription': 'Screenings of {name} in Lithuania.',
+  'head.genres': 'Genre: {genres}.',
+  'head.notFoundTitle': 'Page not found – Seansai',
+  'movie.nextShowing': 'Next screening: {date}. Where: {places}.',
+  'movie.morePlaces': '{places} and more',
   'city.cinemaCount': {
     one: '{count} cinema',
     other: '{count} cinemas',
@@ -29,6 +47,7 @@ export const en: Messages = {
   'search.placeholder': 'Lithuanian or original title',
   'search.clear': 'Clear search',
   'search.noResults': 'No movies match “{query}”.',
+  'movieList.byCity': 'Browse by city',
   'movieList.empty': 'No upcoming screenings in this city.',
   'movieList.emptyBody': 'Try another city or all of Lithuania.',
   'movieCard.today': {

@@ -8,14 +8,16 @@ type Service = {
   framework: string;
   entrypoint?: string;
   bindings?: unknown;
-  rewrites?: Array<{ source: string; destination: string }>;
+  rewrites?: Array<{ source: string; destination: string; statusCode?: number }>;
   headers?: Array<{ source: string; headers: Header[] }>;
+  routes?: unknown;
 };
 type VercelConfig = {
   regions?: string[];
   crons?: unknown;
   services: Record<string, Service>;
   rewrites: Array<{ source: string; destination: unknown }>;
+  redirects?: unknown;
 };
 
 /** The deployment's routing and headers (FR-001, FR-002, FR-012), checked in CI. */
@@ -44,8 +46,66 @@ describe('vercel.json', () => {
     expect(existsSync(new URL('../../index.ts', import.meta.url))).toBe(true);
   });
 
-  test('serves index.html for deep links', () => {
-    expect(service('web').rewrites).toContainEqual({ source: '/(.*)', destination: '/index.html' });
+  test('answers an unknown address with the app, as a 404, once no file matched', () => {
+    expect(service('web').rewrites).toEqual([
+      { source: '/(.*)', destination: '/404.html', statusCode: 404 },
+    ]);
+  });
+
+  // Measured on a preview: with `routes`, a service's `headers` are silently dropped.
+  test('uses no low-level routes, which would drop the headers below', () => {
+    expect(service('web').routes).toBeUndefined();
+  });
+
+  test('lets hashed assets be cached forever', () => {
+    expect(service('web').headers).toContainEqual({
+      source: '/assets/(.*)',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+    });
+  });
+
+  test('sends / to the remembered language, temporarily as it depends on the visitor', () => {
+    expect(config.redirects).toEqual(
+      expect.arrayContaining([
+        {
+          source: '/',
+          has: [{ type: 'cookie', key: 'seansai_lang', value: 'en' }],
+          destination: '/en/',
+          permanent: false,
+        },
+        { source: '/', destination: '/lt/', permanent: false },
+      ]),
+    );
+  });
+
+  test('checks the cookie before the rule that sends everyone else to Lithuanian', () => {
+    const rules = config.redirects as Array<{ source: string; has?: unknown }>;
+    const forRoot = rules.filter((rule) => rule.source === '/');
+
+    expect(forRoot[0]?.has).toBeDefined();
+    expect(forRoot[1]?.has).toBeUndefined();
+  });
+
+  test('sends an unknown two-letter language to the same page in Lithuanian, permanently', () => {
+    expect(config.redirects).toContainEqual({
+      source: '/:lang((?!lt|en)[a-z]{2})/:path*',
+      destination: '/lt/:path*',
+      permanent: true,
+    });
+  });
+
+  test('the language redirect matches unknown languages and nothing else', () => {
+    const rules = config.redirects as Array<{ source: string; destination: string }>;
+    const source = rules.find(({ destination }) => destination === '/lt/:path*')?.source;
+    const language = /^\/:lang\((.+)\)\/:path\*$/.exec(source ?? '')?.[1];
+    const redirected = new RegExp(`^/${language ?? ''}(/|$)`);
+
+    for (const path of ['/de', '/de/', '/de/movie/x', '/ru/city/vilnius']) {
+      expect(path).toMatch(redirected);
+    }
+    for (const path of ['/lt/', '/lt/movie/x', '/en/', '/en/city/vilnius', '/api/v1/cities']) {
+      expect(path).not.toMatch(redirected);
+    }
   });
 
   test("gives every page the API's security headers", () => {

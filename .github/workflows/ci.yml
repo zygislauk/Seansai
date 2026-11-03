@@ -63,6 +63,8 @@ jobs:
             done
             get /api/v1/health | grep --quiet '"status":"ok"'
             get /lt/vilnius | grep --quiet 'id="root"'
+            curl --silent --show-error --fail --max-time 10 --dump-header - --output /dev/null \
+              http://localhost:3000/lt/vilnius | grep --quiet --ignore-case '^x-robots-tag: noindex'
             script=$(get / | grep --only-matching '/assets/[^"]*\.js' | head -n 1)
             [ -n "$script" ]
             get "$script" > /dev/null

@@ -40,10 +40,7 @@ async function showFilters(page: Page) {
 test('US3: changing city and filtering screenings', async ({ page }) => {
   // 1. Switch city to "Visa Lietuva", then to Kaunas; the list follows, and Kaunas survives a reload.
   await page.goto('/lt/');
-  await page
-    .getByRole('dialog', { name: 'Pasirinkite miestą' })
-    .getByRole('button', { name: /^Vilnius/ })
-    .click();
+  await switchCity(page, 'Visa Lietuva', /^Vilnius/);
   const cards = page.getByRole('article');
   await expect(cards).toHaveCount(await movieCount(page, 'vilnius'));
 

@@ -223,7 +223,8 @@ title, description and image match the movie.
   and instead ask not to be listed.
 - **FR-012**: Every page MUST name its preferred address. A movie address with date, filter or city
   options MUST name the plain movie page, and a list address with a city option MUST name that city's
-  list page. These addresses MUST otherwise keep working as they do today.
+  list page. These addresses MUST otherwise keep working as they do today. Readers without scripts get
+  the plain page for any address with options, so what they're told names the page they got.
 - **FR-013**: Each page MUST name its counterpart in the other language, with Lithuanian as the default
   for searchers whose language is neither.
 - **FR-014**: Requests for `/` and for unknown language prefixes MUST receive a real redirect in the
@@ -250,7 +251,8 @@ title, description and image match the movie.
 
 - **Public page**: an address people and search engines can open. It has a language, a preferred
   address, a counterpart in the other language, a title, a description and a preview image.
-- **Site map entry**: one current public page, with when its data last changed.
+- **Site map entry**: one current public page, with the date of the snapshot it comes from. A page's
+  screenings change daily, so that's when its data last changed.
 
 ## Success Criteria *(mandatory)*
 

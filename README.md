@@ -67,6 +67,7 @@ docker run -p 3000:3000 -v seansai-data:/data -e SEANSAI_CONTACT=https://github.
 | `SOURCES_MODE`                           | `live` (default) or `fixtures` for the saved test data.                                  |
 | `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Turso database instead of a file. Required on Vercel.                                    |
 | `CRON_SECRET`                            | Enables the fallback refresh route (`/api/v1/cron/daily`). At least 32 hex characters.   |
+| `VERCEL_DEPLOY_HOOK_URL`                 | Asks Vercel for a new snapshot after a refresh. A secret. Unset means no call.           |
 
 ## Deploy to Vercel (free)
 
@@ -90,6 +91,44 @@ in [specs/002-vercel-deploy/quickstart.md](specs/002-vercel-deploy/quickstart.md
   refresh hourly.
 - **Monitoring**: Hobby keeps runtime logs for only an hour, so `GET /api/v1/health` (each
   source's status and last successful refresh) is the lasting record of how refreshes went.
+
+## Findable in search engines
+
+On Vercel, every public page is a static file in a **daily snapshot**, so search engines and link
+previews get real content without running scripts. The design is in
+[specs/003-seo-friendly-web/](specs/003-seo-friendly-web/).
+
+- **How it stays current**: when a refresh updates at least one source, it calls the Deploy Hook in
+  `VERCEL_DEPLOY_HOOK_URL` (setup in [quickstart.md §5](specs/002-vercel-deploy/quickstart.md)). The
+  build reads the public API and renders each movie and city in both languages. If that build fails,
+  the previous deployment stays live.
+- **Without the hook**, the data still updates, but the pages stay as they were at the last deployment.
+- **Trying it locally**: start an API, then build with `SNAPSHOT_API_URL` set
+  ([quickstart.md §1](specs/003-seo-friendly-web/quickstart.md)). Without that setting or `VERCEL`,
+  `npm run build` writes no pages.
+- **Self-hosted copies** have no snapshot. They run as a single-page app and ask not to be listed.
+- **Rolling back**: a rollback stops every later deployment going live, including the daily hook's, so
+  pages stay as they were until you undo it with **Undo Rollback** or `vercel promote`. Hobby can only roll
+  back to the previous deployment, and after a daily rebuild that may hold the same code. See below.
+
+**If a merge breaks production's API**, a fix can't deploy by itself, because each build reads the live
+API rather than its own commit's, and fails when that's broken:
+
+1. Roll back in Vercel, which also restores the previous API. If the previous deployment holds the same
+   bad code, promote an older one with `vercel promote`.
+2. Push the fix. Its build reads the restored API and succeeds, but doesn't go live yet.
+3. Use **Undo Rollback** or `vercel promote` on that deployment, which also turns automatic deployments
+   back on.
+
+As a last resort, set `SNAPSHOT_API_URL` in Vercel to another API with data, reachable without Vercel's
+Deployment Protection, and remove it once the fix is live.
+
+**To move to `seansai.lt`**:
+
+1. Attach the domain to the Vercel project, as builds read their data from the public address.
+2. Change `SITE_URL` in [apps/web/src/lib/site.ts](apps/web/src/lib/site.ts) and merge. That one line
+   moves every preferred address, language link, preview tag and the site map.
+3. Redirect the old address to the new one in Vercel, and add the new address to Google Search Console.
 
 ## Quality gates
 

@@ -86,11 +86,16 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     brotliOptions: { params: { [zlib.BROTLI_PARAM_QUALITY]: 4 } },
   });
 
+  const webDistDir = options.webDistDir ?? null;
+
   app.addHook('onRequest', (request, reply, done) => {
     reply.headers(SECURITY_HEADERS);
     // robots.txt allows /api/ on purpose: search engines render pages with these requests, and
     // blocking them would show the page's error state. The header keeps answers out of search.
-    if (request.url.startsWith('/api/')) reply.header('x-robots-tag', 'noindex');
+    // A self-hosted copy stays out of search altogether: only the public address is listed.
+    if (webDistDir !== null || request.url.startsWith('/api/')) {
+      reply.header('x-robots-tag', 'noindex');
+    }
     done();
   });
 
@@ -107,7 +112,6 @@ export function buildServer(options: ServerOptions): FastifyInstance {
       );
   });
 
-  const webDistDir = options.webDistDir ?? null;
   app.setNotFoundHandler((request, reply) => {
     if (webDistDir === null || request.url.startsWith('/api/')) {
       return reply.status(404).send(errorBody('not_found', 'There is no such API route.'));

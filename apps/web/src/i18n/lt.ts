@@ -9,6 +9,20 @@ export type PluralForms = { other: string } & Partial<
   Record<'zero' | 'one' | 'two' | 'few' | 'many', string>
 >;
 
+/**
+ * "In Vilnius" in Lithuanian changes the city's name, and the data only has the name itself. A city
+ * not here reads "Kino seansai: {name}", and a test reports it (page-head.test.ts).
+ */
+export const cityLocatives: Record<string, string> = {
+  vilnius: 'Vilniuje',
+  kaunas: 'Kaune',
+  klaipeda: 'Klaipėdoje',
+  siauliai: 'Šiauliuose',
+  panevezys: 'Panevėžyje',
+  marijampole: 'Marijampolėje',
+  gargzdai: 'Gargžduose',
+};
+
 export const lt = {
   'app.name': 'Seansai',
   'layout.skipToContent': 'Pereiti prie turinio',
@@ -30,6 +44,24 @@ export const lt = {
   'city.promptBody': 'Rodysime šio miesto kino teatrų seansus. Pasirinkimą įsiminsime.',
   'city.all': 'Visa Lietuva',
   'city.change': 'Keisti miestą',
+  'city.choiceLabel': 'Miestas',
+  'city.choiceBody': 'Rodome visos Lietuvos seansus. Norite matyti tik savo miesto?',
+  'city.choose': 'Pasirinkti miestą',
+  'city.keepAll': 'Palikti visą Lietuvą',
+  'head.listTitle': 'Kino seansai visoje Lietuvoje – Seansai',
+  'head.listDescription': 'Visų Lietuvos kino teatrų seansai vienoje vietoje.',
+  'head.cityTitle': 'Kino seansai {place}',
+  'head.cityDescription':
+    'Filmai ir kino seansai {place}: kas rodoma ir kada, su bilietų nuorodomis.',
+  'head.cityTitleNoForm': 'Kino seansai: {place}',
+  'head.cityDescriptionNoForm':
+    'Filmai ir kino seansai: {place}. Kas rodoma ir kada, su bilietų nuorodomis.',
+  'head.movieTitle': '{name} – seansai',
+  'head.movieDescription': 'Filmo „{name}“ seansai Lietuvoje.',
+  'head.genres': 'Žanras: {genres}.',
+  'head.notFoundTitle': 'Puslapis nerastas – Seansai',
+  'movie.nextShowing': 'Artimiausias seansas: {date}. Kur: {places}.',
+  'movie.morePlaces': '{places} ir kt',
   'city.cinemaCount': {
     one: '{count} kino teatras',
     few: '{count} kino teatrai',
@@ -40,6 +72,7 @@ export const lt = {
   'search.placeholder': 'Lietuviškas arba originalus pavadinimas',
   'search.clear': 'Išvalyti paiešką',
   'search.noResults': 'Pagal „{query}“ filmų nerasta.',
+  'movieList.byCity': 'Pagal miestą',
   'movieList.empty': 'Šiame mieste artimiausių seansų nėra.',
   'movieList.emptyBody': 'Pabandykite pasirinkti kitą miestą arba visą Lietuvą.',
   'movieCard.today': {

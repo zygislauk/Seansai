@@ -10,6 +10,7 @@ export default defineConfig(
   {
     ignores: [
       '**/dist/',
+      '**/dist-*/',
       '**/coverage/',
       '**/playwright-report/',
       '**/test-results/',
@@ -35,6 +36,10 @@ export default defineConfig(
     files: ['**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['apps/web/public/**/*.js'],
+    languageOptions: { globals: globals.browser },
   },
   prettier,
 );

@@ -8,6 +8,7 @@ import { adapters, findSourceConfig } from '../sources/index.ts';
 import { adapterNow, createHttpClient } from '../sources/runtime.ts';
 import type { SourceAdapter } from '../sources/types.ts';
 import { runDailyRefresh } from './daily.ts';
+import { requestSnapshotBuild } from './deploy-hook.ts';
 import { refreshSource, type RefreshOutcome } from './refresh-source.ts';
 
 /** How to refresh each enabled source and clean up: the server and `refresh-now.ts` share this. */
@@ -43,8 +44,17 @@ export function createRefreshPipeline(
     logger.info({ screenings, movies }, 'Daily cleanup removed past screenings and old movies');
     return { screenings, movies };
   };
-  const runAll = () =>
-    runDailyRefresh({ adapters: enabledAdapters, refresh, cleanup, clock, logger });
+  const runAll = async () => {
+    const result = await runDailyRefresh({
+      adapters: enabledAdapters,
+      refresh,
+      cleanup,
+      clock,
+      logger,
+    });
+    await requestSnapshotBuild(result.sources, { url: config.deployHookUrl, logger });
+    return result;
+  };
 
   return { adapters: enabledAdapters, refresh, cleanup, runAll };
 }

@@ -8,6 +8,9 @@ import { expect, type APIRequestContext, type BrowserContext, type Page } from '
  * Vilnius. Forum was captured a day later, so its screenings start on Saturday 31 October.
  */
 
+/** The fixture clock, for tests that need the browser to agree with the API about today. */
+export const FIXTURE_INSTANT = new Date('2026-10-30T17:39:42Z');
+
 /** Tests never contact cinema websites: posters and ticket pages are answered locally. */
 export async function answerExternalRequestsLocally(context: BrowserContext) {
   await context.route(
@@ -18,6 +21,11 @@ export async function answerExternalRequestsLocally(context: BrowserContext) {
 }
 
 export async function expectNoAccessibilityViolations(page: Page) {
+  // Part-way through a colour transition, a scan can catch text in its old colour on its new
+  // background, which no visitor is left with.
+  await page.evaluate(
+    'Promise.allSettled(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished))',
+  );
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();

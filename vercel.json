@@ -1,6 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["fra1"],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "cookie", "key": "seansai_lang", "value": "en" }],
+      "destination": "/en/",
+      "permanent": false
+    },
+    { "source": "/", "destination": "/lt/", "permanent": false },
+    {
+      "source": "/:lang((?!lt|en)[a-z]{2})/:path*",
+      "destination": "/lt/:path*",
+      "permanent": true
+    }
+  ],
   "services": {
     "api": {
       "root": "apps/api",
@@ -10,7 +24,7 @@
     "web": {
       "root": "apps/web",
       "framework": "vite",
-      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+      "rewrites": [{ "source": "/(.*)", "destination": "/404.html", "statusCode": 404 }],
       "headers": [
         {
           "source": "/(.*)",

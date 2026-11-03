@@ -1,7 +1,8 @@
-import { screen, within } from '@testing-library/react';
+import type { QueryClient } from '@tanstack/react-query';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { freshness, mockApi, TODAY } from '../helpers/mock-api.ts';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { diggerDetail, freshness, mockApi, TODAY } from '../helpers/mock-api.ts';
 import { renderApp } from '../helpers/render-app.tsx';
 
 beforeEach(() => {
@@ -127,8 +128,9 @@ test('filters narrow the list and live in the URL; when nothing matches, one cli
   await user.click(
     within(screen.getByRole('group', { name: 'Format' })).getByRole('button', { name: '3D' }),
   );
+  // Filters change through the router's navigation, which finishes after the click returns.
+  expect(await screen.findByText('Showing 1 of 3')).toBeInTheDocument();
   expect(within(list).getAllByRole('listitem')).toHaveLength(1);
-  expect(screen.getByText('Showing 1 of 3')).toBeInTheDocument();
   expect(location()).toBe('/en/movie/digger-2026?date=2026-10-31&format=3D');
 
   await user.click(
@@ -136,8 +138,8 @@ test('filters narrow the list and live in the URL; when nothing matches, one cli
       name: 'Vue Vilnius',
     }),
   );
+  const noMatch = (await screen.findByText('No screenings match your filters')).parentElement;
   expect(screen.queryByRole('list', { name: 'Screenings' })).not.toBeInTheDocument();
-  const noMatch = screen.getByText('No screenings match your filters').parentElement;
   if (!noMatch) throw new Error('expected the empty state');
   await user.click(within(noMatch).getByRole('button', { name: 'Clear filters' }));
 
@@ -188,4 +190,119 @@ test('an unknown movie shows "movie not found" with a way back', async () => {
   expect(
     within(screen.getByRole('main')).getByRole('link', { name: 'Back to the movie list' }),
   ).toHaveAttribute('href', '/en/');
+});
+
+describe('when and where it is next showing (FR-005)', () => {
+  test('for all of Lithuania, names the date and cities, in the page’s language', async () => {
+    window.localStorage.setItem('seansai.city', 'all');
+    const api = mockApi({
+      detail: {
+        ...diggerDetail,
+        screeningDates: ['2026-11-06'],
+        showingAt: [
+          { id: 'a', name: 'Apollo', cityId: 'klaipeda', cityName: 'Klaipeda' },
+          { id: 'b', name: 'Forum', cityId: 'klaipeda', cityName: 'Klaipeda' },
+          { id: 'c', name: 'Skalvija', cityId: 'vilnius', cityName: 'Vilnius' },
+        ],
+      },
+    });
+    renderApp('/en/movie/digger-2026');
+
+    expect(
+      await screen.findByText('Next screening: Friday 6 November. Where: Klaipeda, Vilnius.'),
+    ).toBeInTheDocument();
+    expect(api.requested()).toContain('/api/v1/movies/digger-2026?city=all&lang=en');
+  });
+
+  test('within a city, names its cinemas', async () => {
+    mockApi();
+    renderApp('/en/movie/digger-2026');
+
+    expect(
+      await screen.findByText(
+        'Next screening: Friday 30 October. Where: Apollo Akropolis, Skalvija, Vue Vilnius.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  test('says nothing when it isn’t showing anywhere', async () => {
+    mockApi({ detail: { ...diggerDetail, screeningDates: [], showingAt: [] } });
+    renderApp('/en/movie/digger-2026');
+
+    await screen.findByRole('heading', { level: 1, name: 'Kasėjas' });
+
+    expect(screen.queryByText(/Next screening/)).not.toBeInTheDocument();
+  });
+
+  test('shows the year with the other facts', async () => {
+    mockApi();
+    renderApp('/en/movie/digger-2026');
+
+    expect(await screen.findByText(/2026 · 101 min · drama/)).toBeInTheDocument();
+  });
+});
+
+describe('the document head', () => {
+  test('describes the movie', async () => {
+    mockApi();
+    renderApp('/en/movie/digger-2026');
+
+    await screen.findByRole('heading', { level: 1, name: 'Kasėjas' });
+
+    expect(document.title).toBe('Kasėjas (2026) – screenings');
+  });
+
+  test('marks a movie no longer listed as not for search engines', async () => {
+    mockApi();
+    renderApp('/en/movie/gone-2020');
+
+    await screen.findByRole('heading', { name: 'Movie not found' });
+
+    expect(document.querySelector('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+    document.head.querySelector('meta[name="robots"]')?.remove();
+  });
+});
+
+describe('a failed background refresh', () => {
+  /** Answers every further request with an error that isn't retried, then refreshes the page. */
+  const failToRefresh = async (queryClient: QueryClient) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ error: { code: 'internal_error', message: 'no' } }), {
+            status: 400,
+          }),
+        ),
+      ),
+    );
+    await act(async () => {
+      await queryClient.refetchQueries();
+      // The page hears about the result on a later tick; assert only after it has rendered it.
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+  };
+
+  test('leaves the movie and its screenings on the movie page', async () => {
+    mockApi();
+    const { queryClient } = renderApp('/en/movie/digger-2026');
+    await screen.findByRole('list', { name: 'Screenings' });
+
+    await failToRefresh(queryClient);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Kasėjas' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Screenings' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  test('leaves the movies on the list page', async () => {
+    mockApi();
+    const { queryClient } = renderApp('/en/');
+    await screen.findByRole('link', { name: /Kasėjas/ });
+
+    await failToRefresh(queryClient);
+
+    expect(screen.getByRole('link', { name: /Kasėjas/ })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });

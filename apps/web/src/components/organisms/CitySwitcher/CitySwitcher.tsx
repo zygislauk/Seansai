@@ -7,8 +7,7 @@ import { CityPrompt } from '../CityPrompt/index.ts';
 import styles from './CitySwitcher.module.scss';
 
 /**
- * The chosen city, always visible in the header; opens the city dialog to change it (US3). Hidden
- * until a known city is chosen, because the page itself asks for one first (FR-013).
+ * The city being shown, always visible in the header; opens the city dialog to change it (US3).
  */
 export function CitySwitcher() {
   const { t, lang } = useT();

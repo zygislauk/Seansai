@@ -30,13 +30,13 @@ Preview URLs may need `vercel curl` if Deployment Protection is on.
 
 | Check | Expected | If not |
 |-------|----------|--------|
-| `curl -I <preview>/lt/nonexistent` | Status 404 | Add the `routes` fallback (research §6) |
-| Browser at that address | The app's not-found page | Fix `404.html` |
+| `curl -I <preview>/lt/nonexistent` | Status 404 | Check the service's rewrite (research §6) |
+| Browser at that address | The app's not-found page | Fix `404.html`, or the service's rewrite (research §6) |
 | `curl -I <preview>/lt/movie/was-marielle-weiß` (percent-encoded), and a Cyrillic id | 200 | Research §6 fallback |
 | `curl -I <preview>/` | Temporary redirect to `/lt/` | Check `redirects` |
 | Same with `--cookie seansai_lang=en` | Redirect to `/en/` | Check the `has` rule |
 | `curl -I <preview>/de/movie/x` | Permanent redirect to `/lt/movie/x` | Check the source pattern |
-| `curl -I <preview>/lt/` | `X-Robots-Tag: noindex`, all security headers | See research §7 |
+| `curl -I <preview>/lt/` | `X-Robots-Tag: noindex`, all security headers | See research §6 and §7 |
 | Browser console on a first visit | No CSP violation, no hydration errors | Research §2 and §5 fallbacks |
 
 ## 3. After merging to production
@@ -47,7 +47,17 @@ curl -sI https://seansai.vercel.app/lt/ | grep -i x-robots-tag   # none expected
 curl -sI https://seansai.vercel.app/api/v1/cities | grep -i x-robots-tag   # noindex
 curl -s https://seansai.vercel.app/robots.txt
 curl -s https://seansai.vercel.app/sitemap.xml | grep -c '<loc>'
+curl -sI https://seansai.vercel.app/ | head -1                     # 307, to /lt/
+curl -sI -H 'Cookie: seansai_lang=en' https://seansai.vercel.app/ | grep -i ^location   # /en/
+curl -sI https://seansai.vercel.app/de/movie/x | head -1           # 308, to /lt/movie/x
+curl -sI https://seansai.vercel.app/lt/nonexistent | head -1       # 404
+curl -sI https://seansai.vercel.app/lt/city/riga | head -1         # 404
+curl -sI https://seansai.vercel.app/lt/ | grep -i content-security-policy   # present
+curl -sI https://seansai.vercel.app/og-default.png | head -1       # 200
 ```
+
+Also confirm the `screenings_by_cinema_and_start` index exists on production's database (research §11), and
+that the rows read in Turso's dashboard stay under its allowance.
 
 Check `X-Robots-Tag` on the current production deployment's own unique address, from `vercel ls` (FR-016):
 
@@ -76,8 +86,10 @@ Then:
 If `lastmod` falls behind `/api/v1/health`'s `lastSuccessAt`, the hook or the build failed: check the home job's
 log, then the deployment in Vercel. Pages stay as they were until an update succeeds (FR-003).
 
-**Rollback note**: a dashboard rollback lasts only until the next hook call, which deploys the latest `main`.
-Revert the code on `main` as well.
+**Rollback note**: after a rollback, hook deployments build but don't go live, so `lastmod` stops moving, with
+no failed build to explain it. Undo it with **Undo Rollback** or `vercel promote`. Hobby can only roll back to
+the previous deployment, which after a daily rebuild may hold the same code. If a merge broke production's API,
+follow the [README](../../README.md#findable-in-search-engines), as a fix's build reads the live API.
 
 ## 5. Owner steps for search engines
 

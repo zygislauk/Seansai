@@ -1,14 +1,15 @@
-import type { MovieDetail } from '@seansai/shared';
+import type { MovieDetailResponse } from '@seansai/shared';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
-import { useCities, useMovie, useScreenings } from '../api/hooks.ts';
+import { useMovie, useScreenings } from '../api/hooks.ts';
 import { useCity } from '../app/city.tsx';
+import { useDocumentHead } from '../app/document-head.ts';
 import { useFilters } from '../app/filters.ts';
 import { Badge } from '../components/atoms/Badge/index.ts';
 import { Button } from '../components/atoms/Button/index.ts';
 import { Poster } from '../components/atoms/Poster/index.ts';
 import { Spinner } from '../components/atoms/Spinner/index.ts';
-import { CityPrompt } from '../components/organisms/CityPrompt/index.ts';
 import { DatePicker } from '../components/organisms/DatePicker/index.ts';
 import { EmptyState } from '../components/organisms/EmptyState/index.ts';
 import { ErrorState } from '../components/organisms/ErrorState/index.ts';
@@ -19,6 +20,7 @@ import { StaleNotice } from '../components/organisms/StaleNotice/index.ts';
 import { PageLayout } from '../components/templates/PageLayout/index.ts';
 import { useT } from '../i18n/index.tsx';
 import { applyFilters, hasFilters, noFilters } from '../lib/filters.ts';
+import { nextShowing, pageHead } from '../lib/page-head.ts';
 import { secondaryTitle } from '../lib/text.ts';
 import styles from './MoviePage.module.scss';
 import { NotFoundPage } from './NotFoundPage.tsx';
@@ -32,15 +34,17 @@ function withDate(params: URLSearchParams, date: string, today: string | null): 
   return search === '' ? '' : `?${search}`;
 }
 
-/** One movie's screenings in the chosen city on one date, today by default (FR-006 to FR-011). */
+/** One movie's screenings in the city on one date, today by default (FR-006 to FR-011). */
 export function MoviePage() {
   const { t, lang, formatTime } = useT();
   const { movieId = '' } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { city, chooseCity } = useCity();
-  const cities = useCities(lang);
-  const detail = useMovie(movieId, city);
+  const { city, forgetCity } = useCity();
+  const detail = useMovie(movieId, city, lang);
+  useDocumentHead(
+    detail.data ? pageHead({ kind: 'movie', detail: detail.data, city }, lang) : null,
+  );
 
   // "Today" comes from the server, so it matches the data even on a device with a wrong clock.
   const dates = detail.data?.availableDates ?? [];
@@ -58,6 +62,11 @@ export function MoviePage() {
     requested === null || unavailableDate ? null : requested,
   );
 
+  const unknownCity = detail.error instanceof ApiError && detail.error.code === 'invalid_city';
+  useEffect(() => {
+    if (unknownCity) forgetCity();
+  }, [unknownCity, forgetCity]);
+
   // Replaces the history entry, so Back leaves the movie instead of stepping through dates.
   const chooseDate = (next: string) => {
     void navigate(
@@ -69,18 +78,6 @@ export function MoviePage() {
   if (detail.error instanceof ApiError && detail.error.code === 'movie_not_found') {
     return <NotFoundPage reason="movie" />;
   }
-  const unknownCity = detail.error instanceof ApiError && detail.error.code === 'invalid_city';
-  if (city === null || unknownCity) {
-    return (
-      <PageLayout>
-        <CityPrompt
-          cities={cities.data?.cities ?? null}
-          failed={cities.isError}
-          onSelect={chooseCity}
-        />
-      </PageLayout>
-    );
-  }
 
   return (
     <PageLayout
@@ -89,8 +86,9 @@ export function MoviePage() {
         t('layout.updatedAt', { time: formatTime(screenings.data.freshness.updatedAt) })
       }
     >
-      {detail.isPending && <LoadingState />}
-      {detail.isError && (
+      {(detail.isPending || unknownCity) && <LoadingState />}
+      {/* Only with nothing to show: a failed refresh leaves the movie in place (research.md §7). */}
+      {detail.isError && detail.data === undefined && !unknownCity && (
         <ErrorState
           onRetry={() => {
             void detail.refetch();
@@ -99,7 +97,7 @@ export function MoviePage() {
       )}
       {detail.data && date !== null && (
         <div className={styles.page}>
-          <MovieHeader movie={detail.data.movie} />
+          <MovieHeader detail={detail.data} city={city} />
           <section className={styles.screenings} aria-labelledby="screenings-heading">
             <DatePicker
               dates={dates}
@@ -128,13 +126,17 @@ function DateHeading({ date, isToday }: { date: string; isToday: boolean }) {
   return isToday ? `${t('movie.today')}, ${formatDate(date)}` : formatDate(date);
 }
 
-function MovieHeader({ movie }: { movie: MovieDetail }) {
-  const { t } = useT();
+function MovieHeader({ detail, city }: { detail: MovieDetailResponse; city: string }) {
+  const translator = useT();
+  const { t } = translator;
+  const { movie } = detail;
   const subtitle = secondaryTitle(movie);
   const facts = [
+    movie.year,
     movie.durationMinutes !== null && t('movie.duration', { minutes: movie.durationMinutes }),
     ...movie.genres,
   ].filter(Boolean);
+  const summary = nextShowing(detail, city, translator);
   return (
     <header className={styles.movie}>
       <Poster
@@ -156,10 +158,16 @@ function MovieHeader({ movie }: { movie: MovieDetail }) {
           )}
           {facts.join(' · ')}
         </p>
+        {summary !== null && <p className={styles.summary}>{summary}</p>}
       </div>
     </header>
   );
 }
+
+const neverChanges = () => () => undefined;
+const isInBrowser = () => true;
+/** Also what's used while hydrating, as the first render has to match the snapshot's markup. */
+const isInSnapshot = () => false;
 
 function ScreeningsContent({
   query,
@@ -172,8 +180,9 @@ function ScreeningsContent({
 }) {
   const { t, formatDate } = useT();
   const [filters, setFilters] = useFilters();
+  const hasTakenOver = useSyncExternalStore(neverChanges, isInBrowser, isInSnapshot);
   if (query.isPending) return <LoadingState />;
-  if (query.isError) {
+  if (query.data === undefined) {
     return (
       <ErrorState
         onRetry={() => {
@@ -183,7 +192,13 @@ function ScreeningsContent({
     );
   }
   // While another date loads, the previous list stays visible (placeholder data).
-  const { date, screenings, nextDateWithScreenings, freshness } = query.data;
+  const { date, nextDateWithScreenings, freshness } = query.data;
+  // A snapshot's list can be hours old, and asking for a current one can fail (FR-007 of 001).
+  const isSnapshot = query.dataUpdatedAt === 0 && !query.isPlaceholderData;
+  const screenings =
+    isSnapshot && hasTakenOver
+      ? query.data.screenings.filter(({ startsAt }) => new Date(startsAt) > new Date())
+      : query.data.screenings;
   const shown = applyFilters(screenings, filters);
   return (
     <div className={styles.results} aria-busy={query.isPlaceholderData}>

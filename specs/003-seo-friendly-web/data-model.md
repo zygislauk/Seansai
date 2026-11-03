@@ -22,6 +22,19 @@ showingAt: Array<{ id: string; name: string; cityId: string; cityName: string }>
 
 With `screeningDates[0]`, this gives the movie summary (FR-005): when and where the movie is next showing.
 
+## API addition: `CitiesResponse.cities[].hasMovies`
+
+Added to `GET /api/v1/cities`. Additive, and has to be live before the code that reads it ships
+([plan](./plan.md#rollout-order)).
+
+```ts
+hasMovies: boolean;
+```
+
+- True when any shown cinema in the city has a screening that hasn't started.
+- Decides which city links the general list shows, and which city pages are in the site map.
+- One query that stops at the first screening it finds for each cinema, as every page requests `/cities`.
+
 ## PageHead
 
 What a page says about itself. Built by one pure function, `pageHead(page, lang)`, used both by the snapshot
@@ -30,7 +43,7 @@ What a page says about itself. Built by one pure function, `pageHead(page, lang)
 | Field | Rule |
 |-------|------|
 | `title` | Unique among site map pages (SC-002). Movie: title, plus year if known, plus "seansai". City: "Kino seansai Vilniuje". |
-| `description` | Up to about 155 characters, in the page's language, from known facts only. Movie: genres, where it's showing, next date. |
+| `description` | Up to about 155 characters, in the page's language, from known facts only. Movie: where it's showing, next date, and genres on Lithuanian pages, as the sources only state them in Lithuanian. When space runs out, genres go before when and where. |
 | `canonical` | Full address of the preferred page (FR-012), from `SITE_URL`. |
 | `alternates` | `lt`, `en` and `x-default` (Lithuanian): the same set on both versions. |
 | `image` | The poster, or the default preview image. |
@@ -98,7 +111,7 @@ Priority and change-frequency values are left out because Google ignores them.
 |-----|-------|-------|--------|
 | `seansai.city` | localStorage | City id or `all` | Now means "they've answered". Absent means first visit. |
 | `seansai.lang` | localStorage | `lt`, `en` | Unchanged |
-| `seansai_lang` | Cookie, 1 year, `SameSite=Lax`, `Secure` on HTTPS | `lt`, `en` | New. Written with `seansai.lang`, read only by the `/` redirect. |
+| `seansai_lang` | Cookie, 1 year, `SameSite=Lax`, `Secure` on HTTPS | `lt`, `en` | New. Written with `seansai.lang` and copied from it at startup, read only by the `/` redirect. |
 
 ## Configuration
 

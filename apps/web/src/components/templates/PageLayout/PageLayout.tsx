@@ -1,9 +1,11 @@
 import type { Lang } from '@seansai/shared';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
+import { useCity } from '../../../app/city.tsx';
 import { useT } from '../../../i18n/index.tsx';
 import { setLang } from '../../../storage/settings.ts';
 import { VisuallyHidden } from '../../atoms/VisuallyHidden/index.ts';
+import { CityChoice } from '../../organisms/CityChoice/index.ts';
 import { CitySwitcher } from '../../organisms/CitySwitcher/index.ts';
 import styles from './PageLayout.module.scss';
 
@@ -21,6 +23,7 @@ type PageLayoutProps = {
 
 export function PageLayout({ children, footer }: PageLayoutProps) {
   const { t, lang } = useT();
+  const { isChosen } = useCity();
   return (
     <div className={styles.page}>
       <a className={styles.skipLink} href="#main">
@@ -38,6 +41,7 @@ export function PageLayout({ children, footer }: PageLayoutProps) {
         </div>
       </header>
       <main id="main" tabIndex={-1} className={styles.main}>
+        {!isChosen && <CityChoice />}
         {children}
       </main>
       {footer !== undefined && <footer className={styles.footer}>{footer}</footer>}

@@ -17,7 +17,19 @@ describe('loadConfig', () => {
       contact: null,
       disabledSources: [],
       serveWebApp: false,
+      deployHookUrl: null,
     });
+  });
+
+  test('takes an optional https address for the snapshot deploy hook', () => {
+    const url = 'https://api.vercel.com/v1/integrations/deploy/prj/hook';
+
+    expect(
+      loadConfig({ SOURCES_MODE: 'fixtures', VERCEL_DEPLOY_HOOK_URL: url }).deployHookUrl,
+    ).toBe(url);
+    expect(() =>
+      loadConfig({ SOURCES_MODE: 'fixtures', VERCEL_DEPLOY_HOOK_URL: 'http://example.com' }),
+    ).toThrow(/VERCEL_DEPLOY_HOOK_URL/);
   });
 
   test('stores live data in apps/api/data by default and serves the web app in production', () => {

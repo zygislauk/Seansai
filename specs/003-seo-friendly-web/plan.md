@@ -162,12 +162,13 @@ apps/web/
 
 apps/api/src/
 ├── routes/movies.ts            # Adds showingAt
+├── routes/cities.ts            # Adds hasMovies
 ├── db/queries.ts               # One query for the cinemas showing a movie
 ├── refresh/deploy-hook.ts      # New: asks Vercel to rebuild after a refresh
 ├── refresh-now.ts, routes/cron.ts  # Call it after a refresh
 └── server.ts                   # X-Robots-Tag on the API, and on self-hosted pages
 
-packages/shared/src/api.ts      # showingAt on MovieDetailResponse
+packages/shared/src/api.ts      # showingAt on MovieDetailResponse, hasMovies on CitiesResponse
 vercel.json                     # Redirects, no fallback to index.html
 ```
 
@@ -179,10 +180,11 @@ build needs no database access or credentials.
 
 1. Add `showingAt` to the API and merge it. Builds read the production API, and `MovieDetailResponse`
    must include the field before the snapshot code can validate it.
-2. Merge the snapshot, pages and first-visit change.
-3. Create the Deploy Hook and put its URL in the home job's `refresh.env` and in Vercel's Production
+2. Add `hasMovies` to `/cities` and merge it, before any build reads it (US3).
+3. Merge the snapshot, pages and first-visit change.
+4. Create the Deploy Hook and put its URL in the home job's `refresh.env` and in Vercel's Production
    environment, so that both refresh routes can call it.
-4. Register the site with Google Search Console and submit the site map. This is the owner's step.
+5. Register the site with Google Search Console and submit the site map. This is the owner's step.
 
 ## Complexity Tracking
 

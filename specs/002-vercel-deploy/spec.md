@@ -46,7 +46,7 @@ self-hosted copy with the same data.
 **Acceptance Scenarios**:
 
 1. **Given** the site is deployed and has data, **When** a visitor opens the public address,
-   **Then** they see the city prompt or their city's movie list exactly as in feature 001.
+   **Then** they see the movie list, for all of Lithuania or their city, as in feature 001.
 2. **Given** a visitor has a link to a movie's screenings for a date, **When** they open or reload
    it, **Then** that page opens directly, not a "page not found" error.
 3. **Given** two visitors open the site at the same moment, possibly served by different servers,

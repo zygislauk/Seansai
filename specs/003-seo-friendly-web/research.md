@@ -84,8 +84,9 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   A failed build shows only in Vercel, so the `lastmod` values in `/sitemap.xml` are the check for it
   (quickstart §4).
 - **Side effects**: every hook call deploys the latest `main`, so any merged change goes live by the next
-  morning at the latest. A rollback made in the dashboard is overwritten by the next hook call, so
-  rolling back needs the code reverted too. This goes in the runbook.
+  morning at the latest. A rollback stops those deployments going live until it's undone (corrected
+  2026-11-03 from [Vercel's docs](https://vercel.com/docs/instant-rollback); this first said the next hook
+  call would overwrite it). The runbook is in the README.
 
 ## 5. Security headers and embedded data
 
@@ -109,14 +110,76 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
 - **Evidence**: Vercel [documents](https://vercel.com/kb/guide/custom-404-page) serving a `404.html` from
   the output directory.
 - **Verify**:
-  - `404.html` answers with status 404 inside a Services web service. **Fallback**: service-level
-    `routes` with `{ "handle": "filesystem" }` and `{ "src": "/.*", "status": 404, "dest": "/404.html" }`.
+  - `404.html` answers with status 404 inside a Services web service. **Fallback**: a service-level
+    rewrite to `/404.html` with `statusCode: 404`. Rewrites only apply once no file matches. The fallback
+    was needed: see below.
   - Paths with non-ASCII ids are served from their directories: 8 of today's 216 movies have such ids,
     for example `was-marielle-weiß` and `спеціальна-операція`. **Fallback**: they get 404 with a working
     page for people and are left out of the site map until fixed.
-- **Language cookie**: `seansai_lang`, written only when someone uses the language switch. It holds a
-  preference and identifies no one. Visitors who chose a language before this ships have it in
-  localStorage only, and `/` sends them to Lithuanian once; the site has been public for days.
+- **Language cookie**: `seansai_lang`, written when someone uses the language switch, and at startup when
+  localStorage already holds a language (owner, 2026-11-03). It holds a preference and identifies no one.
+  Without the startup copy, visitors who chose a language before this ships would land on Lithuanian from `/`
+  on every visit until they next used the switch. With it, that happens at most once.
+
+### Measured on the first preview (2026-11-03)
+
+The preview's snapshot was built on Vercel from production's API, in 51 s of build time. All **Verify** items for
+US1 held, so no fallback was needed:
+
+| Check | Result |
+|-------|--------|
+| `StaticRouterProvider` output hydrates against `RouterProvider` (§2) | Yes, in Chromium: the snapshot's DOM is kept, the app responds, and the console is clean |
+| Embedded JSON under the CSP (§5) | No violation, with the production CSP sent by Vercel |
+| Non-ASCII movie addresses (§6) | 200 for `was-marielle-weiß` (percent-encoded) and a Cyrillic id |
+| A movie with a 102-character id | 200, after raising the API's limit on ids (found by the first real build, and fixed first in its own PR) |
+
+The 404 status and page, the redirects and `X-Robots-Tag` depend on `vercel.json` changes in US2, so they're measured below.
+
+**On previews only**, a movie missing from the preview's database shows "Movie not found" once the app takes
+over, because the snapshot comes from production's data and the app calls the preview's own API (§3). That day
+the two shared 155 movies of about 215. Production's snapshot and API read the same data.
+
+A full build from production's data wrote 434 pages. The largest list page was 26.9 kB and the largest movie
+page 8.5 kB compressed, against budgets of 80 kB and 40 kB, with no duplicate titles or descriptions.
+
+### Measured on the US2 preview (2026-11-03)
+
+Measured with `vercel curl` and in Chromium under the real CSP, on a remote build of the final `vercel.json`. The
+exceptions are `sitemap.xml` and `robots.txt`, last checked on a local build of it, and the site map's count and
+`/api/v1/nope`, last checked on an earlier preview of this branch.
+
+**`404.html` isn't used on its own.** Without a rule, an unknown address answered 404 with Vercel's plain
+`NOT_FOUND` text, even though Vercel's guide says an emitted `404.html` is served automatically. The web service
+therefore has `{ "source": "/(.*)", "destination": "/404.html", "statusCode": 404 }`.
+
+Rejected, after trying it: service-level `routes` with `{ "handle": "filesystem" }` and a 404 rule, which Vercel's
+own 404 guide recommends. Vercel's `vercel.json` reference marks `handle` as deprecated in favour of rewrites, so
+Constitution VIII rules it out. It also silently dropped the service's `headers`, though the reference says the two
+can be used together: every page lost its CSP and assets lost their long cache lifetime, with no build error. So
+`tests/unit/vercel-config.test.ts` rejects `routes` on this service. `statusCode` on a rewrite is in Vercel's
+[published schema](https://openapi.vercel.sh/vercel.json), though not in the reference's prose. It compiles to the
+same rule after the filesystem check.
+
+Testing tip: a `vercel deploy --prebuilt` of a build made on this Mac answers 500 from the API, while a remote build
+of the same code doesn't. The likely cause is a native module built for macOS, though that wasn't confirmed.
+
+| Check | Result |
+|-------|--------|
+| `/lt/nonexistent`, `/lt/movie/no-such-movie-2026` | 404, `text/html`, with `404.html`'s content and all security headers |
+| The same in a browser | The app's not-found page, `noindex` kept, no canonical link, clean console |
+| A movie in the database with no page in the snapshot (`instruktorius`) | 404 for crawlers. A person sees the movie, `noindex` is removed, and it names its own address |
+| `/`, and `/` with `seansai_lang=lt` | 307 to `/lt/` |
+| `/` with `seansai_lang=en` | 307 to `/en/` |
+| `/de/movie/x`, `/de` | 308 to `/lt/movie/x`, `/lt/`. Query strings are kept |
+| `/lt/`, a movie, `sitemap.xml`, `robots.txt` | 200 with all security headers. `application/xml` and `text/plain` for the last two |
+| `/assets/*` | `public, max-age=31536000, immutable`. A missing asset's 404 gets this too, which only matters if a rollback brings that file name back |
+| `/api/v1/cities`, `/api/v1/nope` | `noindex` on both, as a 200 and a JSON 404 |
+| `X-Robots-Tag` on the preview's pages | `noindex`, sent by Vercel. Production is checked at T067 |
+| `sitemap.xml` | 434 addresses, the same pages as the snapshot |
+| Language in a browser | No cookie before a choice. The switch writes it. A language already in localStorage is copied at startup, `Secure`, `Lax`, for a year. `/` then goes to `/en/` |
+
+Redirects are answered before the web service's routes, so they carry no security headers. They have no content
+to protect.
 
 ## 7. Search-engine rules that shaped the design
 
@@ -196,6 +259,11 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   reports any registry city missing from the map.
 - **Discovery**: the general list page links to every city page, and the site map lists them. A city's
   own link appears only while it has movies.
+- **Knowing which cities have movies**: `/cities` gains `hasMovies`, so the snapshot and the running app show
+  the same links (FR-002). The field has to be live before the code that reads it (§3). Rejected:
+  - Fetching all 7 city lists on each visit loads data that isn't shown (Constitution VI).
+  - Working it out only in the snapshot makes the links differ once the app takes over.
+  - Linking every supported city needs no API change, but sends crawlers to empty pages.
 
 - **Rows read by `hasMovies`** (measured with `.scanstats` on a local copy of the 7,000-screening test
   database, with 18 cinemas plus one with no screenings; Turso's own counter wasn't used). The query stops at
@@ -225,3 +293,26 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   ([contract](./contracts/snapshot.md#failing-safely)).
 - **No synopses**: descriptions are composed from title, year, genres and where and when it's showing.
 - **Posters**: 28 of 216 have none, so they use the default preview image.
+
+## 13. Measured budgets (2026-11-03)
+
+From the preview of commit `3b1bef2`, whose snapshot was built on Vercel from production's API and has 442
+pages. Compressed sizes are gzip of what the preview served. Movie pages are a sample of 10, as the build
+itself fails any page over budget, and it passed.
+
+| Budget (plan.md) | Target | Measured |
+|------------------|--------|----------|
+| List page, compressed | ≤ 80 kB | 27.5 kB (`/lt/`), 23.7 kB (`/lt/city/vilnius`), 3.7 kB (`/lt/city/gargzdai`) |
+| Movie page, compressed | ≤ 40 kB | 7.5 kB at most in the sample |
+| JavaScript on first visit, compressed | ≤ 150 kB | 140.3 kB |
+| Rendering all pages in a build | < 3 min | About 29 s, reading production's API |
+| Whole build, then deployed | No target | 41 s, deployment finished 50 s after the build started |
+
+No duplicate title or description warnings in that build's log (SC-002). The 10-minute target from refresh
+to live can only be measured once the hook exists (T068). First paint (SC-007) is measured on production
+(T067).
+
+Quickstart §1 also passed by hand against the fixture data on 2026-11-03: content straight away, the
+non-blocking choice, choosing a city going to its page, no flash after a reload, and nothing in the console.
+The fixture data is older than today, so that browser run took the client-render path. Hydration is covered
+by `seo.spec.ts`, whose tests fix the clock.

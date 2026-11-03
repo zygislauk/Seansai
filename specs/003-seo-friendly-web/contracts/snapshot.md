@@ -27,7 +27,7 @@ produces pages.
 ## Reading data
 
 - Requests: `/cities?lang={lang}`, `/movies?city=all`, `/movies?city={id}`, `/movies/{id}?city=all&lang={lang}`,
-  and `/movies/{id}/screenings?city=all&lang={lang}`.
+  and `/movies/{id}/screenings?city=all`, as the app asks for them.
 - Each carries `snapshot={build time}`, to avoid reading what the CDN cached before the refresh.
 - At most 8 requests at once, each retried twice. Responses are validated with `packages/shared`.
 
@@ -68,7 +68,8 @@ movie records, so the right fix is merging those records, and one shouldn't hold
     "web": {
       "root": "apps/web",
       "framework": "vite",
-      // Removed: the catch-all rewrite to /index.html. dist/404.html serves unknown addresses.
+      // Replaces the catch-all rewrite to /index.html. A rewrite only applies once no file matches.
+      "rewrites": [{ "source": "/(.*)", "destination": "/404.html", "statusCode": 404 }],
       "headers": [ /* unchanged */ ]
     }
   },

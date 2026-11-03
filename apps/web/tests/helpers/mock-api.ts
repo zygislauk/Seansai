@@ -112,6 +112,7 @@ export const diggerDetail: MovieDetailResponse = {
 };
 
 type MockOptions = {
+  cities?: CitiesResponse;
   movies?: MoviesResponse;
   screenings?: ScreeningsResponse;
   detail?: MovieDetailResponse;
@@ -141,7 +142,7 @@ export function mockApi(options: MockOptions = {}) {
     if (options.failing?.(url)) return json(400, { error: { code: 'failed', message: 'failed' } });
     const city = url.searchParams.get('city');
     const badCity = city !== null && !['vilnius', 'kaunas', 'all'].includes(city);
-    if (url.pathname === '/api/v1/cities') return json(200, cities);
+    if (url.pathname === '/api/v1/cities') return json(200, options.cities ?? cities);
     if (badCity) return json(400, { error: { code: 'invalid_city', message: 'unknown city' } });
     if (url.pathname === '/api/v1/movies') return json(200, options.movies ?? movies);
     const match = /^\/api\/v1\/movies\/([^/]+)(\/screenings)?$/.exec(url.pathname);

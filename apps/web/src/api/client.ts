@@ -85,9 +85,10 @@ export function getMovies(city: string, signal?: AbortSignal): Promise<MoviesRes
 export function getMovie(
   movieId: string,
   city: string,
+  lang: Lang,
   signal?: AbortSignal,
 ): Promise<MovieDetailResponse> {
-  return request(moviePath(movieId), { city }, MovieDetailResponseSchema, signal);
+  return request(moviePath(movieId), { city, lang }, MovieDetailResponseSchema, signal);
 }
 
 /** `date` null asks for today as the server sees it; the response says which date that is. */

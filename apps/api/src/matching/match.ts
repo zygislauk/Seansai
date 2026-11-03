@@ -50,10 +50,12 @@ const DURATION_TOLERANCE_MINUTES = 15;
  */
 export const MAX_MOVIE_ID_BYTES = 200;
 const HASH_LENGTH = 8;
+/** For a title with no letters or digits, such as "???", whose match key is empty. */
+const UNNAMED_MOVIE_SLUG = 'be-pavadinimo';
 
 /** Stable, URL-friendly id from match key and year, e.g. `digger-2026`. */
 export function movieIdOf(matchKey: string, year: number | null): string {
-  const slug = matchKey.replaceAll(' ', '-');
+  const slug = matchKey === '' ? UNNAMED_MOVIE_SLUG : matchKey.replaceAll(' ', '-');
   const id = year === null ? slug : `${slug}-${String(year)}`;
   if (Buffer.byteLength(id) <= MAX_MOVIE_ID_BYTES) return id;
 
