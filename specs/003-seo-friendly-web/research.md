@@ -335,16 +335,41 @@ From PR #10's merge, `f66ee07`, with CI and the production deployment both passi
 | Security headers on `/lt/` | Present |
 | A first visit in a browser | Hydrated, no dialog, the city choice, nothing in the console |
 
-**Not yet measured**:
+**SC-008, Facebook's debugger**: passed. The owner checked 10 movies, including non-ASCII addresses, a WebP poster
+and a general image, and all were right after **Scrape Again**. Three things came out of it:
 
-- **SC-008, Facebook's debugger**: it needs a Facebook login, so it's the owner's. Standing in for it, 10 movies
-  fetched with Facebook's user agent all had the right title, a description of 155 characters or fewer, and an
-  `og:url` matching their address. All 10 images answered 200: 8 posters and 2 general images. One poster is WebP,
-  a format worth watching for in the debugger.
-- **SC-007, PageSpeed**: the free API's daily quota was used up. Standing in for it, a lab run of Largest Contentful
-  Paint from the owner's Mac, on a Pixel 7 profile with Lighthouse's slow 4G figures and a 4× slower CPU, 3 runs
-  each: `/lt/` 1.6 s, `/lt/city/vilnius` 1.8 to 2.1 s, a movie page 0.5 s, all
-  under the 2.5 s target. SC-007 is about 75% of real visits, which only field data can show.
-- **The index from §11 on production's database**: reading Turso needs credentials this check didn't use. The
-  dashboard's rows-read figure is the place to look.
+- The debugger warns that `fb:app_id` is missing on every movie. It only links a page to a Facebook app for
+  Insights, and previews work without it, so it stays out.
+- The first pass showed descriptions naming Marijampolė and Gargždai, removed that evening by PR #12. That merge's
+  own build read the live API before the new version replaced it, so its pages kept the old cities. 24 of 222
+  Lithuanian movie pages named them in their description. A redeploy cleared them: no mentions on the 440 movie
+  pages in the site map, and those cities' pages answer 404.
+- A merge that changes what the API serves needs a second build to reach the pages, from the next refresh or a
+  redeploy. Facebook keeps its own copy, so a changed page also needs **Scrape Again**.
+
+**SC-007, PageSpeed**: under the 2.5 s target in the lab, on the Mobile tab, one run each by the owner:
+
+| Page | Largest Contentful Paint | Performance score |
+|------|--------------------------|-------------------|
+| `/lt/` | 2.4 s | 98 |
+| `/lt/movie/clayface-2026` | 0.8 s | 100 |
+
+SC-007 is about 75% of real visits, and PageSpeed has no real-visitor data for either page yet, so that part is
+still unproven. `/lt/` has only 0.1 s to spare. An earlier lab run from the owner's Mac, on a Pixel 7 profile with
+Lighthouse's slow 4G figures and a 4× slower CPU, 3 runs each, gave `/lt/` 1.6 s, `/lt/city/vilnius` 1.8 to 2.1 s
+and a movie page 0.5 s.
+
+**Turso usage**, from the dashboard on the evening of 2026-11-03, with the period it covers not recorded:
+
+| Measure | Used | Free allowance | Share |
+|---------|------|----------------|-------|
+| Rows read | 1,933,257 | 500 M a month | 0.39% |
+| Rows written | 86,141 | 10 M a month | 0.86% |
+| Storage | 1.77 MB | 5 GB | < 0.1% |
+
+All are far under the 50% limit. Rows written are higher than 002's estimate of about 6 k a run, or about 0.2 M a
+month, so they're worth comparing again after a full month.
+
+**The index from §11**: `screenings_by_cinema_and_start` exists on production's database, from one read-only query
+of `sqlite_master`.
 
