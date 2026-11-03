@@ -240,9 +240,11 @@ async function serveWithProductionCsp(context: BrowserContext) {
   const vercelJson = JSON.parse(
     readFileSync(new URL('../../../../vercel.json', import.meta.url), 'utf8'),
   ) as {
-    services: { web: { routes: Array<{ headers?: Record<string, string> }> } };
+    services: { web: { headers: Array<{ headers: Array<{ key: string; value: string }> }> } };
   };
-  const policy = vercelJson.services.web.routes[0]?.headers?.['Content-Security-Policy'];
+  const policy = vercelJson.services.web.headers
+    .flatMap(({ headers }) => headers)
+    .find(({ key }) => key.toLowerCase() === 'content-security-policy')?.value;
   if (!policy) throw new Error('expected vercel.json to set a Content-Security-Policy');
 
   await context.route(

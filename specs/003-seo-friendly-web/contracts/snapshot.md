@@ -68,14 +68,9 @@ movie records, so the right fix is merging those records, and one shouldn't hold
     "web": {
       "root": "apps/web",
       "framework": "vite",
-      // Removed: the catch-all rewrite to /index.html, and `headers`, which `routes` silently disables.
-      "routes": [
-        { "src": "/(.*)", "headers": { /* the security headers, unchanged */ }, "continue": true },
-        { "src": "/assets/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" },
-          "continue": true },
-        { "handle": "filesystem" },
-        { "src": "/.*", "status": 404, "dest": "/404.html" }
-      ]
+      // Replaces the catch-all rewrite to /index.html. A rewrite only applies once no file matches.
+      "rewrites": [{ "source": "/(.*)", "destination": "/404.html", "statusCode": 404 }],
+      "headers": [ /* unchanged */ ]
     }
   },
   "rewrites": [ /* unchanged */ ]

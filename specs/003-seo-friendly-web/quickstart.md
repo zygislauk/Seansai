@@ -30,8 +30,8 @@ Preview URLs may need `vercel curl` if Deployment Protection is on.
 
 | Check | Expected | If not |
 |-------|----------|--------|
-| `curl -I <preview>/lt/nonexistent` | Status 404 | Add the `routes` fallback (research §6) |
-| Browser at that address | The app's not-found page | Fix `404.html`, or the `routes` fallback (research §6) |
+| `curl -I <preview>/lt/nonexistent` | Status 404 | Check the service's rewrite (research §6) |
+| Browser at that address | The app's not-found page | Fix `404.html`, or the service's rewrite (research §6) |
 | `curl -I <preview>/lt/movie/was-marielle-weiß` (percent-encoded), and a Cyrillic id | 200 | Research §6 fallback |
 | `curl -I <preview>/` | Temporary redirect to `/lt/` | Check `redirects` |
 | Same with `--cookie seansai_lang=en` | Redirect to `/en/` | Check the `has` rule |

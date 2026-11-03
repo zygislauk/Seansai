@@ -109,9 +109,9 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
 - **Evidence**: Vercel [documents](https://vercel.com/kb/guide/custom-404-page) serving a `404.html` from
   the output directory.
 - **Verify**:
-  - `404.html` answers with status 404 inside a Services web service. **Fallback**: service-level
-    `routes` with `{ "handle": "filesystem" }` and `{ "src": "/.*", "status": 404, "dest": "/404.html" }`.
-    The fallback was needed: see below.
+  - `404.html` answers with status 404 inside a Services web service. **Fallback**: a service-level
+    rewrite to `/404.html` with `statusCode: 404`. Rewrites only apply once no file matches. The fallback
+    was needed: see below.
   - Paths with non-ASCII ids are served from their directories: 8 of today's 216 movies have such ids,
     for example `was-marielle-weiß` and `спеціальна-операція`. **Fallback**: they get 404 with a working
     page for people and are left out of the site map until fixed.
@@ -143,17 +143,24 @@ page 8.5 kB compressed, against budgets of 80 kB and 40 kB, with no duplicate ti
 
 ### Measured on the US2 preview (2026-11-03)
 
-Measured on the preview of `c75f830`, with `vercel curl` and in Chromium under the real CSP.
+Measured with `vercel curl` and in Chromium under the real CSP, on a remote build of the final `vercel.json`. The
+exceptions are `sitemap.xml` and `robots.txt`, last checked on a local build of it, and the site map's count and
+`/api/v1/nope`, last checked on an earlier preview of this branch.
 
-**Two things differed from the documentation:**
+**`404.html` isn't used on its own.** Without a rule, an unknown address answered 404 with Vercel's plain
+`NOT_FOUND` text, even though Vercel's guide says an emitted `404.html` is served automatically. The web service
+therefore has `{ "source": "/(.*)", "destination": "/404.html", "statusCode": 404 }`.
 
-- **`404.html` isn't used on its own.** Without `routes`, an unknown address answered 404 with Vercel's plain
-  `NOT_FOUND` text, so the documented fallback above is in `vercel.json`. `handle` is marked deprecated in Vercel's
-  documentation, but it's the only way found to say "after looking for a file".
-- **`routes` silently drops the service's `headers`.** Vercel's documentation says the two can be used together,
-  but with both present, every page lost its CSP and assets lost their long cache lifetime, with no build error.
-  The headers now live in `routes` instead, and `tests/unit/vercel-config.test.ts` rejects `headers` beside them.
-  Check response headers on a preview after any change to these rules.
+Rejected, after trying it: service-level `routes` with `{ "handle": "filesystem" }` and a 404 rule, which Vercel's
+own 404 guide recommends. Vercel's `vercel.json` reference marks `handle` as deprecated in favour of rewrites, so
+Constitution VIII rules it out. It also silently dropped the service's `headers`, though the reference says the two
+can be used together: every page lost its CSP and assets lost their long cache lifetime, with no build error. So
+`tests/unit/vercel-config.test.ts` rejects `routes` on this service. `statusCode` on a rewrite is in Vercel's
+[published schema](https://openapi.vercel.sh/vercel.json), though not in the reference's prose. It compiles to the
+same rule after the filesystem check.
+
+Testing tip: a `vercel deploy --prebuilt` of a build made on this Mac answers 500 from the API, while a remote build
+of the same code doesn't. The likely cause is a native module built for macOS, though that wasn't confirmed.
 
 | Check | Result |
 |-------|--------|
@@ -162,9 +169,9 @@ Measured on the preview of `c75f830`, with `vercel curl` and in Chromium under t
 | A movie in the database with no page in the snapshot (`instruktorius`) | 404 for crawlers. A person sees the movie, `noindex` is removed, and it names its own address |
 | `/`, and `/` with `seansai_lang=lt` | 307 to `/lt/` |
 | `/` with `seansai_lang=en` | 307 to `/en/` |
-| `/de/movie/x`, `/de` | 308 to `/lt/movie/x`, `/lt/` |
+| `/de/movie/x`, `/de` | 308 to `/lt/movie/x`, `/lt/`. Query strings are kept |
 | `/lt/`, a movie, `sitemap.xml`, `robots.txt` | 200 with all security headers. `application/xml` and `text/plain` for the last two |
-| `/assets/*` | `public, max-age=31536000, immutable` |
+| `/assets/*` | `public, max-age=31536000, immutable`. A missing asset's 404 gets this too, which only matters if a rollback brings that file name back |
 | `/api/v1/cities`, `/api/v1/nope` | `noindex` on both, as a 200 and a JSON 404 |
 | `X-Robots-Tag` on the preview's pages | `noindex`, sent by Vercel. Production is checked at T067 |
 | `sitemap.xml` | 434 addresses, the same pages as the snapshot |
