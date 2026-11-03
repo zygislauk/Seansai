@@ -4,7 +4,8 @@ import {
   ScreeningsResponseSchema,
 } from '@seansai/shared';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import { startCatalogServer, TODAY } from '../helpers/catalog.ts';
+import { MAX_MOVIE_ID_BYTES } from '../../src/matching/match.ts';
+import { LONG_TITLE_MOVIE_ID, startCatalogServer, TODAY } from '../helpers/catalog.ts';
 
 let server: Awaited<ReturnType<typeof startCatalogServer>>;
 
@@ -147,7 +148,6 @@ describe('GET /movies/{id}/screenings', () => {
   test.each([
     ['a path', '..%2F..%2Fetc%2Fpasswd'],
     ['punctuation', 'digger%27%3B--'],
-    ['too long', 'a'.repeat(100)],
   ])('answers a malformed movie id (%s) with 404 movie_not_found', async (_, movieId) => {
     for (const url of [
       `/api/v1/movies/${movieId}?city=vilnius`,
@@ -159,11 +159,32 @@ describe('GET /movies/{id}/screenings', () => {
     }
   });
 
-  test('refuses an id longer than the router accepts with 414, without details', async () => {
-    const response = await server.app.inject(`/api/v1/movies/${'a'.repeat(300)}?city=vilnius`);
+  test('serves a movie with an id as long as an event’s title makes it', async () => {
+    expect(LONG_TITLE_MOVIE_ID.length).toBeGreaterThan(100);
 
-    expect(response.statusCode).toBe(414);
-    expect(response.body).not.toMatch(/stack|node_modules|\/src\//);
+    const detail = await server.app.inject(`/api/v1/movies/${LONG_TITLE_MOVIE_ID}?city=vilnius`);
+    const screenings = await server.app.inject(
+      `/api/v1/movies/${LONG_TITLE_MOVIE_ID}/screenings?city=vilnius&date=${TODAY}`,
+    );
+
+    expect(detail.statusCode).toBe(200);
+    expect(MovieDetailResponseSchema.parse(detail.json()).movie.id).toBe(LONG_TITLE_MOVIE_ID);
+    expect(screenings.statusCode).toBe(200);
+  });
+
+  test.each([
+    ['the movie', ''],
+    ['its screenings', `/screenings`],
+  ])('accepts ids up to the longest it creates, and no longer, for %s', async (_, rest) => {
+    const url = (length: number) =>
+      `/api/v1/movies/${'a'.repeat(length)}${rest}?city=vilnius&date=${TODAY}`;
+
+    const longest = await server.app.inject(url(MAX_MOVIE_ID_BYTES));
+    const tooLong = await server.app.inject(url(MAX_MOVIE_ID_BYTES + 1));
+
+    expect(longest.statusCode).toBe(404);
+    expect(tooLong.statusCode).toBe(414);
+    expect(tooLong.body).not.toMatch(/stack|node_modules|\/src\//);
   });
 
   test('rejects an unknown city with 400 invalid_city', async () => {

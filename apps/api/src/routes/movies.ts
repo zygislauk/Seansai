@@ -22,12 +22,10 @@ export function movieSummary(movie: MovieRecord): MovieSummary {
 
 /**
  * Movie ids are slugs of a normalised title and a year: letters and digits joined by hyphens.
- * Fastify itself refuses path parameters over 100 characters (414).
+ * Over-long ones never reach this route (`maxParamLength`): the answer is 414, or 404 from the
+ * catch-all when the web app is served too.
  */
-const MovieIdSchema = z
-  .string()
-  .max(99)
-  .regex(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u);
+const MovieIdSchema = z.string().regex(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u);
 
 /** The movie, or a 404 `movie_not_found` (also for ids that cannot be movie ids). */
 export async function findMovie(queries: Queries, movieId: string): Promise<MovieRecord> {

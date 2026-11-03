@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import type { MatchReviewRecord, MovieIdentity, MovieRecord } from '../db/repository.ts';
@@ -42,10 +43,25 @@ export type Resolution = {
 /** Cinemas list running times with or without ads and trailers: Vue's run 11–13 minutes shorter than Apollo's. */
 const DURATION_TOLERANCE_MINUTES = 15;
 
+/**
+ * Ids must fit in an address and be a file name in the page snapshot, which allows 255 bytes. Any
+ * real title fits: the longest so far is 102 characters. An id's length is also the router's limit
+ * on path parameters, so every movie can be reached.
+ */
+export const MAX_MOVIE_ID_BYTES = 200;
+const HASH_LENGTH = 8;
+
 /** Stable, URL-friendly id from match key and year, e.g. `digger-2026`. */
-function movieIdOf(matchKey: string, year: number | null): string {
+export function movieIdOf(matchKey: string, year: number | null): string {
   const slug = matchKey.replaceAll(' ', '-');
-  return year === null ? slug : `${slug}-${String(year)}`;
+  const id = year === null ? slug : `${slug}-${String(year)}`;
+  if (Buffer.byteLength(id) <= MAX_MOVIE_ID_BYTES) return id;
+
+  // Cut by whole letters, with a hash of the whole id so two long titles stay two movies.
+  const hash = createHash('sha256').update(id).digest('hex').slice(0, HASH_LENGTH);
+  const letters = Array.from(id);
+  while (Buffer.byteLength(letters.join('')) > MAX_MOVIE_ID_BYTES - HASH_LENGTH - 1) letters.pop();
+  return `${letters.join('').replace(/-+$/, '')}-${hash}`;
 }
 
 /**

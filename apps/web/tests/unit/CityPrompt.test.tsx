@@ -74,7 +74,10 @@ test('a ?city= link wins over the saved city and becomes the saved city', async 
 
   expect(await screen.findByRole('heading', { name: 'Zuikis' })).toBeInTheDocument();
   expect(api.requested()).toContain('/api/v1/movies?city=all');
-  expect(window.localStorage.getItem('seansai.city')).toBe('all');
+  // Saved in an effect, which runs just after the render that shows the heading.
+  await waitFor(() => {
+    expect(window.localStorage.getItem('seansai.city')).toBe('all');
+  });
 });
 
 test('asks again when the saved city is no longer supported', async () => {
