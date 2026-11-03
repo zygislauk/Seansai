@@ -204,6 +204,15 @@ calls.
   from. The no-circumvention rule is still met in its wording: one fixed address and honest
   identification, stopping if refused. It does route around these cinemas' refusal of Vercel,
   which the owner accepted.
+- **Retrying failed sources** (2026-11-03): the first automatic run, at 00:20, started during one of
+  the Mac's maintenance wakes. `pmset -g log` shows it asleep again 27 s later, and awake at 00:38.
+  Atlantis, Garsas, Spindulys and Minija, which crawl 35 to 50 film pages each (about 50 s), failed on
+  waking, and the one-attempt-a-day rule left them out of date all day. The sites were fine: the same
+  crawl with the Mac awake had no fetch errors. Later checks now retry what failed, within the hourly
+  limit for every source. Refusals aren't retried, and a source that keeps failing for another reason
+  is tried hourly until the next day's refresh. Only the error message is stored, so telling them apart
+  reads its start, which saved a migration. Overnight, retries can be cut short the same way until
+  the Mac is next properly awake.
 - **Timing tests on CI** (2026-11-01, owner decision): GitHub's machines vary by about 1.7× in
   throughput. `performance.spec.ts` allows 2.5 s on CI and 2 s elsewhere, because its throttling
   comes on top of the machine's own speed. The target stays 2 s (SC-002): CI catches real slowdowns,

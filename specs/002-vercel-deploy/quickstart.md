@@ -122,6 +122,9 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/lt.seansai.refresh.pli
 - **What it does**: it checks every hour while you are logged in and the Mac is awake, and refreshes
   on the first check of each Vilnius day. So it runs once a day, and catches up after sleep or being
   offline. It can't run while the Mac is off.
+- **After a failure**: later checks that day retry only the sources that failed, each at most once an
+  hour, and the log shows `Retrying the sources that failed`. A cinema that refused the request, or
+  whose robots.txt disallows it, isn't asked again until the next day.
 - **By hand**: run `~/.local/share/seansai-refresh/scripts/home-refresh.sh`. It refuses within an
   hour of the last run, the limit for every source.
 - **If Node changes**: removing that Node version stops the job, with the reason in the log. To

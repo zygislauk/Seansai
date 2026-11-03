@@ -21,9 +21,11 @@ async function main(): Promise<void> {
   const repo = new Repository(db);
   logRobotsOverrides(logger);
 
+  const pipeline = createRefreshPipeline(config, repo, clock, logger);
   const result = await refreshIfDue({
     sources: () => repo.listSources(),
-    run: createRefreshPipeline(config, repo, clock, logger).runAll,
+    run: pipeline.runAll,
+    retry: pipeline.runOnly,
     clock,
     args: process.argv.slice(2),
     logger,

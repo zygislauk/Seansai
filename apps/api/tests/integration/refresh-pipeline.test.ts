@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { loadConfig } from '../../src/config.ts';
 import type { Db } from '../../src/db/index.ts';
 import { Repository } from '../../src/db/repository.ts';
+import { refreshIfDue } from '../../src/refresh/if-due.ts';
 import { createRefreshPipeline } from '../../src/refresh/pipeline.ts';
 import { createClock } from '../../src/sources/runtime.ts';
 import { screeningRecord, seedMovies, seedScreenings, movieRecord } from '../helpers/temp-db.ts';
@@ -40,6 +41,37 @@ describe('createRefreshPipeline', () => {
     );
     expect(Object.values(result.sources)).not.toContain('failed');
     expect((await db.execute('SELECT id FROM screenings LIMIT 1')).rows).toHaveLength(1);
+  });
+
+  test('runOnly refreshes the named sources and leaves the others alone', async () => {
+    const result = await pipelineWith().runOnly(['forum', 'vue']);
+
+    expect(result.sources).toEqual({ forum: 'success', vue: 'success' });
+    const refreshed = (await repo.listSources()).filter(({ lastAttemptAt }) => lastAttemptAt);
+    expect(refreshed.map(({ id }) => id)).toEqual(['forum', 'vue']);
+  });
+
+  test('a failed source recovers on the next hourly check', async () => {
+    const pipeline = pipelineWith();
+    const clock = () => new Date('2026-11-03T12:00:00Z');
+    await repo.recordSourceAttempt(
+      'forum',
+      new Date('2026-11-03T10:00:00Z'),
+      'Request to https://restapi.forumcinemas.lt/api failed: network error',
+    );
+
+    await refreshIfDue({
+      sources: () => repo.listSources(),
+      run: pipeline.runAll,
+      retry: pipeline.runOnly,
+      clock,
+      args: ['--if-due'],
+      logger: createTestLogger().logger,
+    });
+
+    const [forum] = await repo.listSources();
+    expect(forum).toMatchObject({ id: 'forum', lastError: null });
+    expect(forum?.lastSuccessAt).not.toBeNull();
   });
 
   test('asks for a snapshot build once every source has finished', async () => {

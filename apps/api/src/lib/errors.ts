@@ -15,6 +15,14 @@ export class SourceBlockedError extends Error {
   }
 }
 
+/**
+ * Whether a source's stored error says the cinema refused us, which is never retried the same day.
+ * Only the message is stored (`sources.last_error`), so it goes by how the two errors here start.
+ */
+export function isRefusal(message: string): boolean {
+  return message.startsWith('Blocked by ') || message.startsWith('robots.txt disallows ');
+}
+
 /** The URL is disallowed by the host's robots.txt and the source has no owner override. */
 export class RobotsDisallowedError extends Error {
   override readonly name = 'RobotsDisallowedError';
