@@ -48,6 +48,7 @@ export function CityChoice() {
       {open && (
         <CityPrompt
           cities={cities.data?.cities ?? null}
+          failed={cities.isError}
           onSelect={answer}
           onClose={() => {
             setOpen(false);

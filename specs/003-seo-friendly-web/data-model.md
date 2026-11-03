@@ -2,7 +2,7 @@
 
 **Feature**: [spec.md](./spec.md)
 
-No database changes. The new structures are computed from the existing data, and the snapshot is files in
+No new tables or columns, and one new index ([research §11](./research.md#11-city-pages)). The new structures are computed from the existing data, and the snapshot is files in
 a deployment.
 
 ## API addition: `MovieDetailResponse.showingAt`

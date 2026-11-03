@@ -53,7 +53,9 @@ const links = (path: string) => ({
 /** A small fake of the API with two movies, one of them with a non-ASCII id. */
 function apiAnswers(url: URL): unknown {
   const path = decodeURIComponent(url.pathname.replace('/api/v1', ''));
-  if (path === '/cities') return { cities: [{ id: 'vilnius', name: 'Vilnius', cinemaCount: 1 }] };
+  if (path === '/cities') {
+    return { cities: [{ id: 'vilnius', name: 'Vilnius', cinemaCount: 1, hasMovies: true }] };
+  }
   if (path === '/movies') {
     return {
       movies: [

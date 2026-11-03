@@ -12,6 +12,8 @@ import { Repository, toMovieRecord, type MovieRecord, type MovieRow } from './re
  * as a JSON array so each statement's SQL is the same whatever the cinemas.
  */
 
+export type ListedCity = { city: City; cinemaCount: number; hasMovies: boolean };
+
 export type MovieListing = { movie: MovieRecord; screeningsToday: number; firstDate: string };
 
 export type ScreeningListing = {
@@ -50,7 +52,7 @@ type QueriesOptions = {
 export const collator = new Intl.Collator('lt');
 const IN_CINEMAS = 'cinema_id IN (SELECT value FROM json_each(@cinemaIds))';
 
-const SQL = {
+export const SQL = {
   movies: `
     SELECT movies.*, listed.screenings_today, listed.first_date
     FROM (
@@ -69,6 +71,10 @@ const SQL = {
   cinemasShowing: `
     SELECT DISTINCT cinema_id FROM screenings
     WHERE movie_id = @movieId AND ${IN_CINEMAS} AND starts_at > @now`,
+  // EXISTS stops at each cinema's first screening; a movie list would read them all.
+  cinemasWithScreenings: `
+    SELECT json_each.value AS cinema_id FROM json_each(@cinemaIds)
+    WHERE EXISTS (SELECT 1 FROM screenings WHERE cinema_id = json_each.value AND starts_at > @now)`,
   lastDate: 'SELECT MAX(local_date) AS last_date FROM screenings',
   screenings: `
     SELECT id, cinema_id, starts_at, hall, format, spoken_language, subtitle_language,
@@ -99,10 +105,24 @@ export class Queries {
     return this.#cinemas.filter((cinema) => city === 'all' || cinema.cityId === city);
   }
 
-  /** Cities with at least one shown cinema (the city prompt, FR-013). */
-  listCities(): Array<{ city: City; cinemaCount: number }> {
+  /** Cities with at least one shown cinema (the city prompt, FR-013), and whether any has movies. */
+  async listCities(now: Date): Promise<ListedCity[]> {
+    const { rows } = await this.#db.execute({
+      sql: SQL.cinemasWithScreenings,
+      args: this.#bounds(this.#cinemas, now),
+    });
+    const showing = new Set(
+      (rows as unknown as Array<{ cinema_id: string }>).map((row) => row.cinema_id),
+    );
     return cities
-      .map((city) => ({ city, cinemaCount: this.cinemasIn(city.id).length }))
+      .map((city) => {
+        const cinemas = this.cinemasIn(city.id);
+        return {
+          city,
+          cinemaCount: cinemas.length,
+          hasMovies: cinemas.some((cinema) => showing.has(cinema.id)),
+        };
+      })
       .filter((entry) => entry.cinemaCount > 0);
   }
 
