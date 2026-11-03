@@ -238,10 +238,11 @@ function warnAboutDuplicates(pages: readonly RenderedPage[], warn: (message: str
   }
 }
 
-export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
-  const { outDir, renderer, log = console } = options;
+type SnapshotData = Awaited<ReturnType<typeof readSnapshotData>>;
+type SnapshotPage = { page: RenderedPage; html: string; inSiteMap: boolean };
+
+async function readSnapshotData(options: SnapshotOptions) {
   const read = createReader(options);
-  const template = readFileSync(join(outDir, 'index.html'), 'utf8');
 
   const moviesResponse = await read('/movies?city=all', MoviesResponseSchema);
   const { movies } = moviesResponse;
@@ -251,7 +252,6 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
     LANGS.map((lang) => read(`/cities?lang=${lang}`, CitiesResponseSchema)),
   );
   if (!ltCities || !enCities) throw new Error('Could not read the cities');
-  const citiesFor = (lang: Lang) => (lang === 'lt' ? ltCities : enCities);
 
   // Every city gets a page, so a link to one still works on a day it has nothing on.
   const cityMovies = new Map(
@@ -279,42 +279,67 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
   const snapshotDate = movieData[0]?.details.lt.availableDates[0];
   if (snapshotDate === undefined) throw new Error('The API gave no date for today');
 
-  const pages: Array<{ page: RenderedPage; html: string; inSiteMap: boolean }> = [];
-  for (const lang of LANGS) {
-    const list = await renderer.renderListPage(lang, {
-      cities: citiesFor(lang),
-      movies: moviesResponse,
-    });
-    const listHtml = pageHtml(template, lang, list, snapshotDate);
-    checkPage(list, listHtml, LIST_BUDGET_BYTES);
-    pages.push({ page: list, html: listHtml, inSiteMap: true });
+  return {
+    moviesResponse,
+    citiesIn: { lt: ltCities, en: enCities },
+    cityMovies,
+    movieData,
+    snapshotDate,
+  };
+}
 
-    for (const city of citiesFor(lang).cities) {
-      const movies = cityMovies.get(city.id);
-      if (!movies) throw new Error(`The cities differ between languages: ${city.id}`);
-      const page = await renderer.renderCityPage(lang, { cities: citiesFor(lang), city, movies });
-      const html = pageHtml(template, lang, page, snapshotDate);
-      checkPage(page, html, LIST_BUDGET_BYTES);
-      pages.push({ page, html, inSiteMap: city.hasMovies });
-    }
+/** Renders and checks every page of one language, writing nothing. */
+async function renderLanguage(
+  lang: Lang,
+  data: SnapshotData,
+  template: string,
+  renderer: Renderer,
+): Promise<SnapshotPage[]> {
+  const { moviesResponse, citiesIn, cityMovies, movieData, snapshotDate } = data;
+  const cities = citiesIn[lang];
+  const finished = (page: RenderedPage, budget: number, inSiteMap = true): SnapshotPage => {
+    const html = pageHtml(template, lang, page, snapshotDate);
+    checkPage(page, html, budget);
+    return { page, html, inSiteMap };
+  };
 
-    for (const { details, screenings } of movieData) {
-      const page = await renderer.renderMoviePage(lang, {
-        cities: citiesFor(lang),
-        detail: details[lang],
-        screenings,
-      });
-      const html = pageHtml(template, lang, page, snapshotDate);
-      checkPage(page, html, MOVIE_BUDGET_BYTES);
-      pages.push({ page, html, inSiteMap: true });
-    }
+  const pages = [
+    finished(
+      await renderer.renderListPage(lang, { cities, movies: moviesResponse }),
+      LIST_BUDGET_BYTES,
+    ),
+  ];
+  for (const city of cities.cities) {
+    const movies = cityMovies.get(city.id);
+    if (!movies) throw new Error(`The cities differ between languages: ${city.id}`);
+    const page = await renderer.renderCityPage(lang, { cities, city, movies });
+    pages.push(finished(page, LIST_BUDGET_BYTES, city.hasMovies));
   }
+  for (const { details, screenings } of movieData) {
+    const page = await renderer.renderMoviePage(lang, {
+      cities,
+      detail: details[lang],
+      screenings,
+    });
+    pages.push(finished(page, MOVIE_BUDGET_BYTES));
+  }
+  return pages;
+}
 
-  const rendered = pages.map(({ page }) => page);
-  warnAboutDuplicates(rendered, (message) => {
-    log.warn(message);
-  });
-  const notFound = notFoundHtml(template);
+export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
+  const { outDir, renderer, log = console } = options;
+  const template = readFileSync(join(outDir, 'index.html'), 'utf8');
+  const data = await readSnapshotData(options);
+
+  const pages: SnapshotPage[] = [];
+  for (const lang of LANGS) pages.push(...(await renderLanguage(lang, data, template, renderer)));
+
+  warnAboutDuplicates(
+    pages.map(({ page }) => page),
+    (message) => {
+      log.warn(message);
+    },
+  );
 
   // Only now that every page has passed, so a failure leaves nothing behind.
   for (const { page, html } of pages) {
@@ -322,16 +347,16 @@ export async function buildSnapshot(options: SnapshotOptions): Promise<void> {
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, html);
   }
-  writeFileSync(join(outDir, '404.html'), notFound);
+  writeFileSync(join(outDir, '404.html'), notFoundHtml(template));
   writeFileSync(
     join(outDir, 'sitemap.xml'),
     siteMapXml(
       pages.filter(({ inSiteMap }) => inSiteMap).map(({ page }) => page),
-      snapshotDate,
+      data.snapshotDate,
     ),
   );
   writeFileSync(join(outDir, 'robots.txt'), ROBOTS_TXT);
-  log.info(`Snapshot: wrote ${String(pages.length)} pages for ${snapshotDate}`);
+  log.info(`Snapshot: wrote ${String(pages.length)} pages for ${data.snapshotDate}`);
 }
 
 async function main(): Promise<void> {

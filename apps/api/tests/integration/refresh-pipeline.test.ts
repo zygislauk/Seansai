@@ -44,12 +44,18 @@ describe('createRefreshPipeline', () => {
 
   test('asks for a snapshot build once every source has finished', async () => {
     const hook = 'https://api.vercel.com/v1/integrations/deploy/prj/hook';
-    const fetch = vi.fn(() => Promise.resolve(new Response(null, { status: 200 })));
+    let refreshedWhenCalled = -1;
+    const fetch = vi.fn(async () => {
+      const sources = await repo.listSources();
+      refreshedWhenCalled = sources.filter(({ lastSuccessAt }) => lastSuccessAt !== null).length;
+      return new Response(null, { status: 200 });
+    });
     vi.stubGlobal('fetch', fetch);
 
-    await pipelineWith({ VERCEL_DEPLOY_HOOK_URL: hook }).runAll();
+    const { sources } = await pipelineWith({ VERCEL_DEPLOY_HOOK_URL: hook }).runAll();
 
     expect(fetch).toHaveBeenCalledWith(hook, expect.objectContaining({ method: 'POST' }));
+    expect(refreshedWhenCalled).toBe(Object.keys(sources).length);
   });
 
   test('the kill switch stops a source being contacted', async () => {

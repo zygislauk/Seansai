@@ -34,7 +34,7 @@ vercel dev --local --listen 3333
 | Check                                                          | Expected                                                    |
 | -------------------------------------------------------------- | ----------------------------------------------------------- |
 | `curl -s 'localhost:3333/api/v1/movies?city=vilnius'`          | JSON movie list (fixture data)                              |
-| `curl -s -o /dev/null -w '%{http_code}' localhost:3333/vilnius` | `200` (deep link served by the web service)               |
+| `curl -s -o /dev/null -w '%{http_code}' localhost:3333/lt/`    | `200` (served by the web service)                           |
 | `curl -sI localhost:3333/ \| grep -i content-security-policy`   | the CSP header                                              |
 | `curl -s localhost:3333/api/v1/cron/daily`                     | `404` with the `not_found` body                             |
 | `curl -s -H 'Authorization: Bearer wrong' localhost:3333/api/v1/cron/daily` | `404`                                          |
@@ -68,6 +68,10 @@ curl -s localhost:3000/ | head -c 100     # the web app's index.html
    - `vercel env add CRON_SECRET production` with the output of `openssl rand -hex 32`;
    - `vercel env add SEANSAI_CONTACT` with `https://github.com/zygispr/Seansai`.
 4. Deploy a preview by pushing the branch or running `vercel deploy`.
+   - Since feature 003, each build reads pages' data from a public API, and fails if it can't or if
+     there are no movies. A new project has neither yet, so for its first deployments set
+     `SNAPSHOT_API_URL` to an API that has data, such as a self-hosted copy. Remove it once §5 has
+     loaded this project's data, and change `SITE_URL` in `apps/web/src/lib/site.ts`.
    - **Expected**: the build succeeds and `regions` is accepted. If not, use the fallback in
      [hosting.md](./contracts/hosting.md).
 5. `curl <preview>/api/v1/health`.
@@ -99,6 +103,12 @@ git clone https://github.com/zygispr/Seansai.git ~/.local/share/seansai-refresh
 mkdir -p ~/.config/seansai && touch ~/.config/seansai/refresh.env && chmod 600 ~/.config/seansai/refresh.env
 ```
 
+To keep the site's pages current (feature 003), also create a Deploy Hook for `main` under the
+project's **Settings → Git → Deploy Hooks**, and add its address as `VERCEL_DEPLOY_HOOK_URL` to
+`refresh.env` and to Vercel's Production environment. Treat it as a secret: anyone holding it can
+start deployments. Without it, refreshes still update the data, but the pages stay as they were at
+the last deployment.
+
 Once that file is filled in:
 
 ```bash
@@ -116,7 +126,8 @@ launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/lt.seansai.refresh.pli
   hour of the last run, the limit for every source.
 - **If Node changes**: removing that Node version stops the job, with the reason in the log. To
   change the job, run the `launchctl bootout` below first, then the commands above again.
-- **Logs**: `~/Library/Logs/seansai-refresh.log`.
+- **Logs**: `~/Library/Logs/seansai-refresh.log`. With the hook set, a refresh ends with
+  `Snapshot build requested`, and a deployment appears in Vercel.
 - **To stop it**: `launchctl bootout "gui/$(id -u)/lt.seansai.refresh"`.
 
 Then check:

@@ -30,7 +30,9 @@ export function MovieListPage() {
   const cities = useCities(lang);
   const pageCity = cities.data?.cities.find((item) => item.id === cityId);
 
-  const unknownCity = movies.error instanceof ApiError && movies.error.code === 'invalid_city';
+  // The API accepts `all`, but that's the general list, which has its own address.
+  const unknownCity =
+    cityId === 'all' || (movies.error instanceof ApiError && movies.error.code === 'invalid_city');
   const hasMovies = movies.data !== undefined;
 
   // A city page waits to name itself, as its address might not be a city.
@@ -47,8 +49,8 @@ export function MovieListPage() {
   }, [unknownCity, cityId, forgetCity]);
 
   useEffect(() => {
-    if (cityId !== undefined && hasMovies) rememberCity(cityId);
-  }, [cityId, hasMovies, rememberCity]);
+    if (cityId !== undefined && !unknownCity && hasMovies) rememberCity(cityId);
+  }, [cityId, unknownCity, hasMovies, rememberCity]);
 
   if (unknownCity && cityId !== undefined) return <NotFoundPage />;
 

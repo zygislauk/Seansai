@@ -53,7 +53,7 @@ movie and day.
 **Acceptance Scenarios**:
 
 1. **Given** the user opens the website for the first time, **When** the page loads, **Then** they
-   are asked once to choose their city, with "All of Lithuania" as one of the choices.
+   see all of Lithuania, and are offered once a choice of city beside the content.
 2. **Given** the user has chosen a city, **When** the home page loads, **Then** they see all movies
    that have at least one upcoming screening at a supported cinema in that city (or anywhere, for
    "All of Lithuania"), each with its title and poster, ordered as described in FR-003.
@@ -178,10 +178,10 @@ screenings remain, and that clearing filters restores the full list.
   bookmarked, shared, and reloaded.
 - **FR-012**: Users MUST be able to filter screenings by city, by cinema, and by format/language.
   Format filters offer special formats only, not 2D, and appear whenever one would narrow the list.
-- **FR-013**: On a user's first visit, the system MUST ask once for their city (offering "All of
-  Lithuania" as a choice) and MUST remember the choice on the same device without requiring an
-  account. The movie list and screenings MUST be limited to the chosen city, and the user MUST be
-  able to change it at any time.
+- **FR-013**: On a user's first visit, the system MUST show all of Lithuania and offer a choice of
+  city once, beside the content rather than blocking it (changed by feature 003's FR-006). It MUST
+  remember the answer on the same device without requiring an account. The movie list and
+  screenings MUST be limited to the chosen city, and the user MUST be able to change it at any time.
 - **FR-014**: Schedule data MUST be refreshed at least every 3 hours, and the page MUST show when the
   data was last updated.
 - **FR-015**: If data from a cinema could not be refreshed, the system MUST keep showing data from

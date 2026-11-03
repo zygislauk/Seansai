@@ -224,6 +224,17 @@ describe('a city page (/{lang}/city/{cityId})', () => {
     expect(canonical()).toBeUndefined();
   });
 
+  test('"all" isn’t a city with a page', async () => {
+    window.localStorage.setItem('seansai.city', 'kaunas');
+    mockApi();
+    renderApp('/en/city/all');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Page not found' }),
+    ).toBeInTheDocument();
+    expect(window.localStorage.getItem('seansai.city')).toBe('kaunas');
+  });
+
   test('choosing another city goes to its page', async () => {
     const user = userEvent.setup();
     mockApi();

@@ -630,6 +630,40 @@ test.describe('in a browser', () => {
     await expect(cards.first()).toBeVisible();
   });
 
+  test('a screening that started since the snapshot isn’t shown, even with the API down', async ({
+    page,
+    request,
+  }) => {
+    const messages = complaints(page);
+    const movies = await listedMovies(request);
+    let earliest: { ticketUrl: string; startsAt: string } | undefined;
+    let later: { ticketUrl: string; startsAt: string } | undefined;
+    let id = '';
+    for (const { movie, screeningsToday } of movies) {
+      if (screeningsToday < 2) continue;
+      const response = await request.get(
+        `/api/v1/movies/${encodeURIComponent(movie.id)}/screenings?city=all`,
+      );
+      const { screenings } = ScreeningsResponseSchema.parse(await response.json());
+      const first = screenings[0];
+      const last = screenings.at(-1);
+      if (first && last && first.startsAt < last.startsAt && first.ticketUrl !== last.ticketUrl) {
+        [earliest, later, id] = [first, last, movie.id];
+        break;
+      }
+    }
+    if (!earliest || !later) throw new Error('expected a movie with two times today');
+    await page.clock.setFixedTime(new Date(new Date(earliest.startsAt).getTime() + 60_000));
+    await page.route('**/api/v1/**', (route) => route.abort());
+
+    await page.goto(moviePath(id));
+
+    await expect(page.locator(`main a[href="${later.ticketUrl}"]`).first()).toBeAttached();
+    await expect(page.locator(`main a[href="${earliest.ticketUrl}"]`)).toHaveCount(0);
+    await expect(page.locator('html')).not.toHaveAttribute('data-boot', 'client');
+    expect(messages.filter((message) => !message.includes('ERR_FAILED'))).toEqual([]);
+  });
+
   test('once answered, the choice of city doesn’t come back', async ({ page }) => {
     await page.goto('/lt/');
     await page

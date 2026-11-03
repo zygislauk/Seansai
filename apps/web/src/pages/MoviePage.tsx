@@ -1,5 +1,5 @@
 import type { MovieDetailResponse } from '@seansai/shared';
-import { useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ApiError } from '../api/client.ts';
 import { useMovie, useScreenings } from '../api/hooks.ts';
@@ -164,6 +164,11 @@ function MovieHeader({ detail, city }: { detail: MovieDetailResponse; city: stri
   );
 }
 
+const neverChanges = () => () => undefined;
+const isInBrowser = () => true;
+/** Also what's used while hydrating, as the first render has to match the snapshot's markup. */
+const isInSnapshot = () => false;
+
 function ScreeningsContent({
   query,
   today,
@@ -175,6 +180,7 @@ function ScreeningsContent({
 }) {
   const { t, formatDate } = useT();
   const [filters, setFilters] = useFilters();
+  const hasTakenOver = useSyncExternalStore(neverChanges, isInBrowser, isInSnapshot);
   if (query.isPending) return <LoadingState />;
   if (query.data === undefined) {
     return (
@@ -186,7 +192,13 @@ function ScreeningsContent({
     );
   }
   // While another date loads, the previous list stays visible (placeholder data).
-  const { date, screenings, nextDateWithScreenings, freshness } = query.data;
+  const { date, nextDateWithScreenings, freshness } = query.data;
+  // A snapshot's list can be hours old, and asking for a current one can fail (FR-007 of 001).
+  const isSnapshot = query.dataUpdatedAt === 0 && !query.isPlaceholderData;
+  const screenings =
+    isSnapshot && hasTakenOver
+      ? query.data.screenings.filter(({ startsAt }) => new Date(startsAt) > new Date())
+      : query.data.screenings;
   const shown = applyFilters(screenings, filters);
   return (
     <div className={styles.results} aria-busy={query.isPlaceholderData}>

@@ -84,8 +84,9 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   A failed build shows only in Vercel, so the `lastmod` values in `/sitemap.xml` are the check for it
   (quickstart §4).
 - **Side effects**: every hook call deploys the latest `main`, so any merged change goes live by the next
-  morning at the latest. A rollback made in the dashboard is overwritten by the next hook call, so
-  rolling back needs the code reverted too. This goes in the runbook.
+  morning at the latest. A rollback stops those deployments going live until it's undone (corrected
+  2026-11-03 from [Vercel's docs](https://vercel.com/docs/instant-rollback); this first said the next hook
+  call would overwrite it). The runbook is in the README.
 
 ## 5. Security headers and embedded data
 
@@ -292,3 +293,26 @@ to protect.
   ([contract](./contracts/snapshot.md#failing-safely)).
 - **No synopses**: descriptions are composed from title, year, genres and where and when it's showing.
 - **Posters**: 28 of 216 have none, so they use the default preview image.
+
+## 13. Measured budgets (2026-11-03)
+
+From the preview of commit `3b1bef2`, whose snapshot was built on Vercel from production's API and has 442
+pages. Compressed sizes are gzip of what the preview served. Movie pages are a sample of 10, as the build
+itself fails any page over budget, and it passed.
+
+| Budget (plan.md) | Target | Measured |
+|------------------|--------|----------|
+| List page, compressed | ≤ 80 kB | 27.5 kB (`/lt/`), 23.7 kB (`/lt/city/vilnius`), 3.7 kB (`/lt/city/gargzdai`) |
+| Movie page, compressed | ≤ 40 kB | 7.5 kB at most in the sample |
+| JavaScript on first visit, compressed | ≤ 150 kB | 140.3 kB |
+| Rendering all pages in a build | < 3 min | About 29 s, reading production's API |
+| Whole build, then deployed | No target | 41 s, deployment finished 50 s after the build started |
+
+No duplicate title or description warnings in that build's log (SC-002). The 10-minute target from refresh
+to live can only be measured once the hook exists (T068). First paint (SC-007) is measured on production
+(T067).
+
+Quickstart §1 also passed by hand against the fixture data on 2026-11-03: content straight away, the
+non-blocking choice, choosing a city going to its page, no flash after a reload, and nothing in the console.
+The fixture data is older than today, so that browser run took the client-render path. Hydration is covered
+by `seo.spec.ts`, whose tests fix the clock.

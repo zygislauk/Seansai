@@ -94,6 +94,20 @@ describe('vercel.json', () => {
     });
   });
 
+  test('the language redirect matches unknown languages and nothing else', () => {
+    const rules = config.redirects as Array<{ source: string; destination: string }>;
+    const source = rules.find(({ destination }) => destination === '/lt/:path*')?.source;
+    const language = /^\/:lang\((.+)\)\/:path\*$/.exec(source ?? '')?.[1];
+    const redirected = new RegExp(`^/${language ?? ''}(/|$)`);
+
+    for (const path of ['/de', '/de/', '/de/movie/x', '/ru/city/vilnius']) {
+      expect(path).toMatch(redirected);
+    }
+    for (const path of ['/lt/', '/lt/movie/x', '/en/', '/en/city/vilnius', '/api/v1/cities']) {
+      expect(path).not.toMatch(redirected);
+    }
+  });
+
   test("gives every page the API's security headers", () => {
     const pageHeaders = service('web').headers?.find((rule) => rule.source === '/(.*)')?.headers;
 

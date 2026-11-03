@@ -197,11 +197,11 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 **Purpose**: Documents, final checks, release and the steps only the owner can do.
 
-- [ ] T061 [P] Update feature 001's documents now that the behaviour changes: FR-013 in `specs/001-cinema-showtimes/spec.md`, and first-visit text and new responses in `specs/001-cinema-showtimes/contracts/web-routes.md`
-- [ ] T062 [P] Update `specs/002-vercel-deploy/contracts/hosting.md` with the new `vercel.json`, `VERCEL_DEPLOY_HOOK_URL` and the rollback note, and add the hook to `specs/002-vercel-deploy/quickstart.md` §5
-- [ ] T063 [P] Describe snapshots, the hook setting, the rollback note and how to move to `seansai.lt` in `README.md`
-- [ ] T064 Run `specs/003-seo-friendly-web/quickstart.md` §1 by hand, and check the budgets in `specs/003-seo-friendly-web/plan.md`, recording measured HTML sizes and build time in `specs/003-seo-friendly-web/research.md`
-- [ ] T065 Run a reviewer agent over the whole branch against `.specify/memory/constitution.md` (Constitution I), and fix what it finds
+- [X] T061 [P] Update feature 001's documents now that the behaviour changes: FR-013 in `specs/001-cinema-showtimes/spec.md`, and first-visit text and new responses in `specs/001-cinema-showtimes/contracts/web-routes.md`
+- [X] T062 [P] Update `specs/002-vercel-deploy/contracts/hosting.md` with the new `vercel.json`, `VERCEL_DEPLOY_HOOK_URL` and the rollback note, and add the hook to `specs/002-vercel-deploy/quickstart.md` §5
+- [X] T063 [P] Describe snapshots, the hook setting, the rollback note and how to move to `seansai.lt` in `README.md`
+- [X] T064 Run `specs/003-seo-friendly-web/quickstart.md` §1 by hand, and check the budgets in `specs/003-seo-friendly-web/plan.md`, recording measured HTML sizes and build time in `specs/003-seo-friendly-web/research.md`
+- [X] T065 Run a reviewer agent over the whole branch against `.specify/memory/constitution.md` (Constitution I), and fix what it finds
 - [ ] T066 **Ask the owner to approve**, then open a PR from `003-seo-pages`, wait for CI, merge to `main`, confirm the PR shows as merged and that CI and the production deployment on `main` passed, using `gh`
 - [ ] T067 Do `specs/003-seo-friendly-web/quickstart.md` §3 on production, including Facebook's debugger for 10 movies (SC-008) and a phone-sized PageSpeed run (SC-007), and record the results in `specs/003-seo-friendly-web/research.md`
 - [ ] T068 **Owner step**: create the Deploy Hook for `main` in Vercel, add `VERCEL_DEPLOY_HOOK_URL` to `~/.config/seansai/refresh.env` and Vercel's Production environment, then confirm one daily cycle as in `specs/003-seo-friendly-web/quickstart.md` §4 (SC-004)

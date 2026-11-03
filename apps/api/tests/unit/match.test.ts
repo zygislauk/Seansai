@@ -8,6 +8,7 @@ import {
   type Alias,
   type Listing,
 } from '../../src/matching/match.ts';
+import { matchKeyOf } from '../../src/matching/normalize.ts';
 
 function listing(overrides: Partial<Listing> = {}): Listing {
   return {
@@ -384,5 +385,20 @@ describe('movieIdOf', () => {
     expect(movieIdOf(longTitle, 2026)).toBe(movieIdOf(longTitle, 2026));
     expect(movieIdOf(longTitle, 2026)).not.toBe(movieIdOf(`${longTitle} kita`, 2026));
     expect(movieIdOf(longTitle, 2026)).not.toBe(movieIdOf(longTitle, 2025));
+  });
+});
+
+describe('a title with no letters or digits', () => {
+  // The public API and every snapshot build reject an id that isn't made of letters and digits.
+  const VALID_ID = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u;
+
+  test.each([
+    ['???', 2026],
+    ['???', null],
+    ['— …', 2026],
+  ])('%s from %s still gets a usable id', (title, year) => {
+    const key = matchKeyOf({ title, originalTitle: null, englishTitle: null });
+
+    expect(movieIdOf(key, year)).toMatch(VALID_ID);
   });
 });
