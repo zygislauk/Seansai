@@ -68,8 +68,14 @@ movie records, so the right fix is merging those records, and one shouldn't hold
     "web": {
       "root": "apps/web",
       "framework": "vite",
-      // Removed: the catch-all rewrite to /index.html. dist/404.html serves unknown addresses.
-      "headers": [ /* unchanged */ ]
+      // Removed: the catch-all rewrite to /index.html, and `headers`, which `routes` silently disables.
+      "routes": [
+        { "src": "/(.*)", "headers": { /* the security headers, unchanged */ }, "continue": true },
+        { "src": "/assets/(.*)", "headers": { "Cache-Control": "public, max-age=31536000, immutable" },
+          "continue": true },
+        { "handle": "filesystem" },
+        { "src": "/.*", "status": 404, "dest": "/404.html" }
+      ]
     }
   },
   "rewrites": [ /* unchanged */ ]

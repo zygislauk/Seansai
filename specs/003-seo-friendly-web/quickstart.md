@@ -31,12 +31,12 @@ Preview URLs may need `vercel curl` if Deployment Protection is on.
 | Check | Expected | If not |
 |-------|----------|--------|
 | `curl -I <preview>/lt/nonexistent` | Status 404 | Add the `routes` fallback (research §6) |
-| Browser at that address | The app's not-found page | Fix `404.html` |
+| Browser at that address | The app's not-found page | Fix `404.html`, or the `routes` fallback (research §6) |
 | `curl -I <preview>/lt/movie/was-marielle-weiß` (percent-encoded), and a Cyrillic id | 200 | Research §6 fallback |
 | `curl -I <preview>/` | Temporary redirect to `/lt/` | Check `redirects` |
 | Same with `--cookie seansai_lang=en` | Redirect to `/en/` | Check the `has` rule |
 | `curl -I <preview>/de/movie/x` | Permanent redirect to `/lt/movie/x` | Check the source pattern |
-| `curl -I <preview>/lt/` | `X-Robots-Tag: noindex`, all security headers | See research §7 |
+| `curl -I <preview>/lt/` | `X-Robots-Tag: noindex`, all security headers | See research §6 and §7 |
 | Browser console on a first visit | No CSP violation, no hydration errors | Research §2 and §5 fallbacks |
 
 ## 3. After merging to production

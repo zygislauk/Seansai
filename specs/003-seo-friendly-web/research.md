@@ -111,6 +111,7 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
 - **Verify**:
   - `404.html` answers with status 404 inside a Services web service. **Fallback**: service-level
     `routes` with `{ "handle": "filesystem" }` and `{ "src": "/.*", "status": 404, "dest": "/404.html" }`.
+    The fallback was needed: see below.
   - Paths with non-ASCII ids are served from their directories: 8 of today's 216 movies have such ids,
     for example `was-marielle-weiß` and `спеціальна-операція`. **Fallback**: they get 404 with a working
     page for people and are left out of the site map until fixed.
@@ -131,7 +132,7 @@ US1 held, so no fallback was needed:
 | Non-ASCII movie addresses (§6) | 200 for `was-marielle-weiß` (percent-encoded) and a Cyrillic id |
 | A movie with a 102-character id | 200, after raising the API's limit on ids (found by the first real build, and fixed first in its own PR) |
 
-The 404 status and page, the redirects and `X-Robots-Tag` depend on `vercel.json` changes in US2, so they're checked at T046.
+The 404 status and page, the redirects and `X-Robots-Tag` depend on `vercel.json` changes in US2, so they're measured below.
 
 **On previews only**, a movie missing from the preview's database shows "Movie not found" once the app takes
 over, because the snapshot comes from production's data and the app calls the preview's own API (§3). That day
@@ -139,6 +140,38 @@ the two shared 155 movies of about 215. Production's snapshot and API read the s
 
 A full build from production's data wrote 434 pages. The largest list page was 26.9 kB and the largest movie
 page 8.5 kB compressed, against budgets of 80 kB and 40 kB, with no duplicate titles or descriptions.
+
+### Measured on the US2 preview (2026-11-03)
+
+Measured on the preview of `c75f830`, with `vercel curl` and in Chromium under the real CSP.
+
+**Two things differed from the documentation:**
+
+- **`404.html` isn't used on its own.** Without `routes`, an unknown address answered 404 with Vercel's plain
+  `NOT_FOUND` text, so the documented fallback above is in `vercel.json`. `handle` is marked deprecated in Vercel's
+  documentation, but it's the only way found to say "after looking for a file".
+- **`routes` silently drops the service's `headers`.** Vercel's documentation says the two can be used together,
+  but with both present, every page lost its CSP and assets lost their long cache lifetime, with no build error.
+  The headers now live in `routes` instead, and `tests/unit/vercel-config.test.ts` rejects `headers` beside them.
+  Check response headers on a preview after any change to these rules.
+
+| Check | Result |
+|-------|--------|
+| `/lt/nonexistent`, `/lt/movie/no-such-movie-2026` | 404, `text/html`, with `404.html`'s content and all security headers |
+| The same in a browser | The app's not-found page, `noindex` kept, no canonical link, clean console |
+| A movie in the database with no page in the snapshot (`instruktorius`) | 404 for crawlers. A person sees the movie, `noindex` is removed, and it names its own address |
+| `/`, and `/` with `seansai_lang=lt` | 307 to `/lt/` |
+| `/` with `seansai_lang=en` | 307 to `/en/` |
+| `/de/movie/x`, `/de` | 308 to `/lt/movie/x`, `/lt/` |
+| `/lt/`, a movie, `sitemap.xml`, `robots.txt` | 200 with all security headers. `application/xml` and `text/plain` for the last two |
+| `/assets/*` | `public, max-age=31536000, immutable` |
+| `/api/v1/cities`, `/api/v1/nope` | `noindex` on both, as a 200 and a JSON 404 |
+| `X-Robots-Tag` on the preview's pages | `noindex`, sent by Vercel. Production is checked at T067 |
+| `sitemap.xml` | 434 addresses, the same pages as the snapshot |
+| Language in a browser | No cookie before a choice. The switch writes it. A language already in localStorage is copied at startup, `Secure`, `Lax`, for a year. `/` then goes to `/en/` |
+
+Redirects are answered before the web service's routes, so they carry no security headers. They have no content
+to protect.
 
 ## 7. Search-engine rules that shaped the design
 

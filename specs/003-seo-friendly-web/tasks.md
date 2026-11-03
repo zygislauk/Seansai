@@ -132,7 +132,7 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 - [X] T043 [US2] Add `redirects` and remove the web service's catch-all rewrite in `vercel.json`, as in `specs/003-seo-friendly-web/contracts/snapshot.md`
 - [X] T044 [US2] Update the CI container check `get /lt/vilnius` if needed so it still proves the self-hosted fallback, and add a `noindex` check, in `.github/workflows/ci.yml`
 - [X] T045 [US2] Run all quality gates, commit `feat(web): add site map, preferred addresses and real responses (003 US2)` and push
-- [ ] T046 [US2] On the preview, do the remaining checks from `specs/003-seo-friendly-web/quickstart.md` §2: 404 status and page, both `/` redirects, the language redirect, `X-Robots-Tag`. Apply the `routes` fallback from `specs/003-seo-friendly-web/research.md` §6 if 404 fails, and record the results there
+- [X] T046 [US2] On the preview, do the remaining checks from `specs/003-seo-friendly-web/quickstart.md` §2: 404 status and page, both `/` redirects, the language redirect, `X-Robots-Tag`. Apply the `routes` fallback from `specs/003-seo-friendly-web/research.md` §6 if 404 fails, and record the results there
 
 **Checkpoint**: US1 and US2 are the shippable core. Search engines can be told about the site from here.
 
