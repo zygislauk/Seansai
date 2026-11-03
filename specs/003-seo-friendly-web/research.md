@@ -118,6 +118,27 @@ preview deployment has to confirm them ([quickstart.md §2](./quickstart.md)). E
   preference and identifies no one. Visitors who chose a language before this ships have it in
   localStorage only, and `/` sends them to Lithuanian once; the site has been public for days.
 
+### Measured on the first preview (2026-11-03)
+
+The preview's snapshot was built on Vercel from production's API, in 51 s of build time. All **Verify** items for
+US1 held, so no fallback was needed:
+
+| Check | Result |
+|-------|--------|
+| `StaticRouterProvider` output hydrates against `RouterProvider` (§2) | Yes, in Chromium: the snapshot's DOM is kept, the app responds, and the console is clean |
+| Embedded JSON under the CSP (§5) | No violation, with the production CSP sent by Vercel |
+| Non-ASCII movie addresses (§6) | 200 for `was-marielle-weiß` (percent-encoded) and a Cyrillic id |
+| A movie with a 102-character id | 200, after raising the API's limit on ids (found by the first real build, and fixed first in its own PR) |
+
+The 404 status and page, the redirects and `X-Robots-Tag` depend on `vercel.json` changes in US2, so they're checked at T046.
+
+**On previews only**, a movie missing from the preview's database shows "Movie not found" once the app takes
+over, because the snapshot comes from production's data and the app calls the preview's own API (§3). That day
+the two shared 155 movies of about 215. Production's snapshot and API read the same data.
+
+A full build from production's data wrote 434 pages. The largest list page was 26.9 kB and the largest movie
+page 8.5 kB compressed, against budgets of 80 kB and 40 kB, with no duplicate titles or descriptions.
+
 ## 7. Search-engine rules that shaped the design
 
 - **Don't block the API in robots.txt**: Google says not to block resources a page needs, and that

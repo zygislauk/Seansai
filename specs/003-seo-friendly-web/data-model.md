@@ -30,7 +30,7 @@ What a page says about itself. Built by one pure function, `pageHead(page, lang)
 | Field | Rule |
 |-------|------|
 | `title` | Unique among site map pages (SC-002). Movie: title, plus year if known, plus "seansai". City: "Kino seansai Vilniuje". |
-| `description` | Up to about 155 characters, in the page's language, from known facts only. Movie: genres, where it's showing, next date. |
+| `description` | Up to about 155 characters, in the page's language, from known facts only. Movie: where it's showing, next date, and genres on Lithuanian pages, as the sources only state them in Lithuanian. When space runs out, genres go before when and where. |
 | `canonical` | Full address of the preferred page (FR-012), from `SITE_URL`. |
 | `alternates` | `lt`, `en` and `x-default` (Lithuanian): the same set on both versions. |
 | `image` | The poster, or the default preview image. |
