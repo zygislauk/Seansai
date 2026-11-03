@@ -202,7 +202,7 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 - [X] T063 [P] Describe snapshots, the hook setting, the rollback note and how to move to `seansai.lt` in `README.md`
 - [X] T064 Run `specs/003-seo-friendly-web/quickstart.md` §1 by hand, and check the budgets in `specs/003-seo-friendly-web/plan.md`, recording measured HTML sizes and build time in `specs/003-seo-friendly-web/research.md`
 - [X] T065 Run a reviewer agent over the whole branch against `.specify/memory/constitution.md` (Constitution I), and fix what it finds
-- [ ] T066 **Ask the owner to approve**, then open a PR from `003-seo-pages`, wait for CI, merge to `main`, confirm the PR shows as merged and that CI and the production deployment on `main` passed, using `gh`
+- [X] T066 **Ask the owner to approve**, then open a PR from `003-seo-pages`, wait for CI, merge to `main`, confirm the PR shows as merged and that CI and the production deployment on `main` passed, using `gh`
 - [ ] T067 Do `specs/003-seo-friendly-web/quickstart.md` §3 on production, including Facebook's debugger for 10 movies (SC-008) and a phone-sized PageSpeed run (SC-007), and record the results in `specs/003-seo-friendly-web/research.md`
 - [ ] T068 **Owner step**: create the Deploy Hook for `main` in Vercel, add `VERCEL_DEPLOY_HOOK_URL` to `~/.config/seansai/refresh.env` and Vercel's Production environment, then confirm one daily cycle as in `specs/003-seo-friendly-web/quickstart.md` §4 (SC-004)
 - [ ] T069 **Owner step**: register with Google Search Console and submit the site map, as in `specs/003-seo-friendly-web/quickstart.md` §5, committing the verification file to `apps/web/public/` (FR-021)

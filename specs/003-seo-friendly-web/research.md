@@ -316,3 +316,35 @@ Quickstart §1 also passed by hand against the fixture data on 2026-11-03: conte
 non-blocking choice, choosing a city going to its page, no flash after a reload, and nothing in the console.
 The fixture data is older than today, so that browser run took the client-render path. Hydration is covered
 by `seo.spec.ts`, whose tests fix the clock.
+
+## 14. Measured on production (2026-11-03)
+
+From PR #10's merge, `f66ee07`, with CI and the production deployment both passing. The build took 44 s and wrote
+440 pages, and its log has no duplicate title or description warnings (SC-002).
+
+| Check | Result |
+|-------|--------|
+| `/lt/` without scripts | 212 movie links and 7 city links in the HTML |
+| `X-Robots-Tag` | None on `/lt/`, `noindex` on `/api/v1/cities`, `noindex` on the deployment's own address (FR-016) |
+| `/robots.txt` | Exactly as in the contract |
+| `/sitemap.xml` | 440 addresses, all with today's `lastmod` |
+| `/` | 307 to `/lt/`, and to `/en/` with `seansai_lang=en` |
+| `/de/movie/x` | 308 to `/lt/movie/x` |
+| `/lt/nonexistent`, `/lt/city/riga`, `/lt/city/all` | 404 |
+| `/lt/city/vilnius`, `/og-default.png`, `/favicon.svg` | 200 |
+| Security headers on `/lt/` | Present |
+| A first visit in a browser | Hydrated, no dialog, the city choice, nothing in the console |
+
+**Not yet measured**:
+
+- **SC-008, Facebook's debugger**: it needs a Facebook login, so it's the owner's. Standing in for it, 10 movies
+  fetched with Facebook's user agent all had the right title, a description of 155 characters or fewer, and an
+  `og:url` matching their address. All 10 images answered 200: 8 posters and 2 general images. One poster is WebP,
+  a format worth watching for in the debugger.
+- **SC-007, PageSpeed**: the free API's daily quota was used up. Standing in for it, a lab run of Largest Contentful
+  Paint from the owner's Mac, on a Pixel 7 profile with Lighthouse's slow 4G figures and a 4× slower CPU, 3 runs
+  each: `/lt/` 1.6 s, `/lt/city/vilnius` 1.8 to 2.1 s, a movie page 0.5 s, all
+  under the 2.5 s target. SC-007 is about 75% of real visits, which only field data can show.
+- **The index from §11 on production's database**: reading Turso needs credentials this check didn't use. The
+  dashboard's rows-read figure is the place to look.
+
