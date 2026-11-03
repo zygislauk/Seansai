@@ -1,7 +1,7 @@
 # Seansai: one container serving the API and the built web app (plan.md, "Deployment").
 #
 #   docker build -t seansai .
-#   docker run -p 3000:3000 -v seansai-data:/data -e SEANSAI_CONTACT=https://github.com/zygispr/Seansai seansai
+#   docker run -p 3000:3000 -v seansai-data:/data -e SEANSAI_CONTACT=https://github.com/zygislauk/Seansai seansai
 #
 # SEANSAI_CONTACT is required: it is sent in the User-Agent so cinemas can reach the operator.
 # DISABLED_SOURCES=vue,cinamon is the kill switch for the robots.txt overrides (research.md §1b).
