@@ -1,6 +1,13 @@
 import { describe, expect, test } from 'vitest';
 import type { MovieIdentity } from '../../src/db/repository.ts';
-import { loadAliases, resolveMovie, type Alias, type Listing } from '../../src/matching/match.ts';
+import {
+  loadAliases,
+  MAX_MOVIE_ID_BYTES,
+  movieIdOf,
+  resolveMovie,
+  type Alias,
+  type Listing,
+} from '../../src/matching/match.ts';
 
 function listing(overrides: Partial<Listing> = {}): Listing {
   return {
@@ -344,5 +351,38 @@ describe('resolveMovie', () => {
       expect(result.movie.id).toBe('digger');
       expect(result.reviews).toEqual([]);
     });
+  });
+});
+
+describe('movieIdOf', () => {
+  test('joins the title and year, whatever their length up to the limit', () => {
+    expect(movieIdOf('digger', 2026)).toBe('digger-2026');
+    expect(movieIdOf('digger', null)).toBe('digger');
+    const longest = 'a'.repeat(MAX_MOVIE_ID_BYTES);
+    expect(movieIdOf(longest, null)).toBe(longest);
+  });
+
+  const longTitle = 'labai ilgas renginio pavadinimas '.repeat(10).trim();
+
+  test('shortens only a longer one, within the limit, as a valid id', () => {
+    const id = movieIdOf(longTitle, 2026);
+
+    expect(Buffer.byteLength(id)).toBeLessThanOrEqual(MAX_MOVIE_ID_BYTES);
+    expect(id).toMatch(/^labai-ilgas-renginio/);
+    expect(id).toMatch(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u);
+  });
+
+  test('counts bytes, as letters outside Latin take more of a file name', () => {
+    const id = movieIdOf('спеціальна операція '.repeat(20).trim(), null);
+
+    expect(Buffer.byteLength(id)).toBeLessThanOrEqual(MAX_MOVIE_ID_BYTES);
+    expect(id).toMatch(/^спеціальна/);
+    expect(id).toMatch(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u);
+  });
+
+  test('stays the same each time, and differs for two long titles', () => {
+    expect(movieIdOf(longTitle, 2026)).toBe(movieIdOf(longTitle, 2026));
+    expect(movieIdOf(longTitle, 2026)).not.toBe(movieIdOf(`${longTitle} kita`, 2026));
+    expect(movieIdOf(longTitle, 2026)).not.toBe(movieIdOf(longTitle, 2025));
   });
 });
