@@ -16,7 +16,7 @@ acceptance criteria. Test tasks come first in each phase and must fail before th
 
 - Phase 1: the API addition, which ships on its own first.
 - Phase 2: shared setup and the rendering pipeline.
-- Phases 3–6: one phase per user story, in priority order. Each ends with a commit.
+- Phases 3–6: one phase per user story, in priority order. Each ends with a commit. US3 starts with a second API addition, which ships on its own first.
 - Phase 7: documents, final checks, production and the owner's steps.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -32,7 +32,7 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 ## Phase 1: API Addition (First PR)
 
-**Purpose**: The one API change, which has to be live before later builds can work, because builds validate against production's API (research §3). This PR carries only this and the 003 documents. Nothing visible changes.
+**Purpose**: The first API change, which has to be live before later builds can work, because builds validate against production's API (research §3). This PR carries only this and the 003 documents. Nothing visible changes.
 
 **⚠️ CRITICAL**: No user story can be deployed until T005 is merged.
 
@@ -144,6 +144,14 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 **Independent Test**: Take one city's list page from the site map and confirm it has its own title and description naming the city, and lists only movies showing there.
 
+### API addition for User Story 3 (its own PR)
+
+> **⚠️ Merge this before the rest of US3.** The app needs `hasMovies` to decide which city links to show, and builds validate against production's API (research §3), so it has to be live first.
+
+- [ ] T046a [US3] On a new branch from `main`, add failing tests for `hasMovies` on `GET /api/v1/cities`: true for a city with a screening that hasn't started, false for a city whose screenings have all started or that has none, and only the shown cinemas count, in `apps/api/tests/integration/cities.test.ts`
+- [ ] T046b [US3] Add `hasMovies: boolean` to `CitiesResponseSchema` in `packages/shared/src/api.ts`, one query in `apps/api/src/db/queries.ts` that stops at the first screening it finds for each cinema, with no N+1, and the field in `apps/api/src/routes/cities.ts`. Pass `now` to that route, as the movie routes get it. Add the field to `apps/web/tests/helpers/mock-api.ts`, add `GET /cities` to `apps/api/tests/integration/performance.test.ts`, and document the field in `specs/001-cinema-showtimes/contracts/public-api.md`. Every page requests `/cities`, so measure the rows the query reads against the Turso allowance in `specs/003-seo-friendly-web/plan.md`, and record the result in `specs/003-seo-friendly-web/research.md` §11
+- [ ] T046c [US3] Run all quality gates and a reviewer agent against `.specify/memory/constitution.md`, and fix what it finds (Constitution I). **Ask the owner to approve a PR**, wait for CI, and merge. Confirm the PR shows as merged and that `curl https://seansai.vercel.app/api/v1/cities?lang=lt` includes `hasMovies`, then merge `main` into `003-seo-pages`
+
 ### Tests for User Story 3 ⚠️
 
 - [ ] T047 [P] [US3] Add failing tests for city page heads: "Kino seansai Vilniuje" in Lithuanian, the English form, the fallback "Kino seansai: {name}" for a city not in the map, a list of every registry city confirming it has a form, and `?city=vilnius` naming `/{lang}/city/vilnius`, in `apps/web/tests/unit/page-head.test.ts`
@@ -155,8 +163,8 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 - [ ] T050 [P] [US3] Add the Lithuanian forms for the 7 current cities (Vilniuje, Kaune, Klaipėdoje, Šiauliuose, Panevėžyje, Marijampolėje, Gargžduose) and the English title in `apps/web/src/i18n/lt.ts` and `apps/web/src/i18n/en.ts`, and city pages in `apps/web/src/lib/page-head.ts`
 - [ ] T051 [US3] Add the route `city/:cityId` using `MovieListPage` in `apps/web/src/app/router.tsx`, and take the city from the address in `apps/web/src/app/city.tsx` and `apps/web/src/pages/MovieListPage.tsx`. An unknown city shows `NotFoundPage`
 - [ ] T052 [US3] Navigate to the chosen city's page when choosing a city on a list page, from `chooseCity` in `apps/web/src/app/city.tsx`
-- [ ] T053 [US3] Add plain links to every city page with current movies to the general list in `apps/web/src/pages/MovieListPage.tsx` and `apps/web/src/pages/MovieListPage.module.scss`
-- [ ] T054 [US3] Render city pages and add those with current movies to the site map in `apps/web/scripts/prerender.ts`, and add `/{lang}/city/{cityId}` to `specs/001-cinema-showtimes/contracts/web-routes.md`
+- [ ] T053 [US3] Add plain links to every city page with `hasMovies` to the general list, from `useCities`, with no extra request per city, in `apps/web/src/pages/MovieListPage.tsx` and `apps/web/src/pages/MovieListPage.module.scss`
+- [ ] T054 [US3] Render city pages and add those with `hasMovies` to the site map in `apps/web/scripts/prerender.ts`, and add `/{lang}/city/{cityId}` to `specs/001-cinema-showtimes/contracts/web-routes.md`
 - [ ] T055 [US3] Run all quality gates, commit `feat(web): add a page for each city (003 US3)` and push
 
 **Checkpoint**: City searches have pages to land on.
@@ -209,7 +217,7 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 - **Foundational (Phase 2)**: After T005 is merged, on `003-seo-pages`.
 - **US1 (Phase 3)**: After Phase 2.
 - **US2 (Phase 4)**: After US1, as it extends the snapshot script and page descriptions.
-- **US3 (Phase 5)**: After US1. Its site map and canonical parts use US2's work, so do it after US2.
+- **US3 (Phase 5)**: After US1. Its site map and canonical parts use US2's work, so do it after US2. T046c merges separately and must be live before the rest of US3, as the app and every later build read `hasMovies`.
 - **US4 (Phase 6)**: After US1. Independent of US2 and US3.
 - **Polish (Phase 7)**: After the stories wanted for release. T068 and T069 come after T066. T070 is about 8 weeks later.
 
@@ -267,7 +275,7 @@ US1 alone gives readable pages, but don't release it to Google yet. Without US2,
 | Foundational | 12 |
 | US1 | 18 |
 | US2 | 14 |
-| US3 | 9 |
+| US3 | 12 |
 | US4 | 5 |
 | Polish | 10 |
-| **Total** | **73** |
+| **Total** | **76** |

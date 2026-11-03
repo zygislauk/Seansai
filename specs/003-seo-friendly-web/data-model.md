@@ -22,6 +22,19 @@ showingAt: Array<{ id: string; name: string; cityId: string; cityName: string }>
 
 With `screeningDates[0]`, this gives the movie summary (FR-005): when and where the movie is next showing.
 
+## API addition: `CitiesResponse.cities[].hasMovies`
+
+Added to `GET /api/v1/cities`. Additive, and has to be live before the code that reads it ships
+([plan](./plan.md#rollout-order)).
+
+```ts
+hasMovies: boolean;
+```
+
+- True when any shown cinema in the city has a screening that hasn't started.
+- Decides which city links the general list shows, and which city pages are in the site map.
+- One query that stops at the first screening it finds for each cinema, as every page requests `/cities`.
+
 ## PageHead
 
 What a page says about itself. Built by one pure function, `pageHead(page, lang)`, used both by the snapshot

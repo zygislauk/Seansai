@@ -217,6 +217,11 @@ page 8.5 kB compressed, against budgets of 80 kB and 40 kB, with no duplicate ti
   reports any registry city missing from the map.
 - **Discovery**: the general list page links to every city page, and the site map lists them. A city's
   own link appears only while it has movies.
+- **Knowing which cities have movies**: `/cities` gains `hasMovies`, so the snapshot and the running app show
+  the same links (FR-002). The field has to be live before the code that reads it (§3). Rejected:
+  - Fetching all 7 city lists on each visit loads data that isn't shown (Constitution VI).
+  - Working it out only in the snapshot makes the links differ once the app takes over.
+  - Linking every supported city needs no API change, but sends crawlers to empty pages.
 
 ## 12. Things found in the data
 
