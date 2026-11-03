@@ -161,7 +161,7 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 
 ### Implementation for User Story 3
 
-- [X] T050 [P] [US3] Add the Lithuanian forms for the 7 current cities (Vilniuje, Kaune, Klaipėdoje, Šiauliuose, Panevėžyje, Marijampolėje, Gargžduose) and the English title in `apps/web/src/i18n/lt.ts` and `apps/web/src/i18n/en.ts`, and city pages in `apps/web/src/lib/page-head.ts`. `pageHead` also gets the list address's `?city=` option, to name the preferred address from the table in `specs/003-seo-friendly-web/data-model.md`
+- [X] T050 [P] [US3] Add the Lithuanian forms for the 5 current cities (Vilniuje, Kaune, Klaipėdoje, Šiauliuose, Panevėžyje) and the English title in `apps/web/src/i18n/lt.ts` and `apps/web/src/i18n/en.ts`, and city pages in `apps/web/src/lib/page-head.ts`. `pageHead` also gets the list address's `?city=` option, to name the preferred address from the table in `specs/003-seo-friendly-web/data-model.md`
 - [X] T051 [US3] Add the route `city/:cityId` using `MovieListPage` in `apps/web/src/app/router.tsx`, and take the city from the address in `apps/web/src/app/city.tsx` and `apps/web/src/pages/MovieListPage.tsx`. An unknown city shows `NotFoundPage`. `MovieListPage` passes `pageHead` the `?city=` in its address, not `useCity`'s city, which can be the remembered one
 - [X] T052 [US3] Navigate to the chosen city's page when choosing a city on a list page, from `chooseCity` in `apps/web/src/app/city.tsx`
 - [X] T053 [US3] Add plain links to every city page with `hasMovies` to the general list, from `useCities`, with no extra request per city, in `apps/web/src/pages/MovieListPage.tsx` and `apps/web/src/pages/MovieListPage.module.scss`

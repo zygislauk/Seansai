@@ -8,8 +8,9 @@ import { logRobotsOverrides } from './sources/index.ts';
 import { createClock } from './sources/runtime.ts';
 
 /**
- * One refresh of every source into the shared database, then exit. Run from a home connection
- * (scripts/home-refresh.sh), because some cinemas refuse requests from Vercel (research.md §5).
+ * One refresh into the shared database, then exit: of every source, or of those being retried
+ * (refresh/if-due.ts). Run from a home connection (scripts/home-refresh.sh), because some cinemas
+ * refuse requests from Vercel (research.md §5).
  * `--if-due` is for the scheduled job.
  */
 async function main(): Promise<void> {
@@ -21,9 +22,11 @@ async function main(): Promise<void> {
   const repo = new Repository(db);
   logRobotsOverrides(logger);
 
+  const pipeline = createRefreshPipeline(config, repo, clock, logger);
   const result = await refreshIfDue({
     sources: () => repo.listSources(),
-    run: createRefreshPipeline(config, repo, clock, logger).runAll,
+    run: pipeline.runAll,
+    retry: pipeline.runOnly,
     clock,
     args: process.argv.slice(2),
     logger,

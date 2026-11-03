@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Checks every hour; the refresh itself runs once a day (specs/002-vercel-deploy/quickstart.md §5). -->
+<!-- Checks every hour; the refresh itself runs once a day, plus retries of failed sources (specs/002-vercel-deploy/quickstart.md §5). -->
 <plist version="1.0">
 <dict>
   <key>Label</key>

@@ -230,8 +230,8 @@ screenings remain, and that clearing filters restores the full list.
 ## Assumptions
 
 - **Supported cinemas (initial list)**: Apollo Kinas, Forum Cinemas, Vue (formerly Multikino),
-  Pasaka, Skalvija, and Atlantis, as named by the user, plus Romuva (Kaunas), Garsas (Panevėžys),
-  Spindulys (Marijampolė), Minija (Gargždai) and Cinamon Mega (Kaunas), found during planning
+  Pasaka, Skalvija, and Atlantis, as named by the user, plus Romuva (Kaunas), Garsas (Panevėžys)
+  and Cinamon Mega (Kaunas), found during planning
   research. Which of these currently operate, and where, MUST be verified
   during planning; more cinemas can be added later.
 - **Data availability**: each supported cinema publishes its schedule publicly on its website

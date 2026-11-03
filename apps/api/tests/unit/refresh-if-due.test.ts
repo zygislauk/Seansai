@@ -1,5 +1,11 @@
 import { describe, expect, test, vi } from 'vitest';
 import type { SourceRecord } from '../../src/db/repository.ts';
+import {
+  RobotsDisallowedError,
+  SourceBlockedError,
+  SourceRequestError,
+  SourceResponseError,
+} from '../../src/lib/errors.ts';
 import type { DailyRefreshResult } from '../../src/refresh/daily.ts';
 import {
   exitCodeOf,
@@ -28,16 +34,18 @@ function source(id: string, hoursAgo: number | null): SourceRecord {
 
 function setup(sources: SourceRecord[]) {
   const run = vi.fn().mockResolvedValue(result);
+  const retry = vi.fn().mockResolvedValue(result);
   const { logger, lines } = createTestLogger();
   const refresh = (args: string[] = ['--if-due']) =>
     refreshIfDue({
       sources: () => Promise.resolve(sources),
       run,
+      retry,
       clock: () => NOW,
       args,
       logger,
     });
-  return { run, lines, refresh };
+  return { run, retry, lines, refresh };
 }
 
 describe('refreshIfDue', () => {
@@ -75,6 +83,66 @@ describe('refreshIfDue', () => {
 
     expect(await refresh()).toBeNull();
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('refreshIfDue, after a failed attempt', () => {
+  const URL = 'https://atlantiscinemas.lt/filmai/x';
+  const failed = (id: string, hoursAgo: number, error: Error): SourceRecord => ({
+    ...source(id, hoursAgo),
+    lastError: error.message,
+  });
+  const timedOut = new SourceRequestError(URL, 'timed out after 15000 ms');
+
+  test('retries only the sources that failed, once an hour has passed', async () => {
+    const { run, retry, lines, refresh } = setup([
+      source('apollo', 2),
+      failed('atlantis', 2, timedOut),
+      failed('garsas', 2, new SourceResponseError(URL, 'not what the adapter expects')),
+    ]);
+
+    expect(await refresh()).toBe(result);
+    expect(retry).toHaveBeenCalledExactlyOnceWith(['atlantis', 'garsas']);
+    expect(run).not.toHaveBeenCalled();
+    expect(lines().map((line) => line.msg)).toContain('Retrying the sources that failed');
+  });
+
+  test('waits an hour after the failure', async () => {
+    const { retry, refresh } = setup([failed('atlantis', 0.5, timedOut)]);
+
+    expect(await refresh()).toBeNull();
+    expect(retry).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['blocked', new SourceBlockedError(URL, 'HTTP 403')],
+    ['disallowed by robots.txt', new RobotsDisallowedError(URL)],
+  ])('never retries a source that was %s', async (_reason, error) => {
+    const { retry, refresh } = setup([failed('atlantis', 2, error)]);
+
+    expect(await refresh()).toBeNull();
+    expect(retry).not.toHaveBeenCalled();
+  });
+
+  test('leaves a failure from an earlier day to the next full refresh', async () => {
+    // A retry now would date the latest attempt today, and so cancel today's full refresh.
+    const { run, retry, refresh } = setup([
+      source('apollo', 0.5),
+      failed('atlantis', 30, timedOut),
+    ]);
+
+    expect(await refresh()).toBeNull();
+    expect(retry).not.toHaveBeenCalled();
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  test('a new day refreshes every source, not only the failed ones', async () => {
+    const { run, retry, refresh } = setup([source('apollo', 30), failed('atlantis', 30, timedOut)]);
+
+    await refresh();
+
+    expect(run).toHaveBeenCalledOnce();
+    expect(retry).not.toHaveBeenCalled();
   });
 });
 

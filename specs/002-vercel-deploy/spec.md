@@ -156,7 +156,8 @@ and run the self-hosted container with saved test data and confirm it works as b
   from the owner's machine, at any time of day, the first time that machine is on with the owner
   logged in. This replaces feature 001's FR-014 ("at least every 3 hours") for the hosted deployment
   only. FR-014's "show when the data was last updated" part still
-  applies.
+  applies. A source that fails MAY be retried later that day, at most once an hour, unless the cinema
+  refused the request.
 - **FR-005**: The daily run MUST also remove past screenings and old movies, under feature 001's
   existing rules.
 - **FR-006**: In the hosted deployment, a cinema MUST be flagged as possibly outdated once its data

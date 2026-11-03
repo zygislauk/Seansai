@@ -16,8 +16,8 @@ per-source adapters, merges listings of the same movie conservatively, stores ev
 the date picker and the filters, keeping movie/date/filters in the URL.
 
 Research verified live data sources for **Apollo, Forum Cinemas, Pasaka, Skalvija and Atlantis**,
-and found four more regular cinemas worth covering: **Romuva** (Kaunas), **Garsas** (Panevėžys),
-**Spindulys** (Marijampolė) and **Minija** (Gargždai) ([research.md §1a](./research.md#1a-additional-venues-not-in-the-users-original-list)).
+and found two more regular cinemas worth covering: **Romuva** (Kaunas) and **Garsas** (Panevėžys)
+([research.md §1a](./research.md#1a-additional-venues-not-in-the-users-original-list)).
 **Vue (formerly Multikino) and Cinamon Mega are included by owner decision** although their
 `robots.txt` disallows the data paths; they run with an explicit, logged override, stop on any
 sign of blocking, and can be switched off without a deploy ([research.md §1b](./research.md#1b-owner-decision-include-vue-and-cinamon-mega-2026-10-30)).
@@ -59,8 +59,8 @@ screen widths from 320 px
 
 **Scale/Scope**:
 - ~1,000 visitors/day, peaks of ~100 concurrent (SC-007); design checked at 10x
-- 11 cinema operators / ~18 venues / 7 cities (Vilnius, Kaunas, Klaipėda, Šiauliai, Panevėžys,
-  Marijampolė, Gargždai) in v1; 7 source adapters; ~4–7k screenings stored at any time
+- 9 cinema operators / ~16 venues / 5 cities (Vilnius, Kaunas, Klaipėda, Šiauliai, Panevėžys)
+  in v1; 7 source adapters; ~4–7k screenings stored at any time
 - 2 main screens (movie list, movie screenings) + city prompt + not-found page
 
 ## Constitution Check
@@ -94,7 +94,7 @@ new projects, layers or patterns beyond those listed.
 
 - Sources are undocumented and can change without notice → adapters are isolated, validated and
   contract-tested; a failing source degrades gracefully (FR-015); `sources:check` detects drift.
-- Permission: the spec's "collection is acceptable" assumption holds for 9 of the 11 operators
+- Permission: the spec's "collection is acceptable" assumption holds for 7 of the 9 operators
   based on `robots.txt`; Vue and Cinamon are included by owner decision with the safeguards in
   research.md §1b. Written confirmation from each cinema is a recommended follow-up.
 

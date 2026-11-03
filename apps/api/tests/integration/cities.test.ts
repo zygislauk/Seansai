@@ -16,8 +16,6 @@ test('lists every city with a supported cinema, with Lithuanian names by default
     'skalvija',
     'atlantis',
     'garsas',
-    'spindulys',
-    'minija',
     'romuva',
     'vue',
     'cinamon',
@@ -33,8 +31,6 @@ test('lists every city with a supported cinema, with Lithuanian names by default
     { id: 'klaipeda', name: 'Klaipėda', cinemaCount: 1, hasMovies: true },
     { id: 'siauliai', name: 'Šiauliai', cinemaCount: 2, hasMovies: true },
     { id: 'panevezys', name: 'Panevėžys', cinemaCount: 2, hasMovies: false },
-    { id: 'marijampole', name: 'Marijampolė', cinemaCount: 1, hasMovies: false },
-    { id: 'gargzdai', name: 'Gargždai', cinemaCount: 1, hasMovies: false },
   ]);
   expect(response.headers['cache-control']).toBe('public, max-age=300, s-maxage=300');
 });
@@ -86,7 +82,7 @@ test('a city whose screenings have all started has no movies', async () => {
 });
 
 test('a city with no screenings has no movies', async () => {
-  await expect(hasMovies(['spindulys'], 'marijampole')).resolves.toBe(false);
+  await expect(hasMovies(['garsas'], 'panevezys')).resolves.toBe(false);
 });
 
 test('only the cinemas shown count', async () => {
