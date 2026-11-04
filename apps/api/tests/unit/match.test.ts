@@ -310,6 +310,18 @@ describe('resolveMovie', () => {
       durationMinutes: 155,
     });
 
+    // Both years' rows exist in production, so an alias can't merge them: each year keeps its own.
+    test('a listing joins its own movie even when an alias merges it into another', () => {
+      const aliases: Alias[] = [
+        { matchKey: 'dune', movieIdA: 'dune-1984', movieIdB: 'dune-2021', resolution: 'merge' },
+      ];
+      const dune2021 = movie({ ...dune1984, id: 'dune-2021', year: 2021 });
+
+      const result = resolveMovie(remake, [dune1984, dune2021], aliases);
+
+      expect(result.movie.id).toBe('dune-2021');
+    });
+
     test('"merge" forces a merge the rules would not make', () => {
       const aliases: Alias[] = [
         { matchKey: 'dune', movieIdA: 'dune-1984', movieIdB: 'dune-2021', resolution: 'merge' },
