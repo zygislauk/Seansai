@@ -1,7 +1,16 @@
 import type { SourceId } from '../sources/types.ts';
 
 export type Chain =
-  'apollo' | 'forum' | 'pasaka' | 'skalvija' | 'atlantis' | 'romuva' | 'garsas' | 'vue' | 'cinamon';
+  | 'apollo'
+  | 'forum'
+  | 'pasaka'
+  | 'skalvija'
+  | 'atlantis'
+  | 'romuva'
+  | 'garsas'
+  | 'vue'
+  | 'cinamon'
+  | 'arlekinas';
 
 export type Cinema = {
   id: string;
@@ -116,6 +125,16 @@ export const cinemas: readonly Cinema[] = [
     websiteUrl: 'https://kinopasaka.lt',
     sourceId: 'pasaka',
     sourceVenueKeys: ['1042'],
+  },
+  {
+    id: 'arlekinas',
+    name: 'Kino teatras Arlekinas',
+    chain: 'arlekinas',
+    cityId: 'klaipeda',
+    address: 'Bangų g. 5A, Klaipėda',
+    websiteUrl: 'https://kinasarlekinas.lt',
+    sourceId: 'arlekinas',
+    sourceVenueKeys: ['main'],
   },
   {
     id: 'skalvija',

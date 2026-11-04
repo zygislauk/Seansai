@@ -16,5 +16,11 @@
     "movieIdA": "cat-in-the-hat-2026",
     "movieIdB": "cat-in-the-hat",
     "resolution": "merge"
+  },
+  {
+    "matchKey": "charlie harper",
+    "movieIdA": "charlie-harper-2026",
+    "movieIdB": "charlie-harper-2025",
+    "resolution": "merge"
   }
 ]

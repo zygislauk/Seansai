@@ -36,6 +36,8 @@ describe('languageOf', () => {
     ['Ukrainiečių k.', 'uk'],
     ['Lithuanian', 'lt'],
     ['Korean', 'ko'],
+    ['kartvelų', 'ka'],
+    ['armėnų', 'hy'],
     ['EN', 'en'],
     ['lt', 'lt'],
   ])('reads "%s" as %s', (name, code) => {

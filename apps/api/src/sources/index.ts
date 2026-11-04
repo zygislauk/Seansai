@@ -1,4 +1,5 @@
 import type { Logger } from '../lib/logger.ts';
+import { arlekinasAdapter } from './arlekinas/adapter.ts';
 import { cinamonAdapter } from './cinamon/adapter.ts';
 import { atlantisAdapter, garsasAdapter } from './fliko/adapter.ts';
 import { forumAdapter } from './forum/adapter.ts';
@@ -33,6 +34,7 @@ export const sourceConfigs: readonly SourceConfig[] = [
   strict('atlantis'),
   strict('garsas'),
   strict('romuva'),
+  strict('arlekinas'),
   { id: 'vue', enabled: true, robotsOverride: true, overrideReason: OWNER_OVERRIDE_REASON },
   { id: 'cinamon', enabled: true, robotsOverride: true, overrideReason: OWNER_OVERRIDE_REASON },
 ];
@@ -46,6 +48,7 @@ export const adapters: readonly SourceAdapter[] = [
   atlantisAdapter,
   garsasAdapter,
   romuvaAdapter,
+  arlekinasAdapter,
   vueAdapter,
   cinamonAdapter,
 ];

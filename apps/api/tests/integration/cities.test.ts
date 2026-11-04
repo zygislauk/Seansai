@@ -19,6 +19,7 @@ test('lists every city with a supported cinema, with Lithuanian names by default
     'romuva',
     'vue',
     'cinamon',
+    'arlekinas',
   ]);
   close = server.close;
 
@@ -28,7 +29,7 @@ test('lists every city with a supported cinema, with Lithuanian names by default
   expect(CitiesResponseSchema.parse(response.json()).cities).toEqual([
     { id: 'vilnius', name: 'Vilnius', cinemaCount: 8, hasMovies: true },
     { id: 'kaunas', name: 'Kaunas', cinemaCount: 3, hasMovies: true },
-    { id: 'klaipeda', name: 'Klaipėda', cinemaCount: 1, hasMovies: true },
+    { id: 'klaipeda', name: 'Klaipėda', cinemaCount: 2, hasMovies: true },
     { id: 'siauliai', name: 'Šiauliai', cinemaCount: 2, hasMovies: true },
     { id: 'panevezys', name: 'Panevėžys', cinemaCount: 2, hasMovies: false },
   ]);

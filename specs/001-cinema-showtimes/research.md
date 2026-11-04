@@ -43,6 +43,7 @@ members, regional cinema reports) and checked each one's website and `robots.txt
 | Kauno kino centras **Romuva** | Kaunas | Oldest working cinema in Lithuania; Kaunas' main arthouse cinema (Europa Cinemas member) | `https://bilietai.kcromuva.lt/` embeds its full calendar as a JSON array (`title`, `start`, `url`) | Allows all | ✅ Add (new small adapter) |
 | Kino centras **Garsas** | Panevėžys | Panevėžys' arthouse cinema (Europa Cinemas member since 2009) | Ticket shop `https://bilietai.garsas.lt/filmai` uses the **same Fliko site template as Atlantis** | Allows all except `/checkout/`, `/kasa/` | ✅ Add (reuses Fliko adapter) |
 | **Cinamon Mega** | Kaunas | Second multiplex in Kaunas (mainstream releases) | Page state holds today's sessions (`showtime: "YYYY-MM-DD HH:MM:SS"`, cinema `pid` `77139293`); the site's app loads pages from `https://cinamonkino.com/api/page/{name}?cinema_id=&timezone=&locale=` (inferred from its JS bundle, **not yet verified**) | `/api/` disallowed | ⚠️ Included by owner decision (§1b) |
+| Kino teatras **Arlekinas** | Klaipėda | Klaipėda's second regular cinema, showing arthouse films most days (added 2026-11-04) | The site's own JSON API: `https://api.kinasarlekinas.lt/api/posts/filter` (films and showings for a date range), `posts/find/{slug}` (languages, age rating, genres) | Allows all (API host); the main site has none | ✅ Add (new small adapter) |
 | **Dainava** | Alytus | Listed as operating in regional-cinema reports | No online schedule or ticket shop found | — | ❌ Not possible without a public schedule |
 
 Not added: one-off or seasonal screening venues (e.g., cultural centres with occasional film
@@ -51,7 +52,8 @@ users ask for them.
 
 **Decision**: Add Romuva and Garsas to v1. Garsas needs no new code
 (the Fliko adapter, renamed from "atlantis"), and Romuva needs one small adapter. Cinamon Mega is
-also included, by owner decision (§1b).
+also included, by owner decision (§1b). Arlekinas was added on 2026-11-04, by owner decision, after
+a coverage check of the five biggest cities found it to be the only regular cinema missing.
 
 **Rationale**: Romuva and Garsas are the main arthouse cinemas in Lithuania's 2nd and 5th largest
 cities, so leaving them out would leave gaps in Kaunas and Panevėžys. Reusing the Fliko adapter
@@ -126,6 +128,14 @@ Conditions, so the decision stays low-risk and reversible:
 - **Cinamon**: `showtime` is local time without offset; cinema `pid` for Mega is `77139293`.
 - **Romuva**: calendar events are embedded in the ticket page as a JSON array; `start` is local
   time (`YYYY-MM-DD HH:MM`); no format or language fields.
+- **Arlekinas**: `posts/filter` needs a date range, or it returns the whole archive (813 films) with
+  no showings. Without `paginate` one request returns everything; `date` and `time_start` are local.
+  In the list `attributes` is empty, so the adapter reads each film's `posts/find/{slug}` (about 26
+  requests a refresh). `title_localized` is the original or an English title, so it can't show that a
+  Lithuanian-spoken film is dubbed. Many films list English and Lithuanian subtitles, and Lithuanian
+  is kept. There is no hall or format. Tickets link to `/movie/{slug}`; `/checkout/` is never
+  requested. Its year can differ from other cinemas' (*Čarlis ir Harper*: 2025, as at Pasaka; Forum
+  and Apollo say 2026), which `aliases.json` merges.
 
 ### Owner decision: do not show 2D (2026-11-02)
 

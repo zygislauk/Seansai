@@ -262,6 +262,22 @@ T058, T070, T083, T084 and T088; adapters, the database and the API are unchange
 
 ---
 
+## Phase 8: Add Arlekinas, Klaipėda (owner decision, 2026-11-04)
+
+**Purpose**: Cover Klaipėda's second regular cinema, the only one a coverage check of the five biggest cities found missing, per [research.md §1a](./research.md#1a-additional-venues-not-in-the-users-original-list). Amends T018 and T052–T064's source list; the API, the database and the web app are unchanged
+
+- [X] T103 Tests first: `apps/api/tests/integration/cities.test.ts` (Klaipėda counts 2 cinemas) and `apps/api/tests/unit/parse.test.ts` (Georgian and Armenian as Arlekinas spells them), confirmed failing
+- [X] T104 Add the cinema to `apps/api/src/registry/cinemas.ts`, `arlekinas` to `SourceId`, `Chain` and `sourceConfigs` with no robots.txt override, and the two language names to `apps/api/src/sources/parse.ts`
+- [X] T105 List the film list and each film's page in `apps/api/tests/fixtures/arlekinas/urls.json` and run `npm run fixtures:capture -- arlekinas`
+- [X] T106 Contract test `apps/api/tests/contract/arlekinas.test.ts`: one list request and one per film; local times read as Vilnius time; every showing is its own screening; tickets link to the film page; unstated details stay unknown; Lithuanian subtitles preferred; a Lithuanian-spoken film isn't called dubbed; a bad film or showing is skipped; a removed film page is skipped and any other failure fails the refresh; confirmed failing
+- [X] T107 Implement `apps/api/src/sources/arlekinas/adapter.ts` and register it in `apps/api/src/sources/index.ts`, so T103 and T106 pass
+- [X] T108 Include Arlekinas in `apps/api/tests/integration/matching-fixtures.test.ts`, with a check that its screenings join the movies other cinemas list. Merge *Čarlis ir Harper*'s two years in `apps/api/src/matching/aliases.json`
+- [X] T109 Update `README.md`, `apps/api/tests/fixtures/README.md` and this feature's `spec.md`, `plan.md`, `research.md`, `data-model.md` and `contracts/source-adapter.md`
+- [ ] T110 Run all quality gates and a reviewer agent against `.specify/memory/constitution.md` (Constitution I), and fix what it finds. **Ask the owner to approve a PR**, wait for CI, and merge
+- [ ] T111 Right after the merge, run one refresh, because a source with no successful refresh counts as stale for visitors until then. The refresh updates the Mac's checkout by itself. Then confirm `arlekinas` is healthy in `/api/v1/health`, its screenings appear under Klaipėda, and `/lt/city/klaipeda` lists it. Check the match-review log for new pairs
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -273,6 +289,7 @@ T058, T070, T083, T084 and T088; adapters, the database and the API are unchange
 - **US3 (Phase 5)**: depends on Foundational; uses US1's MoviePage (T073) and PageLayout (T046)
 - **Polish (Phase 6)**: depends on the stories it covers
 - **Hide 2D (Phase 7)**: depends on US1 and US3
+- **Add Arlekinas (Phase 8)**: depends on US1; independent of the rest
 
 ### Key task dependencies
 
@@ -343,7 +360,7 @@ Task: "Organisms in apps/web/src/components/organisms/"
 5. Deploy the container if ready
 
 A smaller first slice is possible inside US1: build the MCS and Forum adapters first (they cover
-10 of the 16 venues and every city), demo, then add the rest.
+10 of the 17 venues and every city), demo, then add the rest.
 
 ### Incremental Delivery
 

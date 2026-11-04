@@ -18,6 +18,7 @@ the date picker and the filters, keeping movie/date/filters in the URL.
 Research verified live data sources for **Apollo, Forum Cinemas, Pasaka, Skalvija and Atlantis**,
 and found two more regular cinemas worth covering: **Romuva** (Kaunas) and **Garsas** (Panevėžys)
 ([research.md §1a](./research.md#1a-additional-venues-not-in-the-users-original-list)).
+**Arlekinas** (Klaipėda) was added by owner decision on 2026-11-04.
 **Vue (formerly Multikino) and Cinamon Mega are included by owner decision** although their
 `robots.txt` disallows the data paths; they run with an explicit, logged override, stop on any
 sign of blocking, and can be switched off without a deploy ([research.md §1b](./research.md#1b-owner-decision-include-vue-and-cinamon-mega-2026-10-30)).
@@ -59,7 +60,7 @@ screen widths from 320 px
 
 **Scale/Scope**:
 - ~1,000 visitors/day, peaks of ~100 concurrent (SC-007); design checked at 10x
-- 9 cinema operators / ~16 venues / 5 cities (Vilnius, Kaunas, Klaipėda, Šiauliai, Panevėžys)
+- 10 cinema operators / ~17 venues / 5 cities (Vilnius, Kaunas, Klaipėda, Šiauliai, Panevėžys)
   in v1; 7 source adapters; ~4–7k screenings stored at any time
 - 2 main screens (movie list, movie screenings) + city prompt + not-found page
 
@@ -135,7 +136,7 @@ apps/
 │   │   ├── server.ts        # Fastify app: routes, caching headers, static web files
 │   │   ├── routes/          # cities, movies, screenings, health
 │   │   ├── refresh/         # scheduler + refresh job (validate → match → store)
-│   │   ├── sources/         # one folder per adapter: mcs/, forum/, skalvija/, fliko/, romuva/, vue/, cinamon/
+│   │   ├── sources/         # one folder per adapter: mcs/, forum/, skalvija/, fliko/, romuva/, arlekinas/, vue/, cinamon/
 │   │   ├── matching/        # title normalisation, match rules, review log, alias file
 │   │   ├── registry/        # cinemas.ts, cities.ts (city assignment per venue)
 │   │   ├── db/              # SQLite schema, migrations, queries
