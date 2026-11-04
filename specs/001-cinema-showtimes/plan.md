@@ -61,7 +61,7 @@ screen widths from 320 px
 **Scale/Scope**:
 - ~1,000 visitors/day, peaks of ~100 concurrent (SC-007); design checked at 10x
 - 10 cinema operators / ~17 venues / 5 cities (Vilnius, Kaunas, Klaipėda, Šiauliai, Panevėžys)
-  in v1; 7 source adapters; ~4–7k screenings stored at any time
+  in v1; 8 source adapters; ~4–7k screenings stored at any time
 - 2 main screens (movie list, movie screenings) + city prompt + not-found page
 
 ## Constitution Check

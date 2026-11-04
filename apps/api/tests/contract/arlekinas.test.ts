@@ -142,6 +142,63 @@ describe('Arlekinas (the site’s JSON API)', () => {
     });
   });
 
+  test.each([
+    ['an empty address', { cover: { url: '' } }],
+    ['a relative address', { cover: { url: '/storage/1/cover.webp' } }],
+    ['media in another form', []],
+  ])('keeps a film with an unusable poster: %s', async (_case, media) => {
+    const { screenings, skipped } = await runOnBodies(
+      arlekinasAdapter,
+      bodies([{ ...film, media }]),
+      NOW,
+    );
+
+    expect(skipped).toEqual([]);
+    expect(screenings[0]?.posterUrl).toBeNull();
+  });
+
+  test('takes a title marked as dubbed at its word', async () => {
+    const { screenings } = await runOnBodies(
+      arlekinasAdapter,
+      bodies([{ ...film, title: 'Filmas (įgarsinta lietuviškai)' }]),
+      NOW,
+    );
+
+    expect(screenings[0]?.isDubbed).toBe(true);
+  });
+
+  test('requests no page for a film without showings', async () => {
+    const { requests } = await runOnBodies(
+      arlekinasAdapter,
+      bodies([{ ...film, timeSheets: { data: [] } }]),
+      NOW,
+    );
+
+    expect(requests).toEqual([LIST]);
+  });
+
+  // Skipping the film instead would empty the cinema if this answer's form ever changed, as a
+  // refresh that succeeds replaces all of a source's screenings.
+  test('keeps a film’s screenings, with details unknown, when its page can’t be read', async () => {
+    const page = JSON.stringify({ data: { attributes: [{ group_name: 'Kalba', title: null }] } });
+    const { screenings, skipped } = await runOnBodies(
+      arlekinasAdapter,
+      bodies([film], { [`${API}/posts/find/filmas-1`]: page }),
+      NOW,
+    );
+
+    expect(screenings[0]).toMatchObject({
+      sourceScreeningId: '1',
+      title: 'Filmas',
+      spokenLanguage: null,
+      ageRating: null,
+      genres: [],
+    });
+    expect(skipped).toEqual([
+      { reason: 'film page unreadable', raw: `${API}/posts/find/filmas-1` },
+    ]);
+  });
+
   test('skips a film without a title, and a showing without a readable time', async () => {
     const { screenings, skipped } = await runOnBodies(
       arlekinasAdapter,

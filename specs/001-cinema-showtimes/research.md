@@ -134,8 +134,11 @@ Conditions, so the decision stays low-risk and reversible:
   requests a refresh). `title_localized` is the original or an English title, so it can't show that a
   Lithuanian-spoken film is dubbed. Many films list English and Lithuanian subtitles, and Lithuanian
   is kept. There is no hall or format. Tickets link to `/movie/{slug}`; `/checkout/` is never
-  requested. Its year can differ from other cinemas' (*Čarlis ir Harper*: 2025, as at Pasaka; Forum
-  and Apollo say 2026), which `aliases.json` merges.
+  requested. A film page that can't be read leaves that film's details unknown rather than dropping
+  its showings, because a refresh that succeeds replaces all of a source's screenings. Its year can
+  differ from other cinemas' (*Čarlis ir Harper*: 2025, as at Pasaka; Forum and Apollo say 2026).
+  `aliases.json` merges the two years only when one row doesn't exist yet: a listing whose own row
+  exists joins it before aliases are read, so production keeps both rows until one goes stale.
 
 ### Owner decision: do not show 2D (2026-11-02)
 
