@@ -37,6 +37,26 @@ async function showFilters(page: Page) {
   }
 }
 
+test('a click or tap outside the city dialog closes it and keeps the city', async ({
+  page,
+  hasTouch,
+}) => {
+  await page.goto('/lt/');
+  await switchCity(page, 'Visa Lietuva', /^Vilnius/);
+  const switcher = page.getByRole('button', { name: 'Keisti miestą: Vilnius' });
+  await switcher.click();
+  const prompt = page.getByRole('dialog', { name: 'Pasirinkite miestą' });
+  await expect(prompt).toBeVisible();
+
+  const backdrop = prompt.locator('..');
+  const corner = { position: { x: 4, y: 4 } };
+  await (hasTouch ? backdrop.tap(corner) : backdrop.click(corner));
+
+  await expect(prompt).toBeHidden();
+  await expect(switcher).toBeFocused();
+  await expect(page).toHaveURL(/\/lt\/city\/vilnius$/);
+});
+
 test('US3: changing city and filtering screenings', async ({ page }) => {
   // 1. Switch city to "Visa Lietuva", then to Kaunas; the list follows, and Kaunas survives a reload.
   await page.goto('/lt/');

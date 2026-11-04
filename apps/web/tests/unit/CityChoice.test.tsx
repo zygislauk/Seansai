@@ -104,3 +104,18 @@ test('closing the dialog unchanged keeps the choice, and returns focus to its bu
   expect(open).toHaveFocus();
   expect(window.localStorage.getItem('seansai.city')).toBeNull();
 });
+
+test('a click outside the dialog keeps the choice, and returns focus to its button', async () => {
+  const user = userEvent.setup();
+  mockApi();
+  renderApp('/en/');
+
+  const open = await screen.findByRole('button', { name: 'Choose city' });
+  await user.click(open);
+  await user.click(screen.getByRole('dialog').parentElement as HTMLElement);
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(choice()).toBeInTheDocument();
+  expect(open).toHaveFocus();
+  expect(window.localStorage.getItem('seansai.city')).toBeNull();
+});
