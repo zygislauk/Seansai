@@ -394,10 +394,12 @@ US2 (T044).
   - If Docker isn't available, record that this check was skipped in the PR description.
 
   Docker isn't on the owner's Mac, so this was skipped locally, and CI's `container` job passed on PR #17.
-- [ ] T052 [US3] Check the kill switch on production (quickstart §5).
+- [X] T052 [US3] Check the kill switch on production (quickstart §5).
   - Set `DISABLED_SOURCES=forum` in Production and in `refresh.env`, and redeploy.
   - Run the job by hand: the log shows `forum: disabled`, and Forum's cinemas are gone from the site.
   - Remove the variable from both and redeploy.
+
+  Done on 2026-11-04. The job logged `forum: disabled` and made no request to Forum. Its four cinemas left the API and, after the snapshot build, the pages. All of them came back once the variable was removed, which took two redeploys (quickstart §5).
 - [X] T053 [US3] Commit `build: drop the native toolchain from the container (002 US3)` on the follow-up branch.
 - [ ] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, `/api/v1/health` showed that day's `lastSuccessAt`.
   - Vercel Usage: invocations, Active CPU, Provisioned Memory, Fast Origin and Fast Data Transfer are each < 50% of the Hobby allowance, prorated.

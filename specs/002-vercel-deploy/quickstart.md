@@ -144,7 +144,9 @@ Then check:
     to hide the cinemas, and the job to stop contacting them. If a cinema asks Seansai to stop,
     `refresh.env` is the one that matters.
   - After the next run, Forum's cinemas are gone from the site, and the log shows Forum as disabled with no request made to it.
-  - Remove the variable from both afterwards.
+  - Remove the variable from both afterwards, then redeploy twice. Pages are built from the live API,
+    so the first build still sees the cinemas as hidden, and only the second puts them back on the
+    pages. The API shows them again after the first.
 - Missed refresh: with Forum disabled for longer than 48 h, the site would flag it. Unit tests cover
   the threshold (§1). Live checking is optional.
 - If the machine is away for long: `/api/v1/cron/daily` still refreshes from Vercel with the secret,
