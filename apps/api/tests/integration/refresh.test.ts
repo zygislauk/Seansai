@@ -333,6 +333,72 @@ describe('refreshSource', () => {
     expect((await db.execute('SELECT 1 FROM match_reviews')).rows).toEqual([]);
   });
 
+  describe('a film the cinemas date differently', () => {
+    const harper = {
+      title: 'Čarlis ir Harper',
+      originalTitle: 'Charlie Harper',
+      durationMinutes: 102,
+    };
+    const sources = [
+      listingsFrom('forum', [
+        screening({
+          ...harper,
+          cinemaId: 'forum-klaipeda',
+          year: 2026,
+          englishTitle: 'Charlie Harper',
+        }),
+      ]),
+      listingsFrom('pasaka', [screening({ ...harper, cinemaId: 'pasaka-paupys', year: 2025 })]),
+      listingsFrom('vue', [screening({ ...harper, cinemaId: 'vue-vilnius', year: null })]),
+      listingsFrom('romuva', [
+        screening({
+          cinemaId: 'romuva',
+          title: 'Čarlis ir Harper',
+          originalTitle: null,
+          year: null,
+          durationMinutes: null,
+        }),
+      ]),
+      listingsFrom('arlekinas', [screening({ ...harper, cinemaId: 'arlekinas', year: 2025 })]),
+    ];
+    const moviesOfScreenings = async () =>
+      new Set((await storedScreenings()).map((row) => row.movie_id));
+
+    test.each([
+      ['forward', sources],
+      ['reverse', [...sources].reverse()],
+    ])('is one movie from the start, listed %s', async (_order, ordered) => {
+      for (const adapter of ordered) await refreshSource(adapter, context());
+
+      expect((await moviesOfScreenings()).size).toBe(1);
+      expect((await db.execute('SELECT 1 FROM match_reviews')).rows).toEqual([]);
+    });
+
+    test('comes together once already split, and stays together', async () => {
+      const ids = [
+        'charlie-harper-2026',
+        'charlie-harper-2025',
+        'charlie-harper',
+        'carlis-ir-harper',
+      ];
+      const apart = ids.flatMap((movieIdA, index) =>
+        ids.slice(index + 1).map((movieIdB) => ({
+          matchKey: 'charlie harper',
+          movieIdA,
+          movieIdB,
+          resolution: 'keep-separate' as const,
+        })),
+      );
+      for (const adapter of sources) await refreshSource(adapter, context({ aliases: apart }));
+      expect(await moviesOfScreenings()).toEqual(new Set(ids));
+
+      for (const day of [LATER, new Date('2026-10-30T12:00:00Z')]) {
+        for (const adapter of sources) await refreshSource(adapter, context({ now: day }));
+        expect(await moviesOfScreenings()).toEqual(new Set(['charlie-harper-2026']));
+      }
+    });
+  });
+
   test("a listing does not join a film through another listing's running time", async () => {
     const kopa = { title: 'Kopa', originalTitle: null, year: null };
     const sources = [

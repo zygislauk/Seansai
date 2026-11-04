@@ -136,9 +136,8 @@ Conditions, so the decision stays low-risk and reversible:
   is kept. There is no hall or format. Tickets link to `/movie/{slug}`; `/checkout/` is never
   requested. A film page that can't be read leaves that film's details unknown rather than dropping
   its showings, because a refresh that succeeds replaces all of a source's screenings. Its year can
-  differ from other cinemas' (*Čarlis ir Harper*: 2025, as at Pasaka; Forum and Apollo say 2026).
-  `aliases.json` merges the two years only when one row doesn't exist yet: a listing whose own row
-  exists joins it before aliases are read, so production keeps both rows until one goes stale.
+  differ from other cinemas' (*Čarlis ir Harper*: 2025, as at Pasaka; Forum and Apollo say 2026),
+  which §5 treats as one film.
 
 ### Owner decision: do not show 2D (2026-11-02)
 
@@ -215,11 +214,22 @@ nine small sources.
    (and its id derived) after the English title when known, else the original, else the
    Lithuanian title.
 3. Two listings are a **confident match** when they share **any** title key **and** nothing known
-   contradicts it: production years equal when both are known; otherwise durations within
-   **15 minutes** when both are known (Vue lists running times 11–13 minutes shorter than
-   Apollo's, apparently without ads); a listing with neither (Romuva) matches on the title alone.
-4. Everything else stays a **separate movie**; pairs that share a title but conflict on year or
+   contradicts it: production years equal when both are known, or one apart with both durations
+   known and within 15 minutes (cinemas date a film by its premiere or its release here); otherwise
+   durations within **15 minutes** when both are known (Vue lists running times 11–13 minutes
+   shorter than Apollo's, apparently without ads); a listing with neither (Romuva) matches on the
+   title alone.
+4. A listing that matches several existing movies, or its own and others, joins them only when
+   they are **one film**: every pair shares a title with nothing contradicting it, or has a `merge`
+   alias. All listings then join the preferred movie (dated first, then the latest year), so movies
+   already split come together on the next refresh, and the emptied ones go in the daily cleanup.
+5. Everything else stays a **separate movie**; pairs that share a title but conflict on year or
    duration, or that would match more than one movie, are written to the **match-review log**.
+
+*Owner decision 2026-11-04*: films split by a differing year should come together without an alias
+for each one (*Čarlis ir Harper* was 2025 at Pasaka and Arlekinas, 2026 at Forum and Apollo). The
+accepted risk is two different films with the same title, a year apart, within 15 minutes of each
+other. They would merge without a review; a `keep-separate` alias undoes it.
 
 *Owner decision 2026-10-30*: "the same movie shouldn't appear twice" — matching uses the English
 title where available and shared titles in any language, instead of only the original title. On

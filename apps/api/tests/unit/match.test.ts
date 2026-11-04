@@ -274,6 +274,153 @@ describe('resolveMovie', () => {
     ]);
   });
 
+  describe('years a cinema has wrong by one', () => {
+    const harper = (year: number | null, durationMinutes: number | null = 102) =>
+      movie({
+        id: year === null ? 'charlie-harper' : `charlie-harper-${String(year)}`,
+        matchKey: 'charlie harper',
+        keys: ['charlie harper', 'carlis ir harper'],
+        year,
+        durationMinutes,
+      });
+    const harperListing = (overrides: Partial<Listing> = {}) =>
+      listing({
+        title: 'Čarlis ir Harper',
+        originalTitle: 'Charlie Harper',
+        year: 2025,
+        durationMinutes: 102,
+        ...overrides,
+      });
+
+    test('a year apart with agreeing running times is the same film', () => {
+      const result = resolveMovie(harperListing(), [harper(2026)], []);
+
+      expect(result.movie.id).toBe('charlie-harper-2026');
+      expect(result.reviews).toEqual([]);
+    });
+
+    test('a year apart with running times over 15 minutes apart stays separate, for review', () => {
+      const result = resolveMovie(harperListing({ durationMinutes: 120 }), [harper(2026)], []);
+
+      expect(result.movie.id).toBe('charlie-harper-2025');
+      expect(result.reviews).toHaveLength(1);
+    });
+
+    test.each([
+      ['the listing', { durationMinutes: null }, 102],
+      ['the movie', {}, null],
+    ])('a year apart stays separate when %s has no running time', (_who, overrides, minutes) => {
+      const result = resolveMovie(harperListing(overrides), [harper(2026, minutes)], []);
+
+      expect(result.movie.id).toBe('charlie-harper-2025');
+      expect(result.reviews).toHaveLength(1);
+    });
+
+    test('two years apart stays separate, even with the same running time', () => {
+      const result = resolveMovie(harperListing({ year: 2024 }), [harper(2026)], []);
+
+      expect(result.movie.id).toBe('charlie-harper-2024');
+      expect(result.reviews).toHaveLength(1);
+    });
+
+    test.each([2025, 2026])(
+      'movies already split by a year come together under the later one: a %i listing',
+      (year) => {
+        const result = resolveMovie(harperListing({ year }), [harper(2025), harper(2026)], []);
+
+        expect(result.movie.id).toBe('charlie-harper-2026');
+        expect(result.reviews).toEqual([]);
+      },
+    );
+
+    test('a listing without a year joins movies that are one film, rather than asking', () => {
+      const result = resolveMovie(harperListing({ year: null }), [harper(2025), harper(2026)], []);
+
+      expect(result.movie.id).toBe('charlie-harper-2026');
+      expect(result.reviews).toEqual([]);
+    });
+
+    test('a movie known only by title moves to the dated one', () => {
+      const titleOnly = movie({
+        id: 'carlis-ir-harper',
+        matchKey: 'carlis ir harper',
+        year: null,
+        durationMinutes: null,
+      });
+
+      const result = resolveMovie(
+        listing({
+          title: 'Čarlis ir Harper',
+          originalTitle: null,
+          year: null,
+          durationMinutes: null,
+        }),
+        [titleOnly, harper(2026)],
+        [],
+      );
+
+      expect(result.movie.id).toBe('charlie-harper-2026');
+    });
+
+    test('an existing remake leaves a movie where it is', () => {
+      const dune1984 = movie({
+        id: 'dune-1984',
+        matchKey: 'dune',
+        year: 1984,
+        durationMinutes: 155,
+      });
+      const dune2021 = movie({
+        id: 'dune-2021',
+        matchKey: 'dune',
+        year: 2021,
+        durationMinutes: 155,
+      });
+
+      const result = resolveMovie(
+        listing({ title: 'Kopa', originalTitle: 'Dune', year: 1984, durationMinutes: 155 }),
+        [dune1984, dune2021],
+        [],
+      );
+
+      expect(result.movie.id).toBe('dune-1984');
+    });
+
+    test('movies a year apart stay apart when the listing is all that links their titles', () => {
+      const original = movie({
+        id: 'digger-2026',
+        matchKey: 'digger',
+        year: 2026,
+        durationMinutes: 101,
+      });
+      const local = movie({
+        id: 'kasejas-2025',
+        matchKey: 'kasejas',
+        year: 2025,
+        durationMinutes: 101,
+      });
+
+      const result = resolveMovie(listing({ year: null }), [original, local], []);
+
+      expect(result.movie.id).toBe('digger');
+      expect(result.reviews).toHaveLength(2);
+    });
+
+    test('"keep-separate" keeps movies a year apart apart', () => {
+      const aliases: Alias[] = [
+        {
+          matchKey: 'charlie harper',
+          movieIdA: 'charlie-harper-2025',
+          movieIdB: 'charlie-harper-2026',
+          resolution: 'keep-separate',
+        },
+      ];
+
+      const result = resolveMovie(harperListing(), [harper(2025), harper(2026)], aliases);
+
+      expect(result.movie.id).toBe('charlie-harper-2025');
+    });
+  });
+
   describe('alias file', () => {
     test("the real file merges Garsas's Sunday showing of The Cat in the Hat into the film", () => {
       const film = {
@@ -310,17 +457,19 @@ describe('resolveMovie', () => {
       durationMinutes: 155,
     });
 
-    // Both years' rows exist in production, so an alias can't merge them: each year keeps its own.
-    test('a listing joins its own movie even when an alias merges it into another', () => {
-      const aliases: Alias[] = [
-        { matchKey: 'dune', movieIdA: 'dune-1984', movieIdB: 'dune-2021', resolution: 'merge' },
-      ];
-      const dune2021 = movie({ ...dune1984, id: 'dune-2021', year: 2021 });
+    test.each([1984, 2021])(
+      '"merge" joins two existing movies, whichever year the listing states: %i',
+      (year) => {
+        const aliases: Alias[] = [
+          { matchKey: 'dune', movieIdA: 'dune-1984', movieIdB: 'dune-2021', resolution: 'merge' },
+        ];
+        const dune2021 = movie({ ...dune1984, id: 'dune-2021', year: 2021 });
 
-      const result = resolveMovie(remake, [dune1984, dune2021], aliases);
+        const result = resolveMovie({ ...remake, year }, [dune1984, dune2021], aliases);
 
-      expect(result.movie.id).toBe('dune-2021');
-    });
+        expect(result.movie.id).toBe('dune-2021');
+      },
+    );
 
     test('"merge" forces a merge the rules would not make', () => {
       const aliases: Alias[] = [

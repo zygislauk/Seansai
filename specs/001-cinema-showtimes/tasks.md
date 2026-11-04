@@ -271,10 +271,21 @@ T058, T070, T083, T084 and T088; adapters, the database and the API are unchange
 - [X] T105 List the film list and each film's page in `apps/api/tests/fixtures/arlekinas/urls.json` and run `npm run fixtures:capture -- arlekinas`
 - [X] T106 Contract test `apps/api/tests/contract/arlekinas.test.ts`: one list request and one per film; local times read as Vilnius time; every showing is its own screening; tickets link to the film page; unstated details stay unknown; Lithuanian subtitles preferred; a Lithuanian-spoken film isn't called dubbed; a bad film or showing is skipped; an unusable poster is left out; a removed film page is skipped, an unreadable one leaves details unknown, and any other failure fails the refresh; confirmed failing
 - [X] T107 Implement `apps/api/src/sources/arlekinas/adapter.ts` and register it in `apps/api/src/sources/index.ts`, so T103 and T106 pass
-- [X] T108 Include Arlekinas in `apps/api/tests/integration/matching-fixtures.test.ts`, with a check that its screenings join the movies other cinemas list. Merge *Čarlis ir Harper*'s two years in `apps/api/src/matching/aliases.json`, which applies only where one of the two rows doesn't exist yet, as `apps/api/tests/unit/match.test.ts` pins
+- [X] T108 Include Arlekinas in `apps/api/tests/integration/matching-fixtures.test.ts`, with a check that its screenings join the movies other cinemas list. Merge *Čarlis ir Harper*'s two years in `apps/api/src/matching/aliases.json`, as Phase 9 now does for any film
 - [X] T109 Update `README.md`, `apps/api/tests/fixtures/README.md` and this feature's `spec.md`, `plan.md`, `research.md`, `data-model.md` and `contracts/source-adapter.md`
 - [X] T110 Run all quality gates and a reviewer agent against `.specify/memory/constitution.md` (Constitution I), and fix what it finds. **Ask the owner to approve a PR**, wait for CI, and merge
 - [ ] T111 Right after the merge, run one refresh, because a source with no successful refresh counts as stale for visitors until then. The refresh updates the Mac's checkout by itself. Then confirm `arlekinas` is healthy in `/api/v1/health`, its screenings appear under Klaipėda, and `/lt/city/klaipeda` lists it. Check the match-review log for new pairs
+
+---
+
+## Phase 9: Bring together films split by a differing year (owner decision, 2026-11-04)
+
+**Purpose**: Show a film once when cinemas date it a year apart, per FR-005 and [research.md §5](./research.md#5-movie-matching-across-cinemas-fr-005), for any film and without an alias. Amends T029; the database and the API are unchanged
+
+- [X] T112 Tests first: `apps/api/tests/unit/match.test.ts` (a year apart with agreeing running times is one film; over 15 minutes apart, an unknown running time or two years apart stays separate; split movies come together under the later year; a remake or a pair sharing no title stays apart; `merge` joins two existing movies and `keep-separate` holds) and `apps/api/tests/integration/refresh.test.ts` (one movie in either order, and an existing split comes together and stays together), confirmed failing
+- [X] T113 Change `isConfidentMatch` and `resolveMovie` in `apps/api/src/matching/match.ts`, so T112 passes
+- [X] T114 Run all quality gates and a reviewer agent against `.specify/memory/constitution.md` (Constitution I), and fix what it finds. **Ask the owner to approve a PR**, wait for CI, and merge
+- [ ] T115 After the next refresh, confirm *Čarlis ir Harper* is one movie at `charlie-harper-2026`, shown at every cinema that lists it, and that no other film merged wrongly
 
 ---
 
@@ -290,6 +301,7 @@ T058, T070, T083, T084 and T088; adapters, the database and the API are unchange
 - **Polish (Phase 6)**: depends on the stories it covers
 - **Hide 2D (Phase 7)**: depends on US1 and US3
 - **Add Arlekinas (Phase 8)**: depends on US1; independent of the rest
+- **Bring together split films (Phase 9)**: depends on T029; independent of the rest
 
 ### Key task dependencies
 

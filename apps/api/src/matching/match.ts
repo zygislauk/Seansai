@@ -66,18 +66,26 @@ export function movieIdOf(matchKey: string, year: number | null): string {
   return `${letters.join('').replace(/-+$/, '')}-${hash}`;
 }
 
+/** What can contradict a shared title: a listing's or a movie's year and running time. */
+type FilmFacts = Pick<Listing, 'year' | 'durationMinutes'>;
+
 /**
- * For two listings that share a title (research.md §5): known production years must be equal;
- * when a year is missing, known durations must be within 15 minutes. Nothing known to contradict
- * the shared title (e.g. Romuva publishes only titles) counts as a match, because the same movie
- * appearing twice is the more common mistake.
+ * For two listings that share a title (research.md §5): known production years must be equal, or
+ * one apart with both running times known and within 15 minutes, as cinemas date a film by its
+ * premiere or its release here. When a year is missing, known durations must be within 15 minutes.
+ * Nothing known to contradict the shared title (e.g. Romuva publishes only titles) counts as a
+ * match, because the same movie appearing twice is the more common mistake.
  */
-function isConfidentMatch(listing: Listing, candidate: MovieIdentity): boolean {
-  if (listing.year !== null && candidate.year !== null) return listing.year === candidate.year;
-  if (listing.durationMinutes === null || candidate.durationMinutes === null) return true;
-  return (
-    Math.abs(listing.durationMinutes - candidate.durationMinutes) <= DURATION_TOLERANCE_MINUTES
-  );
+function isConfidentMatch(a: FilmFacts, b: FilmFacts): boolean {
+  const durationGap =
+    a.durationMinutes === null || b.durationMinutes === null
+      ? null
+      : Math.abs(a.durationMinutes - b.durationMinutes);
+  const durationsAgree = durationGap !== null && durationGap <= DURATION_TOLERANCE_MINUTES;
+  if (a.year !== null && b.year !== null) {
+    return a.year === b.year || (Math.abs(a.year - b.year) === 1 && durationsAgree);
+  }
+  return durationGap === null || durationsAgree;
 }
 
 function conflictReason(listing: Listing, candidate: MovieIdentity): string {
@@ -95,6 +103,25 @@ function findAlias(aliases: readonly Alias[], idA: string, idB: string): Alias |
       (alias.movieIdA === idA && alias.movieIdB === idB) ||
       (alias.movieIdA === idB && alias.movieIdB === idA),
   );
+}
+
+/**
+ * Whether existing movies are one film: every pair is merged by an alias, or shares a title with
+ * nothing contradicting it. A listing linking two titles isn't enough to merge movies (FR-005).
+ */
+function areOneFilm(movies: readonly MovieIdentity[], aliases: readonly Alias[]): boolean {
+  return movies.every((a, index) =>
+    movies.slice(index + 1).every((b) => {
+      const alias = findAlias(aliases, a.id, b.id);
+      if (alias) return alias.resolution === 'merge';
+      return a.keys.some((key) => b.keys.includes(key)) && isConfidentMatch(a, b);
+    }),
+  );
+}
+
+/** Dated first, then the latest year. Depends only on the movies, so every listing agrees. */
+function byPreference(a: MovieIdentity, b: MovieIdentity): number {
+  return (b.year ?? 0) - (a.year ?? 0) || a.id.localeCompare(b.id);
 }
 
 /**
@@ -132,20 +159,25 @@ export function resolveMovie(
   const candidates = existingMovies.filter(
     (movie) => movie.id === ownId || movie.keys.some((key) => keys.includes(key)),
   );
-  const sameIdentity = candidates.find((movie) => movie.id === ownId);
-  if (sameIdentity) return joinExisting(sameIdentity);
+  const own = candidates.find((movie) => movie.id === ownId);
 
+  const merged: MovieIdentity[] = [];
   const confident: MovieIdentity[] = [];
   const conflicting: MovieIdentity[] = [];
   for (const candidate of candidates) {
+    if (candidate === own) continue;
     const alias = findAlias(aliases, ownId, candidate.id);
-    if (alias?.resolution === 'merge') return joinExisting(candidate);
-    if (alias?.resolution === 'keep-separate') continue;
-    (isConfidentMatch(listing, candidate) ? confident : conflicting).push(candidate);
+    if (alias?.resolution === 'merge') merged.push(candidate);
+    else if (alias?.resolution === 'keep-separate') continue;
+    else (isConfidentMatch(listing, candidate) ? confident : conflicting).push(candidate);
   }
 
-  const [onlyConfident, ...otherConfident] = confident;
-  if (onlyConfident && otherConfident.length === 0) return joinExisting(onlyConfident);
+  // An alias outranks the rules. Movies that turn out to be one film come together under the
+  // preferred one, which empties the others until the daily cleanup removes them.
+  const sameFilm = [...(own ? [own] : []), ...(merged.length > 0 ? merged : confident)];
+  const [preferred] = sameFilm.toSorted(byPreference);
+  if (preferred && areOneFilm(sameFilm, aliases)) return joinExisting(preferred);
+  if (own) return joinExisting(own);
 
   const reviews: MatchReview[] = [
     ...conflicting.map((candidate) => ({
