@@ -4,6 +4,8 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { mockApi } from '../helpers/mock-api.ts';
 import { renderApp } from '../helpers/render-app.tsx';
 
+const backdropOf = (dialog: HTMLElement) => dialog.parentElement as HTMLElement;
+
 afterEach(() => {
   window.localStorage.clear();
   vi.unstubAllGlobals();
@@ -98,6 +100,44 @@ test('the city dialog closes unchanged with Escape or the close button', async (
   await user.click(screen.getByRole('button', { name: 'Close' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   expect(window.localStorage.getItem('seansai.city')).toBe('vilnius');
+});
+
+test('a click outside the city dialog closes it unchanged', async () => {
+  const user = userEvent.setup();
+  window.localStorage.setItem('seansai.city', 'vilnius');
+  mockApi();
+  renderApp('/en/');
+  const switcher = await screen.findByRole('button', { name: 'Change city: Vilnius' });
+
+  await user.click(switcher);
+  await user.click(backdropOf(screen.getByRole('dialog')));
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(switcher).toHaveFocus();
+  expect(window.localStorage.getItem('seansai.city')).toBe('vilnius');
+});
+
+test('the city dialog stays open after a click inside it, or a drag out of it', async () => {
+  const user = userEvent.setup();
+  window.localStorage.setItem('seansai.city', 'vilnius');
+  mockApi();
+  renderApp('/en/');
+
+  await user.click(await screen.findByRole('button', { name: 'Change city: Vilnius' }));
+  const dialog = screen.getByRole('dialog');
+  const title = within(dialog).getByRole('heading', { name: 'Choose your city' });
+
+  await user.click(title);
+  expect(dialog).toBeInTheDocument();
+
+  // Selecting text or using the dialog's scrollbar can end outside it, and then the browser sends
+  // the click to the backdrop.
+  await user.pointer([
+    { keys: '[MouseLeft>]', target: title },
+    { target: backdropOf(dialog) },
+    { keys: '[/MouseLeft]' },
+  ]);
+  expect(dialog).toBeInTheDocument();
 });
 
 test('changing city on a movie page updates a linked city and drops the cinema filter', async () => {

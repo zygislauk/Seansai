@@ -15,7 +15,10 @@ type CityPromptProps = {
   /** The current choice, when changing an earlier one. */
   selected?: string | null;
   onSelect: (city: string) => void;
-  /** When changing an earlier choice: the dialog can be closed (button or Escape) unchanged. */
+  /**
+   * When changing an earlier choice: the dialog can be closed (button, Escape or a click outside)
+   * unchanged.
+   */
   onClose?: () => void;
 };
 
@@ -35,6 +38,7 @@ export function CityPrompt({
   const titleId = useId();
   const bodyId = useId();
   const dialog = useRef<HTMLDivElement>(null);
+  const pressStartedOnBackdrop = useRef(false);
   const hasOptions = cities !== null || failed;
 
   useEffect(() => {
@@ -81,7 +85,21 @@ export function CityPrompt({
   }, []);
 
   return (
-    <div className={styles.backdrop}>
+    // A pointer shortcut only: keyboard users have Escape and the close button.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div
+      className={styles.backdrop}
+      onPointerDown={(event) => {
+        pressStartedOnBackdrop.current = event.target === event.currentTarget;
+      }}
+      onClick={(event) => {
+        // A double click on the button that opened the dialog lands its second click here.
+        if (event.detail > 1) return;
+        // Dragging out of the dialog, to select text or with its scrollbar, also ends in a click
+        // here.
+        if (event.target === event.currentTarget && pressStartedOnBackdrop.current) onClose?.();
+      }}
+    >
       <div
         ref={dialog}
         role="dialog"
