@@ -93,6 +93,8 @@ export function CityPrompt({
         pressStartedOnBackdrop.current = event.target === event.currentTarget;
       }}
       onClick={(event) => {
+        // A double click on the button that opened the dialog lands its second click here.
+        if (event.detail > 1) return;
         // Dragging out of the dialog, to select text or with its scrollbar, also ends in a click
         // here.
         if (event.target === event.currentTarget && pressStartedOnBackdrop.current) onClose?.();

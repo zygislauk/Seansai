@@ -57,6 +57,28 @@ test('a click or tap outside the city dialog closes it and keeps the city', asyn
   await expect(page).toHaveURL(/\/lt\/city\/vilnius$/);
 });
 
+test('a double click or double tap on the city switcher leaves the dialog open', async ({
+  page,
+  hasTouch,
+}) => {
+  await page.goto('/lt/');
+  const switcher = page.getByRole('button', { name: 'Keisti miestą: Visa Lietuva' });
+  await expect(switcher).toBeVisible();
+
+  if (hasTouch) {
+    const box = await switcher.boundingBox();
+    if (!box) throw new Error('The city switcher has no position');
+    const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+    await page.touchscreen.tap(x, y);
+    await page.touchscreen.tap(x, y);
+  } else {
+    await switcher.dblclick();
+  }
+
+  // The second press lands on the backdrop, which appeared under the pointer after the first.
+  await expect(page.getByRole('dialog', { name: 'Pasirinkite miestą' })).toBeVisible();
+});
+
 test('US3: changing city and filtering screenings', async ({ page }) => {
   // 1. Switch city to "Visa Lietuva", then to Kaunas; the list follows, and Kaunas survives a reload.
   await page.goto('/lt/');
