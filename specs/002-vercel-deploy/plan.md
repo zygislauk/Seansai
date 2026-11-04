@@ -169,9 +169,7 @@ apps/api/tests/
 ```
 
 **Structure Decision**: keep the existing monorepo layout from feature 001. All code changes are
-in `apps/api` plus the root deployment files. `apps/web` and `packages/shared` don't change. The
-draft task list in [docs/superpowers/plans/2026-10-31-vercel-turso.md](../../docs/superpowers/plans/2026-10-31-vercel-turso.md)
-matches this structure and feeds `/speckit-tasks`.
+in `apps/api` plus the root deployment files. `apps/web` and `packages/shared` don't change.
 
 ## Complexity Tracking
 

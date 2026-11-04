@@ -6,11 +6,8 @@
 # SEANSAI_CONTACT is required: it is sent in the User-Agent so cinemas can reach the operator.
 # DISABLED_SOURCES=vue,cinamon is the kill switch for the robots.txt overrides (research.md §1b).
 
-# Compilers for better-sqlite3, in case no prebuilt binary matches the platform.
-FROM node:24-slim AS toolchain
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
-  && rm -rf /var/lib/apt/lists/*
+# The package manifests both installs below need.
+FROM node:24-slim AS manifests
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
@@ -18,13 +15,13 @@ COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
 
 # Builds the web app (and checks its bundle budget).
-FROM toolchain AS build
+FROM manifests AS build
 RUN npm ci
 COPY . .
 RUN npm run build -w @seansai/web
 
 # Only what the API needs at run time.
-FROM toolchain AS runtime-deps
+FROM manifests AS runtime-deps
 RUN npm ci --omit=dev --workspace @seansai/api --include-workspace-root
 
 FROM node:24-slim

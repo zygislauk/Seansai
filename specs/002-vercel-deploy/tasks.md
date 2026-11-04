@@ -341,16 +341,19 @@ from that night, and no manual action (spec US2, SC-003, quickstart §5).
   - Fix the findings.
   - Open a PR from `002-vercel-deploy` to `main`.
   - **Do not merge** until the review is resolved and CI is green.
-- [ ] T047 [US2] Once T046's PR is approved and CI is green, merge it to `main` (production) with the owner's go-ahead, and check:
+- [X] T047 [US2] Once T046's PR is approved and CI is green, merge it to `main` (production) with the owner's go-ahead, and check:
   - Vercel's Cron Jobs tab lists `/api/v1/cron/daily`;
   - one manual `curl -H "Authorization: Bearer $CRON_SECRET" https://<production>/api/v1/cron/daily` returns 200 with every enabled source `success`, and its duration in Runtime Logs is < 300 s;
   - then quickstart §5's check on two consecutive mornings. This is the release gate; SC-003's full 7 consecutive days are confirmed in T054.
 
+  Merged as PR #2. The first run found Pasaka and Cinamon refusing Vercel, so T047c replaces the cron and refresh checks, and T047d the check of the real site.
+
 **Changed after T047's first run** (2026-11-02, owner decision): Pasaka and Cinamon refuse Vercel's requests with HTTP 403 ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)), so every source now refreshes from the owner's Mac.
 
 - [X] T047a [US2] Add `refresh-now.ts`, `scripts/home-refresh.sh` and the launchd job. Remove `crons`. Raise the threshold to 48 h.
-- [ ] T047b [US2] With the owner's go-ahead, merge, set up the job (quickstart §5) and confirm its first run: every enabled source `success`.
+- [X] T047b [US2] With the owner's go-ahead, merge, set up the job (quickstart §5) and confirm its first run: every enabled source `success`. Merged as PR #4. The first run into production, by hand on 2026-11-02, had all 11 sources `success`. The first scheduled run, on 2026-11-03, did not: the Mac slept and the four Fliko sources failed ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)), so no scheduled run has yet been clean. T047c covers that.
 - [ ] T047c [US2] Replaces T047's cron checks: quickstart §5's check on two consecutive days.
+- [ ] T047d [US2] Replaces the rest of T047: the owner's check of production from a phone. Feature 001's journeys work (quickstart §4 step 7), and the movie list appears in < 2 s, and in < 3 s after an hour idle (SC-004). Record the times in [research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005).
 
 
 **Checkpoint**: The site keeps itself current every night with no manual action.
@@ -377,23 +380,27 @@ US2 (T044).
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T049 [P] [US3] In `apps/api/tests/integration/cron.test.ts`, add a kill-switch test:
+- [X] T049 [P] [US3] In `apps/api/tests/integration/cron.test.ts`, add a kill-switch test:
   - build the server with a `cron.run` from `runDailyRefresh` over fixture adapters, with `disabledSources: ['forum']` in the refresh context;
   - an authorised call returns `sources.forum === 'disabled'`;
   - the Forum fixture client received no request.
 
 ### Implementation for User Story 3
 
-- [ ] T050 [P] [US3] In `Dockerfile`, remove the `python3 make g++` toolchain installation, which only `better-sqlite3` needed. Keep `DB_PATH=/data/seansai.sqlite`; config turns it into `file:/data/seansai.sqlite`.
-- [ ] T051 [US3] Check the container (quickstart §3; CI's `container` job also does this on every push): `docker build -t seansai .`, then run it with `SOURCES_MODE=fixtures` and the saved fixtures mounted, as quickstart §3 shows.
+- [X] T050 [P] [US3] In `Dockerfile`, remove the `python3 make g++` toolchain installation, which only `better-sqlite3` needed. Keep `DB_PATH=/data/seansai.sqlite`; config turns it into `file:/data/seansai.sqlite`.
+- [X] T051 [US3] Check the container (quickstart §3; CI's `container` job also does this on every push): `docker build -t seansai .`, then run it with `SOURCES_MODE=fixtures` and the saved fixtures mounted, as quickstart §3 shows.
   - `curl -s localhost:3000/api/v1/health` shows `"status":"ok"`.
   - `curl -s localhost:3000/` returns `index.html`.
   - If Docker isn't available, record that this check was skipped in the PR description.
-- [ ] T052 [US3] Check the kill switch on production (quickstart §5).
+
+  Docker isn't on the owner's Mac, so this was skipped locally, and CI's `container` job passed on PR #17.
+- [X] T052 [US3] Check the kill switch on production (quickstart §5).
   - Set `DISABLED_SOURCES=forum` in Production and in `refresh.env`, and redeploy.
   - Run the job by hand: the log shows `forum: disabled`, and Forum's cinemas are gone from the site.
   - Remove the variable from both and redeploy.
-- [ ] T053 [US3] Commit `build: drop the native toolchain from the container (002 US3)` on the follow-up branch.
+
+  Done on 2026-11-04. The job logged `forum: disabled` and made no request to Forum. Its four cinemas left the API and, after the snapshot build, the pages. All of them came back once the variable was removed, which took two redeploys (quickstart §5).
+- [X] T053 [US3] Commit `build: drop the native toolchain from the container (002 US3)` on the follow-up branch.
 - [ ] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, `/api/v1/health` showed that day's `lastSuccessAt`.
   - Vercel Usage: invocations, Active CPU, Provisioned Memory, Fast Origin and Fast Data Transfer are each < 50% of the Hobby allowance, prorated.
   - Turso: rows read and written, and storage, are each < 50% of Free.
@@ -406,9 +413,9 @@ US2 (T044).
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T055 Run every quality gate (quickstart §1): `npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:load && npm run build && npm run test:e2e`. All pass.
-- [ ] T056 [P] Delete the superseded draft `docs/superpowers/plans/2026-10-31-vercel-turso.md`, which this tasks.md replaces. Drop its link from the Structure Decision in [plan.md](./plan.md).
-- [ ] T057 Review the US3 and polish changes the same way as T046.
+- [X] T055 Run every quality gate (quickstart §1): `npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:load && npm run build && npm run test:e2e`. All pass.
+- [X] T056 [P] Delete the superseded draft `docs/superpowers/plans/2026-10-31-vercel-turso.md`, which this tasks.md replaces. Drop its link from the Structure Decision in [plan.md](./plan.md).
+- [X] T057 Review the US3 and polish changes the same way as T046.
   - These are on `002-vercel-deploy-followup` (T048).
   - Reviewer agent plus self-review against the constitution, and the secret `git grep`.
   - Open a PR to `main`. Merge only once the review is resolved and CI is green.
