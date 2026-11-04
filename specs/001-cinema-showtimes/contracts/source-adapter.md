@@ -69,6 +69,7 @@ type SourceScreening = {
 | `skalvija` | Skalvija | WordPress JSON with PHP-warning prefix; title/start/ticket URL only |
 | `fliko` (configured per site: `atlantis`, `garsas`) | Atlantis, Garsas | Server-rendered `/filmai/{slug}` pages of the shared Fliko site template; never calls the `back.*` backends |
 | `romuva` | Romuva | JSON calendar array embedded in the ticket page; title/start/ticket URL only |
+| `arlekinas` | Arlekinas | The site's JSON API: films and showings for a date range, then each film's page for languages, age rating and genres; no hall or format |
 | `vue` | Vue Vilnius | `/data/filmswithshowings/1001`; local times despite `Z` suffix; `robotsOverride` |
 | `cinamon` | Cinamon Mega (Kaunas) | Page API `/api/page/home?cinema_id=77139293&…` (verify first); fallback: today's sessions from page state; `robotsOverride` |
 

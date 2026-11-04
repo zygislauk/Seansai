@@ -36,6 +36,7 @@ function withLatency(db: Db): Db {
 const SLOW_LAST: readonly string[] = [
   'cinamon',
   'romuva',
+  'arlekinas',
   'garsas',
   'vue',
   'skalvija',
@@ -116,6 +117,23 @@ describe.each(['forward', 'reverse', 'parallel'] as const)(
 
     afterAll(() => {
       cleanup();
+    });
+
+    test('Arlekinas joins the movies other cinemas list, across a differing year', async () => {
+      const { rows } = await db.execute(
+        `SELECT count(*) AS screenings, count(DISTINCT movie_id) AS movies FROM screenings
+         WHERE cinema_id = 'arlekinas'`,
+      );
+      expect(rows[0]).toEqual({ screenings: 26, movies: 25 });
+
+      const [harper] = await moviesKnownAs(db, 'Čarlis ir Harper');
+      const shownAt = await db.execute({
+        sql: 'SELECT DISTINCT cinema_id AS cinema FROM screenings WHERE movie_id = ?',
+        args: [harper?.id ?? null],
+      });
+      expect(shownAt.rows.map((row) => row.cinema)).toEqual(
+        expect.arrayContaining(['arlekinas', 'forum-kaunas', 'pasaka-senamiestis']),
+      );
     });
 
     test('no two shown movies share a title', async () => {

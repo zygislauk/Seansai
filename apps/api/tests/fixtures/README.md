@@ -2,7 +2,7 @@
 
 Saved real responses from each cinema source, one folder per source id
 (`apollo`, `forum`, `pasaka`, `skalvija`, `atlantis`, `garsas`, `romuva`,
-`vue`, `cinamon`). They feed the adapter contract tests and `SOURCES_MODE=fixtures`, so tests and
+`vue`, `cinamon`, `arlekinas`). They feed the adapter contract tests and `SOURCES_MODE=fixtures`, so tests and
 local runs never contact cinema websites.
 
 Each folder contains:
@@ -36,6 +36,9 @@ source captured on a later day (Forum) simply starts on a later date.
   plus eight movie pages; in fixture mode the other movies answer "not found" and are skipped.
   HTML fixtures are saved without their inline `<style>` contents (megabytes of CSS no adapter
   reads).
+- **Arlekinas** — `urls.json` lists the film list for the next 90 days plus each film on it, so
+  refreshing this source's fixtures means listing the current films' pages first. Captured on
+  2026-11-04, days after most sources.
 - **Forum** — captured on 2026-10-31, a day after the others. Its API host has no robots.txt
   (404, no restrictions), but answers that request with HTTP 500 when the request says
   `Accept-Language: *`, the default of Node's `fetch`, which RFC 9309 reads as "disallow
@@ -47,6 +50,7 @@ source captured on a later day (Forum) simply starts on a later date.
 | Source | Captured at (UTC) |
 | --- | --- |
 | apollo | 2026-10-30T17:39:42.136Z |
+| arlekinas | 2026-11-04T12:49:46.395Z |
 | atlantis | 2026-10-30T17:45:40.919Z |
 | cinamon | 2026-10-30T17:41:11.578Z |
 | forum | 2026-10-31T16:37:09.442Z |

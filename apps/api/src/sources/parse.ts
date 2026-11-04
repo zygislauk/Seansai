@@ -81,7 +81,10 @@ const LANGUAGE_CODES: Record<string, string> = {
   rumunu: 'ro',
   romanian: 'ro',
   gruzinu: 'ka',
+  kartvelu: 'ka',
   georgian: 'ka',
+  armenu: 'hy',
+  armenian: 'hy',
 };
 
 /**
