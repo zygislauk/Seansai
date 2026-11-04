@@ -415,7 +415,7 @@ US2 (T044).
 
 - [X] T055 Run every quality gate (quickstart §1): `npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:load && npm run build && npm run test:e2e`. All pass.
 - [X] T056 [P] Delete the superseded draft `docs/superpowers/plans/2026-10-31-vercel-turso.md`, which this tasks.md replaces. Drop its link from the Structure Decision in [plan.md](./plan.md).
-- [ ] T057 Review the US3 and polish changes the same way as T046.
+- [X] T057 Review the US3 and polish changes the same way as T046.
   - These are on `002-vercel-deploy-followup` (T048).
   - Reviewer agent plus self-review against the constitution, and the secret `git grep`.
   - Open a PR to `main`. Merge only once the review is resolved and CI is green.
