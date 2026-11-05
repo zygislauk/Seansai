@@ -6,6 +6,9 @@ test-results
 apps/api/tests/fixtures
 package-lock.json
 
+# Google's ownership file has to stay as Google wrote it
+apps/web/public/google*.html
+
 # Spec Kit tooling and feature documents are generated and rewritten by the speckit commands
 .claude
 .specify
