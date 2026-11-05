@@ -239,7 +239,9 @@ and run the self-hosted container with saved test data and confirm it works as b
   is not flagged. A longer gap is.
 - Preview deployments get their own database on the same free database account. The free plan
   allows up to 100 databases, so the separation costs nothing.
-- The public address is the default one Vercel provides. A custom domain is out of scope.
+- The public address was the default one Vercel provides, and a custom domain was out of scope. On
+  2026-11-05 the owner moved the site to `seansai.lt`, a domain bought separately. Hosting and the
+  database stay on their free plans.
 - The site's existing `/api/` data paths, response formats and web pages don't change. The web pages
   already call the data service at relative addresses.
 - Moving existing self-hosted data into the hosted database is out of scope. The hosted site fills

@@ -125,9 +125,9 @@ Deployment Protection, and remove it once the fix is live.
 
 1. Attach the domain to the Vercel project, and check its `/api/v1/health` answers, as builds read
    their data from the public address.
-2. Change `SITE_URL` in [apps/web/src/lib/site.ts](apps/web/src/lib/site.ts), and the tests that name
-   the address, and merge. That one line moves every preferred address, language link, preview tag and
-   the site map.
+2. Change `SITE_URL` in [apps/web/src/lib/site.ts](apps/web/src/lib/site.ts), along with the tests that
+   name the address, and merge. `SITE_URL` alone moves every preferred address, language link, preview
+   tag and the site map.
 3. Redirect the old address to the new one in Vercel, and add the new address to Google Search Console.
 
 ## Quality gates

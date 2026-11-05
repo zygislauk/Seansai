@@ -223,10 +223,12 @@ calls.
   Sending as fast as answered measured the machine, with p95 from 169 to 371 ms on identical code.
   It uses its own paced sender because autocannon's rate setting fires each second's requests at once.
 - **Measured on production from a phone** (2026-11-05, T047d, by eye): after more than an hour idle,
-  the owner saw the list in under 1 s, within SC-004's 3 s. The ordinary load looked fine and wasn't
-  timed. Since feature 003 the list is part of the page, which the CDN serves, so this says little
-  about a cold API call. From a laptop in Lithuania, warm: 0.11–0.16 s to first byte for `/lt/` (CDN
-  hit), and 0.15–0.50 s for an uncached movie list from the API.
+  the owner saw the list in under 1 s, within SC-004's 3 s, and also in under 1 s on an ordinary load,
+  within its 2 s. The phone had Vilnius saved, so `boot-gate.js` sent it to client rendering: the list
+  came through the API, not the page's snapshot, and the 5-minute cache had long expired. Whether the
+  function itself started cold wasn't confirmed. A first-time visitor gets the snapshot instead. From
+  a laptop in Lithuania, warm: 0.11–0.16 s to first byte for `/lt/` (CDN hit), and 0.15–0.50 s for an
+  uncached movie list from the API.
 
 ## 6. Region and latency (SC-004)
 
