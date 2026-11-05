@@ -352,7 +352,9 @@ from that night, and no manual action (spec US2, SC-003, quickstart §5).
 
 - [X] T047a [US2] Add `refresh-now.ts`, `scripts/home-refresh.sh` and the launchd job. Remove `crons`. Raise the threshold to 48 h.
 - [X] T047b [US2] With the owner's go-ahead, merge, set up the job (quickstart §5) and confirm its first run: every enabled source `success`. Merged as PR #4. The first run into production, by hand on 2026-11-02, had all 11 sources `success`. The first scheduled run, on 2026-11-03, did not: the Mac slept and the four Fliko sources failed ([research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005)), so no scheduled run has yet been clean. T047c covers that.
-- [ ] T047c [US2] Replaces T047's cron checks: quickstart §5's check on two consecutive days.
+- [X] T047c [US2] Replaces T047's cron checks: quickstart §5's check on two consecutive days.
+
+  Done on 2026-11-05, for 2026-11-04 and 05. On both days the job alone brought every source it knew to `success` and removed the past screenings (330, then 334). Arlekinas, added on the 4th, had its first refresh by hand that day and its next from the job. The 5th was confirmed on `/health` and the site, the 4th from the job's log only. Atlantis and Garsas timed out on the first attempt both nights while the Mac slept, and succeeded on a later check, at 12:08 and 02:12. No first attempt has yet been clean.
 - [ ] T047d [US2] Replaces the rest of T047: the owner's check of production from a phone. Feature 001's journeys work (quickstart §4 step 7), and the movie list appears in < 2 s, and in < 3 s after an hour idle (SC-004). Record the times in [research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005).
 
 
