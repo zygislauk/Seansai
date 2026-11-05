@@ -72,7 +72,7 @@ test('US1: today’s screenings of a movie across all cinemas in the city', asyn
   await expect(ticket).toHaveCSS('background-color', resting);
   await expect(ticket).toHaveCSS('color', 'rgb(255, 255, 255)');
   if (!isMobile) {
-    await page.mouse.move(0, 0);
+    await page.mouse.click(0, 0);
     await ticket.hover();
     await expect(ticket).toHaveCSS('background-color', hovered);
   }

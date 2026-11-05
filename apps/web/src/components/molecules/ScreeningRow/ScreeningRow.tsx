@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import type { Screening } from '@seansai/shared';
 import { useT } from '../../../i18n/index.tsx';
-import { classNames } from '../../../lib/class-names.ts';
 import { Badge } from '../../atoms/Badge/index.ts';
 import { Icon } from '../../atoms/Icon/index.ts';
 import { VisuallyHidden } from '../../atoms/VisuallyHidden/index.ts';
@@ -13,7 +11,6 @@ import styles from './ScreeningRow.module.scss';
  */
 export function ScreeningRow({ screening }: { screening: Screening }) {
   const { t, formatTime, languageName } = useT();
-  const [opened, setOpened] = useState(false);
   const { cinema, hall, format, spokenLanguage, subtitleLanguage, isDubbed } = screening;
   const time = formatTime(screening.startsAt);
   const code = (language: string) => (
@@ -50,13 +47,7 @@ export function ScreeningRow({ screening }: { screening: Screening }) {
         href={screening.ticketUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className={classNames(styles.ticket, opened && styles.opened)}
-        onClick={() => {
-          setOpened(true);
-        }}
-        onPointerMove={() => {
-          setOpened(false);
-        }}
+        className={styles.ticket}
       >
         {t('screening.buyTicket')}
         <VisuallyHidden>

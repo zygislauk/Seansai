@@ -81,8 +81,8 @@
       color: var(--color-on-accent);
     }
 
-    // The mouse can leave unseen while the cinema's tab is in front, so wait for it to move here.
-    &:hover:not(.opened) {
+    // The mouse can leave unseen while the cinema's tab is in front, and a clicked link keeps focus.
+    &:hover:not(:focus) {
       background: var(--color-accent-hover);
     }
   }
