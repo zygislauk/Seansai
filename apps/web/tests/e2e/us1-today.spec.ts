@@ -46,12 +46,14 @@ test('US1: today’s screenings of a movie across all cinemas in the city', asyn
   }
   await expectNoAccessibilityViolations(page);
 
-  // 4. "Pirkti bilietą" opens the cinema's page in a new tab.
+  // 4. "Pirkti bilietą" stays readable on hover and opens the cinema's page in a new tab.
+  const ticket = rows.first().getByRole('link', { name: /Pirkti bilietą/ });
+  await ticket.hover();
+  // The background first, as the resting label would pass until the hover style applies.
+  await expect(ticket).toHaveCSS('background-color', 'rgb(145, 32, 24)');
+  await expect(ticket).toHaveCSS('color', 'rgb(255, 255, 255)');
   const popup = page.waitForEvent('popup');
-  await rows
-    .first()
-    .getByRole('link', { name: /Pirkti bilietą/ })
-    .click();
+  await ticket.click();
   expect(new URL((await popup).url()).hostname).not.toBe('localhost');
 
   // 5. A movie with no screenings left today points to the next date.
