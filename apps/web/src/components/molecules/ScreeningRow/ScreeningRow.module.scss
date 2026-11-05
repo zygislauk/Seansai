@@ -74,9 +74,16 @@
   text-decoration: none;
   white-space: nowrap;
 
-  &:hover {
-    background: var(--color-accent-hover);
-    // The global `a:hover` colour matches this background and would otherwise hide the label.
-    color: var(--color-on-accent);
+  // Touch screens keep `:hover` after a tap, so only a real pointer gets the hover style.
+  @media (hover: hover) {
+    &:hover {
+      // The global `a:hover` colour matches the background below and would otherwise hide the label.
+      color: var(--color-on-accent);
+    }
+
+    // The mouse can leave unseen while the cinema's tab is in front, so wait for it to move here.
+    &:hover:not(.opened) {
+      background: var(--color-accent-hover);
+    }
   }
 }

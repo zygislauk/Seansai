@@ -70,8 +70,11 @@ a {
   text-underline-offset: 0.15em;
 }
 
-a:hover {
-  color: var(--color-accent-hover);
+// Touch screens keep `:hover` after a tap, so only a real pointer gets the hover style.
+@media (hover: hover) {
+  a:hover {
+    color: var(--color-accent-hover);
+  }
 }
 
 // One visible focus style for every interactive element, shown for keyboard users only.
