@@ -355,7 +355,9 @@ from that night, and no manual action (spec US2, SC-003, quickstart §5).
 - [X] T047c [US2] Replaces T047's cron checks: quickstart §5's check on two consecutive days.
 
   Done on 2026-11-05, for 2026-11-04 and 05. On both days the job alone brought every source it knew to `success` and removed the past screenings (330, then 334). Arlekinas, added on the 4th, had its first refresh by hand that day and its next from the job. The 5th was confirmed on `/health` and the site, the 4th from the job's log only. Atlantis and Garsas timed out on the first attempt both nights while the Mac slept, and succeeded on a later check, at 12:08 and 02:12. No first attempt has yet been clean.
-- [ ] T047d [US2] Replaces the rest of T047: the owner's check of production from a phone. Feature 001's journeys work (quickstart §4 step 7), and the movie list appears in < 2 s, and in < 3 s after an hour idle (SC-004). Record the times in [research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005).
+- [X] T047d [US2] Replaces the rest of T047: the owner's check of production from a phone. Feature 001's journeys work (quickstart §4 step 7), and the movie list appears in < 2 s, and in < 3 s after an hour idle (SC-004). Record the times in [research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005).
+
+  Done on 2026-11-05. The owner found the journeys fine and the list appeared in under 1 s after more than an hour idle. The ordinary load wasn't timed.
 
 
 **Checkpoint**: The site keeps itself current every night with no manual action.
