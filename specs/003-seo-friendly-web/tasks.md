@@ -205,8 +205,8 @@ npm workspaces monorepo: `apps/api/`, `apps/web/`, `packages/shared/`. Tests liv
 - [X] T066 **Ask the owner to approve**, then open a PR from `003-seo-pages`, wait for CI, merge to `main`, confirm the PR shows as merged and that CI and the production deployment on `main` passed, using `gh`
 - [X] T067 Do `specs/003-seo-friendly-web/quickstart.md` §3 on production, including Facebook's debugger for 10 movies (SC-008) and a phone-sized PageSpeed run (SC-007), and record the results in `specs/003-seo-friendly-web/research.md`
 - [X] T068 **Owner step**: create the Deploy Hook for `main` in Vercel, add `VERCEL_DEPLOY_HOOK_URL` to `~/.config/seansai/refresh.env` and Vercel's Production environment, then confirm one daily cycle as in `specs/003-seo-friendly-web/quickstart.md` §4 (SC-004)
-- [ ] T069 **Owner step**: register with Google Search Console and submit the site map, as in `specs/003-seo-friendly-web/quickstart.md` §5, committing the verification file to `apps/web/public/` (FR-021)
-- [ ] T070 About 8 weeks after T069, measure SC-005 and SC-006 and record them in `specs/003-seo-friendly-web/research.md`
+- [X] T069 **Owner step**: register with Google Search Console and submit the site map, as in `specs/003-seo-friendly-web/quickstart.md` §5, committing the verification file to `apps/web/public/` (FR-021). Done on 2026-11-05 for `https://seansai.lt/`: the owner verified with the file from PR #22 and submitted `sitemap.xml`
+- [ ] T070 About 8 weeks after T069, so around 2026-12-31, measure SC-005 and SC-006 and record them in `specs/003-seo-friendly-web/research.md`
 
 ---
 
