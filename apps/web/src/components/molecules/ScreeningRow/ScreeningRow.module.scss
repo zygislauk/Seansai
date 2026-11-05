@@ -76,7 +76,7 @@
 
   &:hover {
     background: var(--color-accent-hover);
-    // The global `a:hover` color matches this background and would otherwise hide the label.
+    // The global `a:hover` colour matches this background and would otherwise hide the label.
     color: var(--color-on-accent);
   }
 }
