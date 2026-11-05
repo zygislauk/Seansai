@@ -37,7 +37,7 @@ const summary = (id: string, title: string) => ({
 
 const freshness = { updatedAt: '2026-11-03T08:00:00+02:00', staleCinemas: [] };
 
-const SITE = 'https://seansai.vercel.app';
+const SITE = 'https://seansai.lt';
 /** For pages whose addresses a test doesn't look at. */
 const noLinks = {
   canonical: null,

@@ -22,7 +22,7 @@ import { SNAPSHOT_PORT } from './ports.ts';
 /** The daily snapshot over the fixture data: what search engines and first-time visitors get. */
 test.use({ baseURL: `http://localhost:${String(SNAPSHOT_PORT)}` });
 
-const SITE = 'https://seansai.vercel.app';
+const SITE = 'https://seansai.lt';
 
 test.beforeEach(async ({ context, request }) => {
   await answerExternalRequestsLocally(context);

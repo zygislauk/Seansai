@@ -9,7 +9,7 @@ const metaContents = (name: string) =>
     (meta) => meta.content,
   );
 
-const SITE = 'https://seansai.vercel.app';
+const SITE = 'https://seansai.lt';
 
 const head = (title: string, robots: 'noindex' | null = null): PageHead => ({
   title,

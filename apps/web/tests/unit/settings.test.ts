@@ -89,7 +89,7 @@ describe('the language cookie', () => {
 
   test('is marked Secure on HTTPS', () => {
     const written = vi.spyOn(document, 'cookie', 'set').mockImplementation(() => undefined);
-    vi.stubGlobal('location', new URL('https://seansai.vercel.app/lt/'));
+    vi.stubGlobal('location', new URL('https://seansai.lt/lt/'));
 
     setLang('lt');
 

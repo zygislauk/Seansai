@@ -121,11 +121,13 @@ API rather than its own commit's, and fails when that's broken:
 As a last resort, set `SNAPSHOT_API_URL` in Vercel to another API with data, reachable without Vercel's
 Deployment Protection, and remove it once the fix is live.
 
-**To move to `seansai.lt`**:
+**To move to another address** (the site is at `seansai.lt`):
 
-1. Attach the domain to the Vercel project, as builds read their data from the public address.
-2. Change `SITE_URL` in [apps/web/src/lib/site.ts](apps/web/src/lib/site.ts) and merge. That one line
-   moves every preferred address, language link, preview tag and the site map.
+1. Attach the domain to the Vercel project, and check its `/api/v1/health` answers, as builds read
+   their data from the public address.
+2. Change `SITE_URL` in [apps/web/src/lib/site.ts](apps/web/src/lib/site.ts), and the tests that name
+   the address, and merge. That one line moves every preferred address, language link, preview tag and
+   the site map.
 3. Redirect the old address to the new one in Vercel, and add the new address to Google Search Console.
 
 ## Quality gates

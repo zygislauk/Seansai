@@ -42,18 +42,18 @@ Preview URLs may need `vercel curl` if Deployment Protection is on.
 ## 3. After merging to production
 
 ```bash
-curl -s https://seansai.vercel.app/lt/ | grep -c '<a '
-curl -sI https://seansai.vercel.app/lt/ | grep -i x-robots-tag   # none expected on production
-curl -sI https://seansai.vercel.app/api/v1/cities | grep -i x-robots-tag   # noindex
-curl -s https://seansai.vercel.app/robots.txt
-curl -s https://seansai.vercel.app/sitemap.xml | grep -c '<loc>'
-curl -sI https://seansai.vercel.app/ | head -1                     # 307, to /lt/
-curl -sI -H 'Cookie: seansai_lang=en' https://seansai.vercel.app/ | grep -i ^location   # /en/
-curl -sI https://seansai.vercel.app/de/movie/x | head -1           # 308, to /lt/movie/x
-curl -sI https://seansai.vercel.app/lt/nonexistent | head -1       # 404
-curl -sI https://seansai.vercel.app/lt/city/riga | head -1         # 404
-curl -sI https://seansai.vercel.app/lt/ | grep -i content-security-policy   # present
-curl -sI https://seansai.vercel.app/og-default.png | head -1       # 200
+curl -s https://seansai.lt/lt/ | grep -c '<a '
+curl -sI https://seansai.lt/lt/ | grep -i x-robots-tag   # none expected on production
+curl -sI https://seansai.lt/api/v1/cities | grep -i x-robots-tag   # noindex
+curl -s https://seansai.lt/robots.txt
+curl -s https://seansai.lt/sitemap.xml | grep -c '<loc>'
+curl -sI https://seansai.lt/ | head -1                     # 307, to /lt/
+curl -sI -H 'Cookie: seansai_lang=en' https://seansai.lt/ | grep -i ^location   # /en/
+curl -sI https://seansai.lt/de/movie/x | head -1           # 308, to /lt/movie/x
+curl -sI https://seansai.lt/lt/nonexistent | head -1       # 404
+curl -sI https://seansai.lt/lt/city/riga | head -1         # 404
+curl -sI https://seansai.lt/lt/ | grep -i content-security-policy   # present
+curl -sI https://seansai.lt/og-default.png | head -1       # 200
 ```
 
 Also confirm the `screenings_by_cinema_and_start` index exists on production's database (research §11), and
