@@ -284,7 +284,8 @@ title, description and image match the movie.
 - **Address**: the preferred public address stays `seansai.vercel.app` for now, because feature 002
   requires everything to stay free. The owner plans to move to `seansai.lt` later. That move, including
   its redirects from the old addresses and telling search engines about it, is a separate piece of
-  work, and FR-022 keeps it small. Search standing may dip for a while after the move.
+  work, and FR-022 keeps it small. Search standing may dip for a while after the move. On 2026-11-05
+  the owner moved the site to `seansai.lt`, a domain bought separately.
 - **No synopses**: the site doesn't collect them, so descriptions are composed from known facts. Adding
   synopses would likely improve rankings, but it means collecting new data and is out of scope.
 - **Out of scope**: link building, paid search, advertising, analytics, blog or editorial content,

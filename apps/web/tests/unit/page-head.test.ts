@@ -220,7 +220,7 @@ describe('the not-found page', () => {
 });
 
 describe('preferred addresses and language links', () => {
-  const SITE = 'https://seansai.vercel.app';
+  const SITE = 'https://seansai.lt';
   const linksTo = (path: (lang: string) => string) => [
     { hreflang: 'lt', href: `${SITE}${path('lt')}` },
     { hreflang: 'en', href: `${SITE}${path('en')}` },

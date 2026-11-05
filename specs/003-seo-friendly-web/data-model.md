@@ -117,5 +117,5 @@ Priority and change-frequency values are left out because Google ignores them.
 
 | Setting | Where | Purpose |
 |---------|-------|---------|
-| `SITE_URL` | Constant in `apps/web/src/lib/site.ts` | The one public address (FR-022). A move to `seansai.lt` changes this line. |
+| `SITE_URL` | Constant in `apps/web/src/lib/site.ts` | The one public address (FR-022). A move changes this line and the tests that name the address. |
 | `VERCEL_DEPLOY_HOOK_URL` | Secret: `refresh.env` and Vercel Production | Optional. Unset means no hook call. Never logged. |
