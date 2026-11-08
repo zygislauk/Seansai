@@ -14,10 +14,10 @@ const KLAIPEDA = '40025d9f-a5cd-4bb9-bd4b-d01c52558731';
 const SIAULIAI = '4c3fe3b1-90c1-4268-9c9f-d86e91cd2a44';
 
 const screeningsUrl = (regionId: string) =>
-  `${API}/region/${regionId}/screening?dateTimeFrom=2026-10-31T00:00:00&dateTimeTo=2026-11-14T00:00:00`;
+  `${API}/region/${regionId}/screening?dateTimeFrom=2026-10-31T00:00:00&dateTimeTo=2027-01-30T00:00:00`;
 
 describe('Forum Cinemas (REST API behind forumcinemas.lt)', () => {
-  test('reads 14 days of every region, the movie list once and the halls of each cinema', async () => {
+  test('reads the listed days (today + 90) of every region, the movie list once and the halls of each cinema', async () => {
     const { screenings, skipped, requests } = await runOnFixtures(createForumAdapter(), NOW);
 
     expect(requests).toEqual([
@@ -185,7 +185,7 @@ describe('Forum Cinemas edge cases', () => {
     await runOnBodies(adapter, bodies(halls), NOW);
 
     const nextDay = new Date(NOW.getTime() + DAY_MS);
-    const nextDayScreenings = `${API}/region/r1/screening?dateTimeFrom=2026-11-01T00:00:00&dateTimeTo=2026-11-15T00:00:00`;
+    const nextDayScreenings = `${API}/region/r1/screening?dateTimeFrom=2026-11-01T00:00:00&dateTimeTo=2027-01-31T00:00:00`;
     const { screenings, requests } = await runOnBodies(
       adapter,
       bodies({ [nextDayScreenings]: JSON.stringify([screening('a', 'm1')]) }),
@@ -194,6 +194,42 @@ describe('Forum Cinemas edge cases', () => {
 
     expect(requests).toContain(`${API}/cinema/${VINGIS}/screen`);
     expect(findScreening(screenings, 'a').hall).toBe('5 salė');
+  });
+
+  test('drops the event labels of premieres and introduced screenings', async () => {
+    const titles = [
+      ['LNK premjera: Kopa: Trečia dalis', 'LNK Premiere: Dune: Part Three'],
+      [
+        'PASIKLYDĘ EKRANE pristato: Kopa: Trečia dalis | Su Skirmantu Malinausku',
+        'Dune: Part Three',
+      ],
+      ['PASIKLYDĘ EKRANE pristato: Kopa. Antra dalis', 'PASIKLYDĘ EKRANE pristato: Dune: Part Two'],
+      ['TV3 premjera: Kalėdų nelaukiant', 'TV3 premjera: Kalėdų nelaukiant'],
+    ];
+    const movies = titles.map(([title, originalTitle], index) => ({
+      ...movie,
+      id: `m${String(index)}`,
+      title,
+      originalTitle,
+    }));
+    const { screenings } = await runOnBodies(
+      createForumAdapter(),
+      bodies({
+        [screeningsUrl('r1')]: JSON.stringify(
+          movies.map((item) => screening(`s-${item.id}`, item.id)),
+        ),
+        [`${API}/movie`]: JSON.stringify(movies),
+      }),
+      NOW,
+    );
+
+    // The bar's "Su Skirmantu Malinausku" is left for title matching, which ignores it.
+    expect(screenings.map(({ title, originalTitle }) => [title, originalTitle])).toEqual([
+      ['Kopa: Trečia dalis', 'Dune: Part Three'],
+      ['Kopa: Trečia dalis | Su Skirmantu Malinausku', 'Dune: Part Three'],
+      ['Kopa. Antra dalis', 'Dune: Part Two'],
+      ['Kalėdų nelaukiant', 'Kalėdų nelaukiant'],
+    ]);
   });
 
   test('skips screenings of a movie the API no longer has, and keeps the rest', async () => {

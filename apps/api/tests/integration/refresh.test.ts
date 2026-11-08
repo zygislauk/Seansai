@@ -142,6 +142,34 @@ describe('refreshSource', () => {
     expect((await repo.listSources())[0]?.lastAttemptAt).toEqual(NOW);
   });
 
+  test('keeps screenings through today + 90 days (Vilnius dates) and drops later ones', async () => {
+    const adapter = stubAdapter({
+      screenings: [
+        // 23:30 on 28 January 2027 in Vilnius, the 90th day after 30 October.
+        screening({ sourceScreeningId: 'last', startsAt: new Date('2027-01-28T21:30:00Z') }),
+        // 00:30 on 29 January in Vilnius, although still 28 January in UTC.
+        screening({ sourceScreeningId: 'beyond', startsAt: new Date('2027-01-28T22:30:00Z') }),
+      ],
+      skipped: [],
+    });
+
+    const outcome = await refreshSource(adapter, context());
+
+    expect(outcome).toMatchObject({ status: 'success', stored: 1, skipped: 0 });
+    expect((await storedScreenings()).map((row) => row.id)).toEqual(['apollo:last']);
+  });
+
+  test('counts the 90 days from the adapter’s own clock in fixture replay', async () => {
+    const adapter = stubAdapter({
+      screenings: [screening({ startsAt: new Date('2027-01-29T10:00:00Z') })],
+      skipped: [],
+    });
+
+    await refreshSource(adapter, context({ sourceNow: new Date('2026-10-31T10:00:00Z') }));
+
+    expect((await storedScreenings()).map((row) => row.id)).toEqual(['apollo:1']);
+  });
+
   test('a result failing SourceScreeningSchema keeps the previous data and records the error', async () => {
     await refreshSource(stubAdapter({ screenings: [screening()], skipped: [] }), context());
 

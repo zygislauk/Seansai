@@ -1,6 +1,6 @@
 [
   "https://www.apollokinas.lt/xml/TheatreAreas/",
-  "https://www.apollokinas.lt/xml/Schedule/?area=1019&dt={today:dd.MM.yyyy}&nrOfDays=14",
-  "https://www.apollokinas.lt/xml/Schedule/?area=1024&dt={today:dd.MM.yyyy}&nrOfDays=14",
-  "https://www.apollokinas.lt/xml/Schedule/?area=1018&dt={today:dd.MM.yyyy}&nrOfDays=14"
+  "https://www.apollokinas.lt/xml/Schedule/?area=1019&dt={today:dd.MM.yyyy}&nrOfDays=91",
+  "https://www.apollokinas.lt/xml/Schedule/?area=1024&dt={today:dd.MM.yyyy}&nrOfDays=91",
+  "https://www.apollokinas.lt/xml/Schedule/?area=1018&dt={today:dd.MM.yyyy}&nrOfDays=91"
 ]

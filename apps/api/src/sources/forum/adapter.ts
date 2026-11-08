@@ -2,20 +2,20 @@ import { z } from 'zod';
 import { SourceRequestError, SourceResponseError } from '../../lib/errors.ts';
 import type { HttpClient } from '../../lib/polite-http.ts';
 import { addDays, todayIn } from '../../lib/time.ts';
+import { DAYS_AHEAD } from '../horizon.ts';
 import { ageRatingOf, formatOf, languageOf } from '../parse.ts';
 import type { AdapterContext, AdapterResult, SourceAdapter, SourceScreening } from '../types.ts';
 
 /**
  * Forum Cinemas (Vingis, Kaunas, Klaipėda, Šiauliai): the REST API that forumcinemas.lt itself
  * calls (its `config.json` names `https://restapi.forumcinemas.lt/api`). Per cycle: the regions,
- * each region's screenings for 14 days, the movie list once (plus any movie missing from it),
+ * each region's screenings for the listed days (horizon.ts), the movie list once (plus any movie missing from it),
  * and each cinema's hall names at most once a day, because that answer carries full seat maps.
  *
  * The feed gives no ticket link; the site opens a screening at `/lt/ekranas/?id=…&cid=…`.
  */
 const API = 'https://restapi.forumcinemas.lt/api';
 const SITE = 'https://forumcinemas.lt';
-const DAYS = 14;
 const HALLS_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 const RegionsSchema = z.array(z.object({ id: z.string().min(1) }));
@@ -51,12 +51,13 @@ type Movie = z.infer<typeof MovieSchema>;
 const ScreensSchema = z.array(z.object({ id: z.string().min(1), name: z.string().nullish() }));
 
 /**
- * Forum prefixes some titles with a programme ("SCA'26: Išganymas" for Scanorama, "Pamatyk kine:
- * Kiti (2001)") and lists dubbed or subtitled versions as films of their own ("Užmirštoji sala
- * (dubliuotas)", original "Forgotten Island (dubbed)"). Other cinemas print the bare title.
+ * Forum prefixes some titles with a programme or event ("SCA'26: Išganymas" for Scanorama,
+ * "Pamatyk kine: Kiti (2001)", "LNK premjera: Kopa: Trečia dalis") and lists dubbed or subtitled
+ * versions as films of their own ("Užmirštoji sala (dubliuotas)", original "Forgotten Island
+ * (dubbed)"). Other cinemas print the bare title.
  */
 const PROGRAMME_LABEL =
-  /^(?:SCA['’]\d{2}[:.]|Pamatyk kine:|PASIKLYDĘ EKRANE kino klasika:|Patirti kiną:|Šeimos kino seansas:|Family screening:)\s*/iu;
+  /^(?:SCA['’]\d{2}[:.]|Pamatyk kine:|PASIKLYDĘ EKRANE (?:kino klasika|pristato):|(?:LNK|TV3) (?:premjera|premiere):|Patirti kiną:|Šeimos kino seansas:|Family screening:)\s*/iu;
 const VERSION_NOTE =
   /\s*\((?:dubliuotas|dubbed|su lietuviškais subtitrais|with lithuanian subtitles|(?:18|19|20)\d{2})\)\s*$/iu;
 const DUBBED_NOTE = /\((?:dubliuotas|dubbed)\)\s*$/iu;
@@ -132,7 +133,7 @@ export function createForumAdapter(): SourceAdapter {
     async fetchScreenings({ now, http, registry }: AdapterContext): Promise<AdapterResult> {
       const result: AdapterResult = { screenings: [], skipped: [] };
       const today = todayIn(now);
-      const range = `dateTimeFrom=${today}T00:00:00&dateTimeTo=${addDays(today, DAYS)}T00:00:00`;
+      const range = `dateTimeFrom=${today}T00:00:00&dateTimeTo=${addDays(today, DAYS_AHEAD + 1)}T00:00:00`;
 
       const screenings: Screening[] = [];
       for (const region of await http.getJson(`${API}/region`, RegionsSchema)) {

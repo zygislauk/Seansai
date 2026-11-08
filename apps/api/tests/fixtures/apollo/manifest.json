@@ -1,6 +1,6 @@
 {
   "https://www.apollokinas.lt/xml/TheatreAreas/": "001.json",
-  "https://www.apollokinas.lt/xml/Schedule/?area=1019&dt=30.10.2026&nrOfDays=14": "002.json",
-  "https://www.apollokinas.lt/xml/Schedule/?area=1024&dt=30.10.2026&nrOfDays=14": "003.json",
-  "https://www.apollokinas.lt/xml/Schedule/?area=1018&dt=30.10.2026&nrOfDays=14": "004.json"
+  "https://www.apollokinas.lt/xml/Schedule/?area=1019&dt=30.10.2026&nrOfDays=91": "002.json",
+  "https://www.apollokinas.lt/xml/Schedule/?area=1024&dt=30.10.2026&nrOfDays=91": "003.json",
+  "https://www.apollokinas.lt/xml/Schedule/?area=1018&dt=30.10.2026&nrOfDays=91": "004.json"
 }

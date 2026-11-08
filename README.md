@@ -20,8 +20,8 @@ The feature spec, plan and design documents are in
 
 **Known gaps**
 
-- **Cinamon** publishes only today's sessions in a form we can read (`today-only`), and its ticket
-  links point to the cinema's schedule page.
+- **Cinamon**'s ticket links point to the cinema's schedule page, because its sessions carry no
+  link of their own.
 
 ### Robots.txt overrides and the kill switch
 

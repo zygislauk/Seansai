@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { SourceResponseError } from '../../lib/errors.ts';
 import { todayIn } from '../../lib/time.ts';
 import { cinemas } from '../../registry/cinemas.ts';
+import { DAYS_AHEAD } from '../horizon.ts';
 import { ageRatingOf, dubbingOf, formatOf, languageOf } from '../parse.ts';
 import type {
   AdapterContext,
@@ -14,11 +15,11 @@ import type {
 
 /**
  * Markus Cinema System feed (Apollo, Pasaka): `Schedule/?area=&dt=dd.MM.yyyy&nrOfDays=` lists
- * every show of one theatre area. Apollo answers in JSON, Pasaka in XML; both carry the same
+ * every show of one theatre area for `nrOfDays` days counting today, so the listed days
+ * (horizon.ts) take one more than DAYS_AHEAD. Apollo answers in JSON, Pasaka in XML; both carry the same
  * fields. The feed's own theatre ids differ from the area ids, so the venue is the area that
  * was requested.
  */
-const DAYS_AHEAD = 14;
 
 type McsOptions = {
   id: SourceId;
@@ -169,7 +170,7 @@ export function createMcsAdapter(options: McsOptions): SourceAdapter {
     async fetchScreenings({ now, http, registry }: AdapterContext): Promise<AdapterResult> {
       const result: AdapterResult = { screenings: [], skipped: [] };
       for (const areaId of options.areaIds) {
-        const url = `${options.baseUrl}Schedule/?area=${areaId}&dt=${feedDate(now)}&nrOfDays=${String(DAYS_AHEAD)}`;
+        const url = `${options.baseUrl}Schedule/?area=${areaId}&dt=${feedDate(now)}&nrOfDays=${String(DAYS_AHEAD + 1)}`;
         const cinema = registry.findBySourceKey(options.id, areaId);
         const shows = showsOf(url, await http.getText(url));
         for (const raw of shows) {

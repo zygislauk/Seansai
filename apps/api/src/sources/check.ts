@@ -37,7 +37,7 @@ type CheckContext = {
 
 /**
  * Fetches one source once and checks it has screenings for today and each of the next 6 days. A
- * source that declares `today-only` (Cinamon in page-state mode) only needs today.
+ * source that declares `today-only` only needs today.
  */
 export async function checkSource(adapter: SourceAdapter, ctx: CheckContext): Promise<SourceCheck> {
   const today = todayIn(ctx.now);

@@ -244,7 +244,7 @@ screenings remain, and that clearing filters restores the full list.
   tickets, show seat availability, or show prices.
 - **Audience**: the website is public and free to use for anyone; there are no user accounts in
   this version.
-- **Date range**: the furthest selectable date depends on how far ahead cinemas publish schedules,
-  typically 7–14 days.
+- **Date range**: every cinema is listed for the same days, today through today + 90 days; within
+  that, the furthest selectable date depends on how far ahead cinemas publish schedules.
 - **Out of scope for this version**: movie reviews and ratings, trailers, notifications or alerts,
   favourites/watchlists, and price comparison.

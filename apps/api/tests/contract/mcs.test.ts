@@ -7,13 +7,13 @@ import { findScreening, runOnBodies, runOnFixtures } from '../helpers/adapters.t
 const NOW = new Date('2026-10-30T17:39:42Z');
 
 describe('Apollo (MCS JSON feed)', () => {
-  test('requests 14 days of schedule per registered area, from today', async () => {
+  test('requests the listed days (today + 90) of schedule per registered area', async () => {
     const { requests } = await runOnFixtures(apolloAdapter, NOW);
 
     expect(requests).toEqual([
-      'https://www.apollokinas.lt/xml/Schedule/?area=1019&dt=30.10.2026&nrOfDays=14',
-      'https://www.apollokinas.lt/xml/Schedule/?area=1024&dt=30.10.2026&nrOfDays=14',
-      'https://www.apollokinas.lt/xml/Schedule/?area=1018&dt=30.10.2026&nrOfDays=14',
+      'https://www.apollokinas.lt/xml/Schedule/?area=1019&dt=30.10.2026&nrOfDays=91',
+      'https://www.apollokinas.lt/xml/Schedule/?area=1024&dt=30.10.2026&nrOfDays=91',
+      'https://www.apollokinas.lt/xml/Schedule/?area=1018&dt=30.10.2026&nrOfDays=91',
     ]);
   });
 
@@ -122,7 +122,7 @@ describe('MCS edge cases', () => {
     baseUrl: 'https://mcs.test/xml/',
     areaIds: ['1019'],
   });
-  const url = 'https://mcs.test/xml/Schedule/?area=1019&dt=30.10.2026&nrOfDays=14';
+  const url = 'https://mcs.test/xml/Schedule/?area=1019&dt=30.10.2026&nrOfDays=91';
   const show = (fields: Record<string, unknown>) =>
     JSON.stringify({
       PubDate: '2026-10-30T00:00:00',

@@ -59,6 +59,10 @@ type SourceScreening = {
 3. Times are converted to exact instants using the source's offset or UTC field; when the source
    gives local time only, it is interpreted in `Europe/Vilnius`.
 4. A successful result **replaces** all of that source's future screenings in storage.
+5. Every source is listed for the same days: today through today + 90 days (Vilnius dates,
+   `apps/api/src/sources/horizon.ts`). An adapter that asks its source for a date range asks for
+   exactly these days; the refresh job drops any screening after the last one, whichever adapter
+   returned it.
 
 ## Adapters in v1
 
@@ -71,7 +75,7 @@ type SourceScreening = {
 | `romuva` | Romuva | JSON calendar array embedded in the ticket page; title/start/ticket URL only |
 | `arlekinas` | Arlekinas | The site's JSON API: films and showings for a date range, then each film's page for languages, age rating and genres; no hall or format |
 | `vue` | Vue Vilnius | `/data/filmswithshowings/1001`; local times despite `Z` suffix; `robotsOverride` |
-| `cinamon` | Cinamon Mega (Kaunas) | Page API `/api/page/home?cinema_id=77139293&…` (verify first); fallback: today's sessions from page state; `robotsOverride` |
+| `cinamon` | Cinamon Mega (Kaunas) | Page API `/api/page/home?cinema_id=77139293&…` for today's sessions and the calendar of dates, then `/api/schedule?…&date=` for each later date; `robotsOverride` |
 
 ## Contract tests
 
