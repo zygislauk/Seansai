@@ -70,9 +70,6 @@ export const en: Messages = {
   'filters.toggleCount': 'Filters ({count})',
   'filters.cinema': 'Cinema',
   'filters.format': 'Format',
-  'filters.audio': 'Language',
-  'filters.original': 'Original language',
-  'filters.dubbed': 'Dubbed',
   'filters.otherFormat': 'Other',
   'filters.clear': 'Clear filters',
   'filters.shown': 'Showing {shown} of {total}',
@@ -81,8 +78,6 @@ export const en: Messages = {
   'common.close': 'Close',
   'screening.buyTicket': 'Buy ticket',
   'screening.ticketContext': '{time}, {cinema}; opens in a new tab',
-  'screening.dubbed': 'Dubbed',
-  'screening.subtitles': '{language} subtitles',
   'stale.title': 'Some information may be out of date',
   'stale.body':
     'We could not update the schedules of these cinemas, so their screenings may be missing or out of date: {cinemas}.',

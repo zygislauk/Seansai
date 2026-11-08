@@ -33,7 +33,7 @@ function renderBar(path = '/en/movie/digger-2026?date=2026-10-31', screenings = 
 
 const group = (name: string) => screen.getByRole('group', { name });
 
-test('offers only the cinemas, formats and audio present in the list', () => {
+test('offers only the cinemas and formats present in the list, and no language', () => {
   renderBar();
 
   const names = (groupName: string) =>
@@ -42,7 +42,7 @@ test('offers only the cinemas, formats and audio present in the list', () => {
       .map((button) => button.textContent);
   expect(names('Cinema')).toEqual(['Apollo Akropolis', 'Skalvija', 'Vue Vilnius']);
   expect(names('Format')).toEqual(['3D']);
-  expect(names('Language')).toEqual(['Original language', 'Dubbed']);
+  expect(screen.queryByRole('group', { name: 'Language' })).not.toBeInTheDocument();
 });
 
 test('hides a group with a single option', () => {
@@ -74,7 +74,7 @@ test('hides the format group when every screening is 2D or every one is the same
   expect(screen.queryByRole('group', { name: 'Format' })).not.toBeInTheDocument();
 });
 
-test('selected chips are pressed and written to the cinema, format and audio parameters', async () => {
+test('selected chips are pressed and written to the cinema and format parameters', async () => {
   const user = userEvent.setup();
   const { query } = renderBar();
 
@@ -82,31 +82,15 @@ test('selected chips are pressed and written to the cinema, format and audio par
   await user.click(vue);
   await user.click(within(group('Cinema')).getByRole('button', { name: 'Skalvija' }));
   await user.click(within(group('Format')).getByRole('button', { name: '3D' }));
-  await user.click(within(group('Language')).getByRole('button', { name: 'Original language' }));
 
   expect(vue).toHaveAttribute('aria-pressed', 'true');
   expect(new URLSearchParams(query())).toEqual(
-    new URLSearchParams('date=2026-10-31&cinema=vue-vilnius,skalvija&format=3D&audio=original'),
+    new URLSearchParams('date=2026-10-31&cinema=vue-vilnius,skalvija&format=3D'),
   );
 
   await user.click(vue);
   expect(vue).toHaveAttribute('aria-pressed', 'false');
   expect(new URLSearchParams(query()).get('cinema')).toBe('skalvija');
-});
-
-test('the two audio choices exclude each other', async () => {
-  const user = userEvent.setup();
-  const { query } = renderBar();
-  const audio = within(group('Language'));
-
-  await user.click(audio.getByRole('button', { name: 'Original language' }));
-  await user.click(audio.getByRole('button', { name: 'Dubbed' }));
-
-  expect(audio.getByRole('button', { name: 'Original language' })).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
-  expect(new URLSearchParams(query()).get('audio')).toBe('dubbed');
 });
 
 test('reads filters from the URL, and "Clear filters" resets them', async () => {

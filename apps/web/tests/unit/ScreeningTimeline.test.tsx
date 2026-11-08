@@ -22,7 +22,7 @@ test('shows one list in the given time order, not grouped by cinema', () => {
   ).toEqual(['Apollo Akropolis', 'Skalvija', 'Vue Vilnius']);
 });
 
-test('each row shows cinema, city, time, and hall, format and language when known', () => {
+test('each row shows cinema, city, time, and hall and format when known, but no language', () => {
   renderUi(<ScreeningTimeline screenings={diggerScreenings} />);
   const [apollo, skalvija, vue] = rows();
   if (!apollo || !skalvija || !vue) throw new Error('expected three rows');
@@ -31,15 +31,13 @@ test('each row shows cinema, city, time, and hall, format and language when know
   expect(apollo).toHaveTextContent('Vilnius');
   expect(apollo).toHaveTextContent('6 salė');
   expect(within(apollo).getByText('3D')).toBeInTheDocument();
-  expect(within(apollo).getByText('EN')).toHaveAttribute('title', 'English');
-  expect(within(apollo).getByText('LT subtitles')).toBeInTheDocument();
+  // Language and dubbing are left to the cinema's own page, even when the source provides them.
+  expect(within(apollo).queryByText(/^EN$|subtitles/)).not.toBeInTheDocument();
+  expect(within(vue).queryByText(/Dubbed|^LT$/)).not.toBeInTheDocument();
 
-  expect(within(vue).getByText('Dubbed')).toBeInTheDocument();
-  expect(within(vue).queryByText('LT')).not.toBeInTheDocument();
-
-  // Skalvija publishes neither hall, format nor language.
+  // Skalvija publishes neither hall nor format.
   expect(skalvija).toHaveTextContent('Vilnius');
-  expect(within(skalvija).queryByText(/salė|subtitles|Dubbed|^[A-Z]{2}$/)).not.toBeInTheDocument();
+  expect(within(skalvija).queryByText(/salė/)).not.toBeInTheDocument();
 });
 
 test('2D is the default and gets no badge; special formats keep theirs', () => {
@@ -67,6 +65,4 @@ test('speaks Lithuanian by default', () => {
   renderUi(<ScreeningTimeline screenings={diggerScreenings} />, 'lt');
 
   expect(screen.getAllByRole('link', { name: /Pirkti bilietą/ })).toHaveLength(3);
-  expect(screen.getByText('Dubliuota')).toBeInTheDocument();
-  expect(screen.getByText('LT sub.')).toBeInTheDocument();
 });

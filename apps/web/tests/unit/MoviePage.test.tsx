@@ -151,14 +151,26 @@ test('filters narrow the list and live in the URL; when nothing matches, one cli
 
 test('opens with the filters in the URL applied', async () => {
   mockApi();
-  renderApp('/en/movie/digger-2026?audio=dubbed');
+  renderApp('/en/movie/digger-2026?cinema=vue-vilnius');
 
   const rows = within(await screen.findByRole('list', { name: 'Screenings' })).getAllByRole(
     'listitem',
   );
   expect(rows).toHaveLength(1);
   expect(rows[0]).toHaveTextContent('Vue Vilnius');
-  expect(screen.getByRole('button', { name: 'Dubbed' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: 'Vue Vilnius' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+test('ignores the retired language filter of older links', async () => {
+  mockApi();
+  renderApp('/en/movie/digger-2026?audio=dubbed');
+
+  expect(
+    within(await screen.findByRole('list', { name: 'Screenings' })).getAllByRole('listitem'),
+  ).toHaveLength(3);
 });
 
 test('names the cinemas whose data may be out of date', async () => {

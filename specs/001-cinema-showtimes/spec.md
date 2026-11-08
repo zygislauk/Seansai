@@ -39,8 +39,8 @@
 A moviegoer opens the website and sees the list of movies currently showing in Lithuanian
 cinemas. They pick a movie and immediately see every remaining screening of it today, from every
 supported cinema, in one place, ordered by start time. Each screening shows the venue, start time,
-and key details (hall, format, language/subtitles). From any screening they can jump to that
-cinema's own page to buy a ticket.
+and key details (hall, format). From any screening they can jump to that cinema's own page to buy
+a ticket.
 
 **Why this priority**: This is the core value: replacing the habit of checking several cinema
 websites one by one with a single view. On its own it already solves the user's problem for the
@@ -61,8 +61,8 @@ movie and day.
    of today's not-yet-started screenings of that movie at the supported cinemas in their chosen
    city, sorted by start time.
 4. **Given** the user sees a screening, **When** they look at it, **Then** it shows the cinema name,
-   city, start time, and any available hall, special format (e.g., 3D, IMAX; 2D, the default, is
-   not shown), and language/subtitle details.
+   city, start time, and any available hall and special format (e.g., 3D, IMAX; 2D, the default,
+   is not shown). Language and subtitle details are not shown; the cinema's own page has them.
 5. **Given** the user chooses a screening, **When** they select "Buy ticket", **Then** they are
    taken to that cinema's own page for that screening (or the movie's page at that cinema if no
    direct screening link is available), opened in a new tab.
@@ -99,8 +99,8 @@ the cinemas' published schedules for that date.
 
 ### User Story 3 - Narrow down screenings by city, cinema, and format (Priority: P3)
 
-The user only cares about cinemas in their city, or wants to see only original-language
-screenings. They filter the screening list by city, cinema, and format/language.
+The user only cares about cinemas in their city, or wants to see only IMAX screenings. They filter
+the screening list by city, cinema, and format.
 
 **Why this priority**: Improves convenience once the list gets long, but the core comparison
 works without it.
@@ -114,8 +114,8 @@ screenings remain, and that clearing filters restores the full list.
    picks "All of Lithuania"), **Then** the movie list and screenings update to that choice.
 2. **Given** a screening list, **When** the user selects one or more cinemas, **Then** only
    screenings at those cinemas are shown.
-3. **Given** a screening list, **When** the user filters by format or language (e.g., original
-   language with subtitles, dubbed, 3D), **Then** only matching screenings are shown.
+3. **Given** a screening list, **When** the user filters by format (e.g., 3D, IMAX), **Then** only
+   matching screenings are shown.
 4. **Given** the user has chosen filters, **When** they return to the website later on the same
    device, **Then** their city choice is remembered.
 5. **Given** filters remove every screening, **When** the list is empty, **Then** the user sees a
@@ -168,16 +168,19 @@ screenings remain, and that clearing filters restores the full list.
   name.
 - **FR-007**: For today, the system MUST hide screenings that have already started.
 - **FR-008**: Each screening MUST show cinema name, city, date, start time, and, when the cinema
-  provides them, hall, format, and language/subtitle details. 2D is the default and MUST NOT be
-  shown; only special formats are.
+  provides them, hall and format. 2D is the default and MUST NOT be shown; only special formats
+  are. Language, subtitle and dubbing details MUST NOT be shown on the screening: most films are
+  in the original language with Lithuanian subtitles, and the cinemas' own labels are too
+  inconsistent to show reliably (the cinema's ticket page states them).
 - **FR-009**: Each screening MUST link to the corresponding page on the cinema's own website so the
   user can buy a ticket there.
 - **FR-010**: Users MUST be able to choose any date from today up to the furthest date for which at
   least one cinema has published screenings.
 - **FR-011**: The selected movie and date MUST be reflected in the page address, so the view can be
   bookmarked, shared, and reloaded.
-- **FR-012**: Users MUST be able to filter screenings by city, by cinema, and by format/language.
+- **FR-012**: Users MUST be able to filter screenings by city, by cinema, and by format.
   Format filters offer special formats only, not 2D, and appear whenever one would narrow the list.
+  There is no language filter, for the reasons given in FR-008.
 - **FR-013**: On a user's first visit, the system MUST show all of Lithuania and offer a choice of
   city once, beside the content rather than blocking it (changed by feature 003's FR-006). It MUST
   remember the answer on the same device without requiring an account. The movie list and

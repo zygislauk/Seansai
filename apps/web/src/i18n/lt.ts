@@ -95,9 +95,6 @@ export const lt = {
   'filters.toggleCount': 'Filtrai ({count})',
   'filters.cinema': 'Kino teatras',
   'filters.format': 'Formatas',
-  'filters.audio': 'Kalba',
-  'filters.original': 'Originalo kalba',
-  'filters.dubbed': 'Dubliuota',
   'filters.otherFormat': 'Kitas',
   'filters.clear': 'Išvalyti filtrus',
   'filters.shown': 'Rodoma {shown} iš {total}',
@@ -106,8 +103,6 @@ export const lt = {
   'common.close': 'Uždaryti',
   'screening.buyTicket': 'Pirkti bilietą',
   'screening.ticketContext': '{time}, {cinema}; atsidaro naujame skirtuke',
-  'screening.dubbed': 'Dubliuota',
-  'screening.subtitles': '{language} sub.',
   'stale.title': 'Kai kurie duomenys gali būti pasenę',
   'stale.body':
     'Nepavyko atnaujinti šių kino teatrų tvarkaraščių, todėl jų seansų gali trūkti arba jie gali būti pasenę: {cinemas}.',
