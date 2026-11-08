@@ -6,29 +6,16 @@ import { VisuallyHidden } from '../../atoms/VisuallyHidden/index.ts';
 import styles from './ScreeningRow.module.scss';
 
 /**
- * One screening: time, cinema and city, hall, format and language, and the ticket link. 2D gets no
- * badge: it is the default, so only special formats stand out.
+ * One screening: time, cinema and city, hall, format, and the ticket link. 2D gets no badge: it is
+ * the default, so only special formats stand out. Language and dubbing are not shown: most films
+ * here are in the original language with Lithuanian subtitles, and the cinemas' own pages state
+ * the exceptions more reliably than our scraped labels.
  */
 export function ScreeningRow({ screening }: { screening: Screening }) {
-  const { t, formatTime, languageName } = useT();
-  const { cinema, hall, format, spokenLanguage, subtitleLanguage, isDubbed } = screening;
+  const { t, formatTime } = useT();
+  const { cinema, hall, format } = screening;
   const time = formatTime(screening.startsAt);
-  const code = (language: string) => (
-    <abbr title={languageName(language)}>{language.toUpperCase()}</abbr>
-  );
-
-  const badges = [
-    format !== null && format !== '2D' && <Badge key="format">{format}</Badge>,
-    isDubbed === true && <Badge key="dubbed">{t('screening.dubbed')}</Badge>,
-    isDubbed !== true && spokenLanguage !== null && (
-      <Badge key="spoken">{code(spokenLanguage)}</Badge>
-    ),
-    isDubbed !== true && subtitleLanguage !== null && (
-      <Badge key="subtitles">
-        {t('screening.subtitles', { language: subtitleLanguage.toUpperCase() })}
-      </Badge>
-    ),
-  ].filter(Boolean);
+  const showFormat = format !== null && format !== '2D';
 
   return (
     <li className={styles.row} data-screening={screening.id}>
@@ -41,7 +28,11 @@ export function ScreeningRow({ screening }: { screening: Screening }) {
           <Icon name="map-pin" size={14} />
           {[cinema.cityName, hall].filter(Boolean).join(' · ')}
         </p>
-        {badges.length > 0 && <p className={styles.badges}>{badges}</p>}
+        {showFormat && (
+          <p className={styles.badges}>
+            <Badge>{format}</Badge>
+          </p>
+        )}
       </div>
       <a
         href={screening.ticketUrl}

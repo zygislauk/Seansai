@@ -100,7 +100,8 @@ test('US3: changing city and filtering screenings', async ({ page }) => {
   await expect(rows.first()).toBeVisible();
   await expect(rows.filter({ hasNotText: 'Kaunas' })).toHaveCount(0);
 
-  // 2. Back in Vilnius, a movie shown at several cinemas: filter by cinema, then by language.
+  // 2. Back in Vilnius, a movie shown at several cinemas: filter by cinema. There is no language
+  //    filter.
   await switchCity(page, 'Kaunas', /^Vilnius/);
   await page.getByRole('link', { name: 'Seansai', exact: true }).click();
   await page.getByRole('searchbox').fill('Užmirštoji sala');
@@ -111,36 +112,17 @@ test('US3: changing city and filtering screenings', async ({ page }) => {
   await showFilters(page);
   // Every screening of it that day is 2D, so there is no format to choose.
   await expect(page.getByRole('group', { name: 'Formatas' })).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Kalba' })).toHaveCount(0);
 
   const cinemas = page.getByRole('group', { name: 'Kino teatras' });
   await cinemas.getByRole('button', { name: 'Vue Vilnius' }).click();
   await expect(page).toHaveURL(/[?&]cinema=vue-vilnius(&|$)/);
   await expect(rows.first()).toBeVisible();
   await expect(rows.filter({ hasNotText: 'Vue Vilnius' })).toHaveCount(0);
+  await expect(page.getByText(/^Rodoma \d+ iš 13$/)).toBeVisible();
+  await expectNoAccessibilityViolations(page);
   await cinemas.getByRole('button', { name: 'Vue Vilnius' }).click();
   await expect(rows).toHaveCount(13);
-
-  await page
-    .getByRole('group', { name: 'Kalba' })
-    .getByRole('button', { name: 'Originalo kalba' })
-    .click();
-  await expect(page).toHaveURL(/[?&]audio=original(&|$)/);
-  await expect(rows).toHaveCount(2);
-  await expect(page.getByText('Rodoma 2 iš 13')).toBeVisible();
-  await expectNoAccessibilityViolations(page);
-
-  // 3. Filters that match nothing explain so and clear with one click.
-  const shownRows = (await rows.allTextContents()).join(' ');
-  const names = await cinemas.getByRole('button').allTextContents();
-  const otherCinema = names.find((name) => !shownRows.includes(name)) ?? '';
-  await cinemas.getByRole('button', { name: otherCinema }).click();
-  await expect(rows).toHaveCount(0);
-  const noMatch = page.getByText('Pagal pasirinktus filtrus seansų nėra');
-  await expect(noMatch).toBeVisible();
-  await expectNoAccessibilityViolations(page);
-  await page.getByRole('main').getByRole('button', { name: 'Išvalyti filtrus' }).last().click();
-  await expect(rows).toHaveCount(13);
-  await expect(page).toHaveURL(/\/lt\/movie\/[\w-]+\?date=2026-11-01$/);
 
   // 2 (format). "Odisėja" runs in 2D at Vue and in IMAX at Forum Cinemas Vingis that day.
   await page.getByRole('link', { name: 'Seansai', exact: true }).click();
@@ -159,4 +141,16 @@ test('US3: changing city and filtering screenings', async ({ page }) => {
   await expect(rows.filter({ hasNotText: 'Forum Cinemas Vingis' })).toHaveCount(0);
   await expect(page.getByText('Rodoma 2 iš 4')).toBeVisible();
   await expectNoAccessibilityViolations(page);
+
+  // 3. Filters that match nothing explain so and clear with one click: Vue shows it only in 2D.
+  await page
+    .getByRole('group', { name: 'Kino teatras' })
+    .getByRole('button', { name: 'Vue Vilnius' })
+    .click();
+  await expect(rows).toHaveCount(0);
+  await expect(page.getByText('Pagal pasirinktus filtrus seansų nėra')).toBeVisible();
+  await expectNoAccessibilityViolations(page);
+  await page.getByRole('main').getByRole('button', { name: 'Išvalyti filtrus' }).last().click();
+  await expect(rows).toHaveCount(4);
+  await expect(page).toHaveURL(/\/lt\/movie\/[\w-]+\?date=2026-11-01$/);
 });

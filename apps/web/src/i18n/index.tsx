@@ -29,8 +29,6 @@ export type Translator = {
   formatTime: (instant: string | Date) => string;
   /** A `YYYY-MM-DD` calendar date, e.g. "Saturday 31 October". */
   formatDate: (date: string, options?: Intl.DateTimeFormatOptions) => string;
-  /** The name of an ISO 639-1 language in the interface language, e.g. "en" → "English". */
-  languageName: (code: string) => string;
 };
 
 export function createTranslator(lang: Lang): Translator {
@@ -43,7 +41,6 @@ export function createTranslator(lang: Lang): Translator {
     minute: '2-digit',
     hourCycle: 'h23',
   });
-  const languageNames = new Intl.DisplayNames(locale, { type: 'language' });
 
   return {
     lang,
@@ -59,7 +56,6 @@ export function createTranslator(lang: Lang): Translator {
       new Intl.DateTimeFormat(locale, { timeZone: TIME_ZONE, ...options }).format(
         new Date(`${date}T12:00:00Z`),
       ),
-    languageName: (code) => languageNames.of(code) ?? code,
   };
 }
 
