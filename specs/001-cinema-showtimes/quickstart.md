@@ -94,6 +94,6 @@ npm run sources:check       # fetches each live source once and prints counts pe
 ```
 
 **Expect**: every enabled source reports screenings for today and at least the next 6 days, and
-no source reports validation errors. Exception: a source that declares a known limitation (e.g.
-Cinamon in `page-state` mode, `today-only`) only needs screenings for today; the check prints the
-limitation instead of failing.
+no source reports validation errors. Exception: a source that declares a known limitation
+(`today-only`; no source declares one at present) only needs screenings for today; the check
+prints the limitation instead of failing.

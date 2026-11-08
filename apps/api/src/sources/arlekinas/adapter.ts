@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { SourceRequestError, SourceResponseError } from '../../lib/errors.ts';
 import type { HttpClient } from '../../lib/polite-http.ts';
-import { addDays, instantFromLocal, todayIn } from '../../lib/time.ts';
+import { instantFromLocal, todayIn } from '../../lib/time.ts';
+import { lastListedDate } from '../horizon.ts';
 import { ageRatingOf, dubbingOf, languageOf } from '../parse.ts';
 import type { AdapterContext, AdapterResult, SourceAdapter } from '../types.ts';
 
@@ -13,8 +14,6 @@ import type { AdapterContext, AdapterResult, SourceAdapter } from '../types.ts';
  */
 const SITE = 'https://kinasarlekinas.lt';
 const API = 'https://api.kinasarlekinas.lt/api';
-/** The programme is published about three weeks ahead; this only has to reach past that. */
-const DAYS_AHEAD = 90;
 
 const ListSchema = z.object({ data: z.array(z.unknown()) });
 
@@ -134,7 +133,7 @@ export const arlekinasAdapter: SourceAdapter = {
     if (!cinema) throw new Error('Arlekinas is missing from the cinema registry');
 
     const today = todayIn(now);
-    const listUrl = `${API}/posts/filter?latest=1&post_time_sheet_date=${today}&post_time_sheet_date_to=${addDays(today, DAYS_AHEAD)}`;
+    const listUrl = `${API}/posts/filter?latest=1&post_time_sheet_date=${today}&post_time_sheet_date_to=${lastListedDate(now)}`;
     const { data: films } = await http.getJson(listUrl, ListSchema);
 
     const result: AdapterResult = { screenings: [], skipped: [] };

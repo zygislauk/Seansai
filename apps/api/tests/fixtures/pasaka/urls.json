@@ -1,6 +1,6 @@
 [
   "https://bilietai.kinopasaka.lt/xml/TheatreAreas/",
-  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1033&dt={today:dd.MM.yyyy}&nrOfDays=14",
-  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1034&dt={today:dd.MM.yyyy}&nrOfDays=14",
-  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1042&dt={today:dd.MM.yyyy}&nrOfDays=14"
+  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1033&dt={today:dd.MM.yyyy}&nrOfDays=91",
+  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1034&dt={today:dd.MM.yyyy}&nrOfDays=91",
+  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1042&dt={today:dd.MM.yyyy}&nrOfDays=91"
 ]

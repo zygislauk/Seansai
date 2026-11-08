@@ -10,6 +10,7 @@ import type { HttpClient } from '../lib/polite-http.ts';
 import { localDateOf } from '../lib/time.ts';
 import { resolveMovie, type Alias, type MatchReview } from '../matching/match.ts';
 import type { CinemaRegistry } from '../registry/cinemas.ts';
+import { lastListedDate } from '../sources/horizon.ts';
 import {
   SourceScreeningSchema,
   type SourceAdapter,
@@ -52,8 +53,9 @@ function validateScreenings(screenings: unknown): SourceScreening[] {
 }
 
 /**
- * One refresh of one source: run the adapter, validate its output, match each listing to a movie
- * and replace the source's future screenings. Any failure keeps the source's previous data and is
+ * One refresh of one source: run the adapter, validate its output, keep the listed days (today
+ * through today + 90, horizon.ts), match each listing to a movie and replace the source's future
+ * screenings. Any failure keeps the source's previous data and is
  * recorded, so the UI can flag the cinema once its data gets old (FR-015).
  */
 export async function refreshSource(
@@ -79,7 +81,15 @@ export async function refreshSource(
       http: ctx.http,
       registry,
     });
-    const screenings = validateScreenings(result.screenings);
+    const lastDate = lastListedDate(ctx.sourceNow ?? now);
+    const published = validateScreenings(result.screenings);
+    const screenings = published.filter((screening) => localDateOf(screening.startsAt) <= lastDate);
+    if (screenings.length < published.length) {
+      logger.debug(
+        { source, dropped: published.length - screenings.length, lastDate },
+        'Dropped screenings beyond the listed days',
+      );
+    }
 
     const known = screenings.filter((screening) => registry.get(screening.cinemaId) !== undefined);
     for (const screening of screenings) {

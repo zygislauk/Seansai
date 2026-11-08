@@ -63,7 +63,7 @@ export type AdapterResult = {
   skipped: Array<{ reason: string; raw: string }>;
 };
 
-/** A known gap in what a source publishes, e.g. Cinamon's page API shows only today. */
+/** A known gap in what a source publishes, e.g. a source that shows only today's sessions. */
 export type SourceLimitation = 'today-only';
 
 export interface SourceAdapter {
@@ -73,8 +73,8 @@ export interface SourceAdapter {
   readonly limitations?: readonly SourceLimitation[];
 
   /**
-   * Fetch and normalise all published screenings from today up to the source's furthest
-   * published date. Must not write to storage and must not throw for a single bad item:
+   * Fetch and normalise the published screenings from today through the last listed date
+   * (horizon.ts); the refresh job drops anything later. Must not write to storage and must not throw for a single bad item:
    * bad items are skipped and counted in `skipped`.
    */
   fetchScreenings(context: AdapterContext): Promise<AdapterResult>;

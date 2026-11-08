@@ -27,11 +27,17 @@ source captured on a later day (Forum) simply starts on a later date.
 
 ## Source notes
 
-- **Cinamon** — `cinamon-mode: page-state`. The page API
-  (`/api/page/home?cinema_id=77139293&timezone=Europe/Vilnius&locale=lt`) answers with JSON, but
-  it holds only today's remaining sessions (the same data as the page state), so the adapter reads
-  today's sessions from it and declares the limitation `today-only`. Sessions carry no link of
-  their own (the site opens them in its script), so tickets link to the Mega schedule page.
+- **Cinamon** — the home page API
+  (`/api/page/home?cinema_id=77139293&timezone=Europe/Vilnius&locale=lt`) holds today's remaining
+  sessions and `calendar_dates`, every date with sessions; each later date comes from
+  `/api/schedule?…&date=YYYY-MM-DD&include=…`, the request the site's schedule page makes. The
+  fixture holds the home page (captured 2026-10-30) and one later date, 2026-12-16 (captured
+  2026-11-08 and listed in `urls.json` with its fixed date); the other dates answer "not found"
+  and are skipped. Sessions carry no link of their own (the site opens them in its script), so
+  tickets link to the Mega schedule page.
+- **Apollo, Pasaka, Forum** — captured when these adapters asked for 14 days. Since 2026-11-08
+  they ask for today + 90 days (`src/sources/horizon.ts`); each manifest was re-keyed to the new
+  request, so the saved answers still hold only the first 14 days.
 - **Fliko sites** (Atlantis, Garsas) — each `urls.json` lists the movie list
   plus eight movie pages; in fixture mode the other movies answer "not found" and are skipped.
   HTML fixtures are saved without their inline `<style>` contents (megabytes of CSS no adapter
@@ -43,7 +49,7 @@ source captured on a later day (Forum) simply starts on a later date.
   (404, no restrictions), but answers that request with HTTP 500 when the request says
   `Accept-Language: *`, the default of Node's `fetch`, which RFC 9309 reads as "disallow
   everything"; the polite client therefore sends `Accept-Language: lt`. `urls.json` lists the
-  regions, each region's 14 days of screenings, the movie list, the one movie missing from it
+  regions, each region's screenings through today + 90 days, the movie list, the one movie missing from it
   and each cinema's halls (those answers carry seat maps, so the adapter asks once a day).
 
 <!-- capture-log:start -->

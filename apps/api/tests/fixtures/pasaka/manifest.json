@@ -1,6 +1,6 @@
 {
   "https://bilietai.kinopasaka.lt/xml/TheatreAreas/": "001.xml",
-  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1033&dt=30.10.2026&nrOfDays=14": "002.xml",
-  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1034&dt=30.10.2026&nrOfDays=14": "003.xml",
-  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1042&dt=30.10.2026&nrOfDays=14": "004.xml"
+  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1033&dt=30.10.2026&nrOfDays=91": "002.xml",
+  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1034&dt=30.10.2026&nrOfDays=91": "003.xml",
+  "https://bilietai.kinopasaka.lt/xml/Schedule/?area=1042&dt=30.10.2026&nrOfDays=91": "004.xml"
 }

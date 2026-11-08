@@ -1,1 +1,4 @@
-["https://cinamonkino.com/api/page/home?cinema_id=77139293&timezone=Europe/Vilnius&locale=lt"]
+[
+  "https://cinamonkino.com/api/page/home?cinema_id=77139293&timezone=Europe/Vilnius&locale=lt",
+  "https://cinamonkino.com/api/schedule?cinema_id=77139293&timezone=Europe/Vilnius&locale=lt&date=2026-12-16&include=film.genre,screen,relatedAttributes,seatsLeft"
+]
