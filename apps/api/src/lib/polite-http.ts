@@ -12,7 +12,8 @@ import type { Logger } from './logger.ts';
  * Good-citizen HTTP access to cinema websites (research.md §1b): an identifying User-Agent with a
  * contact address, sequential requests with a pause per host, a timeout, robots.txt checks and an
  * immediate stop on any sign of blocking. It deliberately never spoofs browser headers, rotates
- * IPs, retries a blocked request or solves CAPTCHAs.
+ * IPs, retries a blocked request or solves CAPTCHAs. The one request it sends again is one the
+ * computer slept through (see #request).
  */
 export interface HttpClient {
   getText(url: string): Promise<string>;
@@ -23,6 +24,14 @@ export interface HttpClient {
 
 const MIN_DELAY_PER_HOST_MS = 500;
 const TIMEOUT_MS = 15_000;
+/**
+ * A request is cut off at TIMEOUT_MS, so one that ends this much later than that was frozen while
+ * the computer slept: the daily refresh runs on a Mac whose lid is usually closed, so it only
+ * wakes for half a minute every 10–15 minutes.
+ */
+const SLEEP_MARGIN_MS = 5_000;
+/** How many times one request is sent again after the computer slept through it. */
+const MAX_RESUMES_AFTER_SLEEP = 5;
 const ROBOTS_CACHE_MS = 24 * 60 * 60 * 1000;
 const BLOCKING_STATUSES = new Set([401, 403, 429]);
 /** Say who refused a request and why. Only these are logged, so cookies never reach the logs. */
@@ -162,11 +171,37 @@ export class PoliteHttpClient implements HttpClient {
   }
 
   /**
+   * One request, sent again if the computer slept through it. With the lid closed the Mac wakes
+   * for about 30 seconds every 10–15 minutes, too briefly for a source of 30 pages, and a request
+   * still waiting when it falls asleep fails on the next wake-up. Sending just that request again
+   * lets the source carry on over the following wake-ups instead of failing. A timeout or broken
+   * connection while awake still fails at once, and so does any answer the server gave.
+   */
+  async #request(url: string): Promise<HttpReply> {
+    const host = new URL(url).host;
+    for (let resumes = 0; ; resumes++) {
+      await this.#waitForTurn(host);
+      const startedAt = Date.now();
+      try {
+        return await this.#send(url);
+      } catch (error) {
+        const elapsedMs = Date.now() - startedAt;
+        if (elapsedMs <= TIMEOUT_MS + SLEEP_MARGIN_MS || resumes >= MAX_RESUMES_AFTER_SLEEP) {
+          throw error;
+        }
+        this.#logger.info(
+          { source: this.#sourceId, url, elapsedMs },
+          'The computer slept through a request; sending it again',
+        );
+      }
+    }
+  }
+
+  /**
    * One request with its body read, all within the timeout: a server can send its headers and then
    * stall, and a stalled source would hold up every source storing after it.
    */
-  async #request(url: string): Promise<HttpReply> {
-    await this.#waitForTurn(new URL(url).host);
+  async #send(url: string): Promise<HttpReply> {
     const controller = new AbortController();
     const timeout = setTimeout(() => {
       controller.abort();
