@@ -215,6 +215,17 @@ calls.
   is tried hourly until the next day's refresh. Only the error message is stored, so telling them apart
   reads its start, which saved a migration. Overnight, retries can be cut short the same way until
   the Mac is next properly awake.
+- **Resuming after sleep** (2026-11-09): with the lid closed and on battery, the Mac wakes for 30–45 s
+  every 10–15 minutes, and macOS ignores keep-awake requests (`caffeinate`) on battery. On 8 and 9
+  November Atlantis and Garsas failed every overnight retry with timeouts, and recovered only once
+  the Mac was properly awake (Atlantis at 17:05 on the 9th). The log showed why: each failure came
+  on a wake-up, from the one request still waiting when the Mac fell asleep. On the 9th at 08:11,
+  Garsas happened to be between requests when it slept, carried on at the next wake-up and
+  succeeded. The polite client now sends a request again when it failed (timeout or broken
+  connection) and more than 20 s passed during it, which only happens when the computer slept
+  through it, up to 5 times. So a 30-page source finishes over 2–3 wake-ups. A timeout while awake,
+  any answer from the server (such as Atlantis's occasional HTTP 502) and any sign of blocking still
+  fail at once.
 - **Timing tests on CI** (2026-11-01, owner decision): GitHub's machines vary by about 1.7× in
   throughput. `performance.spec.ts` allows 2.5 s on CI and 2 s elsewhere, because its throttling
   comes on top of the machine's own speed. The target stays 2 s (SC-002): CI catches real slowdowns,

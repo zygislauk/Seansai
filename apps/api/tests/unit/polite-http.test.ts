@@ -26,10 +26,26 @@ type Route = {
   headers?: Record<string, string>;
   body?: string;
   contentType?: string;
+  /**
+   * The first `calls` requests to this URL are slept through: the clock jumps 15 minutes while
+   * they wait, and then the connection breaks, the request hangs until it times out, or the
+   * server answers as the route says.
+   */
+  asleep?: { calls: number; then: 'reset' | 'timeout' | 'answer' };
 };
 type Call = { url: string; at: number; headers: Headers };
 
 const ALLOW_ALL: Route = { body: 'User-agent: *\nAllow: /\n' };
+/** About how long the Mac sleeps between its brief wake-ups with the lid closed. */
+const SLEEP_MS = 15 * 60 * 1000;
+
+function hangUntilAborted(init?: RequestInit): Promise<Response> {
+  return new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener('abort', () => {
+      reject(new DOMException('The operation was aborted.', 'AbortError'));
+    });
+  });
+}
 
 function createClient(
   routes: Record<string, Route>,
@@ -40,6 +56,16 @@ function createClient(
     const url = input instanceof Request ? input.url : input.toString();
     calls.push({ url, at: Date.now(), headers: new Headers(init?.headers) });
     const route = routes[url] ?? { status: 404 };
+    const asleep = route.asleep;
+    if (asleep && calls.filter((call) => call.url === url).length <= asleep.calls) {
+      vi.setSystemTime(Date.now() + SLEEP_MS);
+      if (asleep.then === 'reset') {
+        return Promise.reject(
+          new TypeError('fetch failed', { cause: new Error('read ECONNRESET') }),
+        );
+      }
+      if (asleep.then === 'timeout') return hangUntilAborted(init);
+    }
     if (route.status === 'hang') {
       return new Promise<Response>((_resolve, reject) => {
         init?.signal?.addEventListener('abort', () => {
@@ -207,6 +233,88 @@ describe('PoliteHttpClient', () => {
 
     await expect(request).rejects.toThrow(SourceRequestError);
     await expect(request).rejects.toThrow(/timed out after 15000 ms/);
+  });
+
+  test('a timeout while awake fails at once, without sending the request again', async () => {
+    const { client, urls } = createClient({
+      'https://cinema.lt/robots.txt': ALLOW_ALL,
+      'https://cinema.lt/slow': { status: 'hang' },
+    });
+
+    await expect(settle(client.getText('https://cinema.lt/slow'))).rejects.toThrow(/timed out/);
+    expect(urls()).toEqual(['https://cinema.lt/robots.txt', 'https://cinema.lt/slow']);
+  });
+
+  describe('when the computer sleeps during a request', () => {
+    test('sends a request again whose connection broke while asleep', async () => {
+      const { client, calls, urls, lines } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/filmai/kopa': { body: 'Kopa', asleep: { calls: 1, then: 'reset' } },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/filmai/kopa'))).resolves.toBe('Kopa');
+      expect(urls()).toEqual([
+        'https://cinema.lt/robots.txt',
+        'https://cinema.lt/filmai/kopa',
+        'https://cinema.lt/filmai/kopa',
+      ]);
+      // Still at least 500 ms after the previous request to the host.
+      const [first, second] = calls.slice(1).map((call) => call.at);
+      expect((second ?? 0) - (first ?? 0)).toBeGreaterThanOrEqual(500);
+      expect(lines()).toContainEqual(
+        expect.objectContaining({
+          msg: 'The computer slept through a request; sending it again',
+          source: 'test',
+          url: 'https://cinema.lt/filmai/kopa',
+        }),
+      );
+    });
+
+    test('sends a request again that timed out after a sleep', async () => {
+      const { client, urls } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/filmai/kopa': { body: 'Kopa', asleep: { calls: 2, then: 'timeout' } },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/filmai/kopa'))).resolves.toBe('Kopa');
+      expect(urls().filter((url) => url.endsWith('/kopa'))).toHaveLength(3);
+    });
+
+    test('gives up after sending it again 5 times', async () => {
+      const { client, urls } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/filmai/kopa': { body: 'Kopa', asleep: { calls: 6, then: 'reset' } },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/filmai/kopa'))).rejects.toThrow(
+        /network error/,
+      );
+      expect(urls().filter((url) => url.endsWith('/kopa'))).toHaveLength(6);
+    });
+
+    test('an answer from the server is never sent again, even after a sleep', async () => {
+      const { client, urls } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/filmai/kopa': { status: 502, asleep: { calls: 1, then: 'answer' } },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/filmai/kopa'))).rejects.toThrow(
+        /HTTP 502/,
+      );
+      expect(urls().filter((url) => url.endsWith('/kopa'))).toHaveLength(1);
+    });
+
+    test('a block found after a sleep still stops at once', async () => {
+      const { client, urls } = createClient({
+        'https://cinema.lt/robots.txt': ALLOW_ALL,
+        'https://cinema.lt/filmai/kopa': { status: 403, asleep: { calls: 1, then: 'answer' } },
+      });
+
+      await expect(settle(client.getText('https://cinema.lt/filmai/kopa'))).rejects.toThrow(
+        SourceBlockedError,
+      );
+      expect(urls().filter((url) => url.endsWith('/kopa'))).toHaveLength(1);
+    });
   });
 
   test('times out a server that stalls after sending its headers', async () => {
