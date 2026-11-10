@@ -240,6 +240,30 @@ calls.
   function itself started cold wasn't confirmed. A first-time visitor gets the snapshot instead. From
   a laptop in Lithuania, warm: 0.11–0.16 s to first byte for `/lt/` (CDN hit), and 0.15–0.50 s for an
   uncached movie list from the API.
+- **Measured over the first week** (T054, 2026-11-10; SC-002, SC-005). Vercel figures are for
+  3–9 or 3–10 November (whole team; Seansai is 95–100 % of it), compared with 7/30 of the monthly
+  allowance. Turso figures are its current cycle to 2026-11-10, compared with the whole month.
+
+  | Allowance (free)                       | Measured                                   | Share of the period |
+  | -------------------------------------- | ------------------------------------------ | ------------------- |
+  | Vercel function invocations, 1 M/mo    | 61,315 (3–9 Nov, usage API)                | 26 %                |
+  | Vercel Active CPU, 4 h/mo              | 21 min 17 s (3–10 Nov, dashboard)          | 38 %                |
+  | Vercel Provisioned Memory, 360 GB-h/mo | 3.27 GB-h (3–9 Nov, usage API)             | 4 %                 |
+  | Vercel Fast Origin Transfer, 10 GB/mo  | 54.64 MB (3–10 Nov, dashboard)             | 2 %                 |
+  | Vercel Fast Data Transfer, 100 GB/mo   | 0.26 GB in + out (3–9 Nov, usage API)      | 1 %                 |
+  | Turso rows read, 500 M/mo              | 7.70 M                                     | 1.5 %               |
+  | Turso rows written, 10 M/mo            | 298.79 k                                   | 3 %                 |
+  | Turso storage, 5 GB                    | 2.27 MB (2 databases of 100)               | < 0.1 %             |
+
+  Every figure is under SC-005's 50 %. Active CPU is the closest and above the ~30 % estimate: days
+  ran from about 1 min (6–7 Nov) to about 5 min (4 Nov), and a month of days like 4 November would
+  reach about 66 %. 3–5 November were the busiest days on every Vercel figure. SC-002: both
+  accounts are free plans (Vercel Hobby, Turso Starter through the Vercel integration), Vercel shows
+  no payment method and no invoices, and Turso is billed through Vercel, so it has nothing to charge.
+  On Hobby, `vercel usage` and `vercel metrics` return no data (they need Pro or Observability Plus);
+  the `/v2/usage?type=requests` API and the dashboard's Usage page do.
+  SC-003 for the same week: the job's log shows every source succeeding on each day from 4 to 10
+  November with no manual run, except Arlekinas's first refresh on the 4th, the day it was added.
 
 ## 6. Region and latency (SC-004)
 

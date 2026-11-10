@@ -404,11 +404,13 @@ US2 (T044).
 
   Done on 2026-11-04. The job logged `forum: disabled` and made no request to Forum. Its four cinemas left the API and, after the snapshot build, the pages. All of them came back once the variable was removed, which took two redeploys (quickstart §5).
 - [X] T053 [US3] Commit `build: drop the native toolchain from the container (002 US3)` on the follow-up branch.
-- [ ] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, `/api/v1/health` showed that day's `lastSuccessAt`.
+- [X] T054 [US3] After one week in production, check usage (quickstart §6, SC-002, SC-005), and confirm SC-003: on each of the 7 days, `/api/v1/health` showed that day's `lastSuccessAt`.
   - Vercel Usage: invocations, Active CPU, Provisioned Memory, Fast Origin and Fast Data Transfer are each < 50% of the Hobby allowance, prorated.
   - Turso: rows read and written, and storage, are each < 50% of Free.
   - Both accounts have no charges and no payment method.
   - Record the figures in [research.md §5](./research.md#5-keeping-usage-free-sc-002-sc-005) under a "Measured" note.
+
+  Done on 2026-11-10. Every figure is under 50 %; the highest is Active CPU at 38 % of the week's share. Vercel has no payment method or invoices, and Turso is on Starter, billed through Vercel. SC-003 is confirmed from the job's log for 4–10 November.
 
 **Checkpoint**: All three stories are delivered and the site is free to run.
 
